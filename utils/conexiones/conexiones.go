@@ -2,16 +2,17 @@ package conexiones
 
 // Importamos librerias
 import (
-	"log"
+	"log/slog"
 	"net/http"
 )
 
-func LevantarServidor(port string, handler http.Handler) {
-	log.Printf("Levantando servidor en el puerto %s...\n", port)
+// Recibe por parametro el puerto, el handler y el logger
+func LevantarServidor(port string, handler http.Handler, logger *slog.Logger) {
+	logger.Info("Levantando servidor en el puerto", "port", port)
 	err := http.ListenAndServe(":"+port, handler)
 
 	//Manejo de errores
 	if err != nil {
-		log.Fatalf("Error al levantar el servidor: %v", err)
+		logger.Error("Error al levantar el servidor: ", "error", err)
 	}
 }
