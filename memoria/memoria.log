@@ -1,0 +1,6 @@
+time=2024-09-04T15:48:46.252-03:00 level=INFO msg="Hola! Soy el módulo memoria"
+time=2024-09-04T15:48:46.272-03:00 level=INFO msg="Levantando servidor en el puerto %s...\n" !BADKEY=8002
+time=2024-09-04T15:56:38.995-03:00 level=INFO msg="Hola! Soy el módulo memoria"
+time=2024-09-04T15:56:39.018-03:00 level=INFO msg="Levantando servidor en el puerto %s...\n" !BADKEY=8002
+time=2024-09-04T15:57:33.630-03:00 level=INFO msg="Hola! Soy el módulo memoria"
+time=2024-09-04T15:57:33.643-03:00 level=INFO msg="Levantando servidor en el puerto" port=8002
