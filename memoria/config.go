@@ -23,10 +23,10 @@ type Config struct {
 	LogLevel        string `json:"log_level"`
 }
 
-var config *Config
+var config Config
 
-func iniciarConfiguracion(filePath string) *Config {
-	var config *Config
+func iniciarConfiguracion(filePath string) Config {
+
 	configFile, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err.Error())
