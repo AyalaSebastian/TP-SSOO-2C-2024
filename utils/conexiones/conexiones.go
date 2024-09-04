@@ -1,4 +1,4 @@
-package server
+package conexiones
 
 // Importamos librerias
 import (
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func initServer(port string, handler http.Handler) {
+func LevantarServidor(port string, handler http.Handler) {
 	log.Printf("Levantando servidor en el puerto %s...\n", port)
 	err := http.ListenAndServe(":"+port, handler)
 
