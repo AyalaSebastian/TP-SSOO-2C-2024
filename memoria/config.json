@@ -8,7 +8,7 @@
     "ip_cpu": "127.0.0.1",
     "port_cpu": 8004,
     "ip_filesystem": "127.0.0.1",
-    "port_filesystem": 8006,
+    "port_filesystem": 8003,
     "scheme": "FIJAS",
     "search_algorithm": "FIRST",
     "partitions": [512, 16, 32, 16, 256, 64, 128],
