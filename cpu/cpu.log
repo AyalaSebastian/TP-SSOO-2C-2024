@@ -17,3 +17,11 @@ time=2024-09-07T00:37:04.060-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-07T00:37:04.065-03:00 level=ERROR msg="strconv.Atoi: parsing \"127.0.0.1\": invalid syntax"
 time=2024-09-07T00:37:04.065-03:00 level=ERROR msg="strconv.Atoi: parsing \"127.0.0.1\": invalid syntax"
 time=2024-09-07T00:37:04.065-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
+time=2024-09-07T19:09:38.733-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-07T19:09:38.744-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
+time=2024-09-07T19:16:03.697-03:00 level=INFO msg="Se pudo establecer la conexion, siguiendo con la funcion\n"
+time=2024-09-07T19:16:03.697-03:00 level=INFO msg="%+v\n" !BADKEY="{Mensaje:Estableciendo handshake con CPU desde Kernel}"
+time=2024-09-07T19:42:57.345-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-07T19:42:57.353-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"
+time=2024-09-07T19:43:54.028-03:00 level=INFO msg="Se pudo establecer la conexion, siguiendo con la funcion"
+time=2024-09-07T19:43:54.028-03:00 level=INFO msg="{Mensaje:Estableciendo handshake con CPU desde Kernel}"
