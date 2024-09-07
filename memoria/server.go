@@ -6,11 +6,13 @@ import (
 	"strconv"
 
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
+	"github.com/sisoputnfrba/tp-golang/utils/server"
 )
 
 func iniciarMemoria(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
 	//mux.HandleFunc("/leer", leerHandler)
 	//mux.HandleFunc("/escribir", escribirHandler)
 

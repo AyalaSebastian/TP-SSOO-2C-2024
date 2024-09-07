@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
+	"github.com/sisoputnfrba/tp-golang/utils/server"
 )
 
 func Iniciar_fileSystem(logger *slog.Logger) {
@@ -13,6 +14,7 @@ func Iniciar_fileSystem(logger *slog.Logger) {
 
 	// Aca van a ir todos los handlers
 
+	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
 	//mux.HandleFunc("/leer", leerHandler)
 	//mux.HandleFunc("/escribir", escribirHandler)
 

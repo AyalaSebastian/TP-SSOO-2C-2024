@@ -13,3 +13,7 @@ time=2024-09-06T22:31:21.311-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-06T22:31:21.318-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
 time=2024-09-06T22:32:09.577-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-06T22:32:09.583-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
+time=2024-09-07T00:37:04.060-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-07T00:37:04.065-03:00 level=ERROR msg="strconv.Atoi: parsing \"127.0.0.1\": invalid syntax"
+time=2024-09-07T00:37:04.065-03:00 level=ERROR msg="strconv.Atoi: parsing \"127.0.0.1\": invalid syntax"
+time=2024-09-07T00:37:04.065-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
