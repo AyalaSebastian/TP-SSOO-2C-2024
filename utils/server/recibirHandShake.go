@@ -17,17 +17,15 @@ func Recibir_handshake(logger *slog.Logger) http.HandlerFunc {
 		var mensaje types.HandShake
 		err := decoder.Decode(&mensaje)
 		if err != nil {
-			// log.Info("Error al decodificar mensaje: %s\n", err.Error())
-			logger.Info(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-			slog.Error("Error al decodificar mensaje: %s\n", err.Error()) //! Arreglar el formato del logger
+			logger.Info(fmt.Sprintf("Error al decodificar mensaje: %s", err.Error()))
 
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Error al decodificar mensaje / Con el Handshake"))
 			return
 		}
 
-		logger.Info("Se pudo establecer la conexion, siguiendo con la funcion\n")
-		logger.Info("%+v\n", mensaje)
+		logger.Info("Se pudo establecer la conexion, siguiendo con la funcion")
+		logger.Info(fmt.Sprintf("%+v", mensaje))
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("HANDSHAKE OK"))

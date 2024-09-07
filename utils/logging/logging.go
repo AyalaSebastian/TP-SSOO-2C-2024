@@ -6,7 +6,7 @@ import (
 )
 
 // Se le pasa por parametro la ruta del archivo de log y el nivel de log que está en el config
-func IniciarLogger(rutaArchivo string, nivel string) *slog.Logger {
+func Iniciar_Logger(rutaArchivo string, nivel string) *slog.Logger {
 	// Abrir el archivo para log
 	archivoLog, err := os.OpenFile(rutaArchivo, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
