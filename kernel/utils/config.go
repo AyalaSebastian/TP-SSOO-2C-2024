@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"encoding/json"
@@ -17,9 +17,9 @@ type Config struct {
 	LogLevel           string `json:"log_level"`
 }
 
-var config Config
+var Configs Config
 
-func iniciarConfiguracion(filePath string) Config {
+func Iniciar_Configuracion(filePath string) Config {
 
 	configFile, err := os.Open(filePath)
 	if err != nil {
@@ -28,7 +28,7 @@ func iniciarConfiguracion(filePath string) Config {
 	defer configFile.Close()
 
 	jsonParser := json.NewDecoder(configFile)
-	jsonParser.Decode(&config)
+	jsonParser.Decode(&Configs)
 
-	return config
+	return Configs
 }

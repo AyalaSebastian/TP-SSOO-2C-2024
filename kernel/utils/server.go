@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"log/slog"
@@ -9,13 +9,14 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/server"
 )
 
-func iniciarMemoria(logger *slog.Logger) {
+func Iniciar_kernel(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
+	// Ejemplos de como agregar handlers
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
 	//mux.HandleFunc("/leer", leerHandler)
 	//mux.HandleFunc("/escribir", escribirHandler)
 
-	conexiones.LevantarServidor(strconv.Itoa(config.Port), mux, logger)
+	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
 }
