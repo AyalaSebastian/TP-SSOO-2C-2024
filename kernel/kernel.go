@@ -1,28 +1,30 @@
 package main
 
 import (
-	"sync"
+	// "sync"
 
+	"github.com/sisoputnfrba/tp-golang/kernel/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/client"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
 
-var waitGroup sync.WaitGroup
+// var waitGroup sync.WaitGroup
 
 func main() {
 	// Inicializamos la configuracion y el logger
-	config = iniciarConfiguracion("config.json")
-	logger := logging.IniciarLogger("kernel.log", config.LogLevel)
+	utils.Configs = utils.Iniciar_Configuracion("config.json")
+	logger := logging.Iniciar_Logger("kernel.log", utils.Configs.LogLevel)
 
 	// Solo lo puse para probar el logger, después lo sacamos
 	logger.Info("Hola! Soy el módulo kernel")
 
-	// Iniciar cpu como server en un hilo para que el programa siga su ejecicion
-	go iniciar_kernel(logger)
-	waitGroup.Add(1)
-
 	// Enviamos handshake a cpu
-	client.Enviar_handshake(config.IpCPU, config.PortCPU, "Estableciendo handshake con CPU desde kernel")
+	client.Enviar_handshake(utils.Configs.IpCPU, utils.Configs.PortCPU, "Estableciendo handshake con CPU desde Kernel")
+	client.Enviar_handshake(utils.Configs.IpMemory, utils.Configs.PortMemory, "Estableciendo handshake con Memoria desde Kernel")
 
-	waitGroup.Wait()
+	// Iniciamos Kernel como server
+	utils.Iniciar_kernel(logger)
+	// waitGroup.Add(1)
+
+	// waitGroup.Wait()
 }

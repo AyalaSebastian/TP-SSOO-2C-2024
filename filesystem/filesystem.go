@@ -1,16 +1,15 @@
 package main
 
 import (
-	"log/slog"
-	"strconv"
-	"sync"
+	// "strconv"
+	// "sync"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
-	"github.com/sisoputnfrba/tp-golang/utils/client"
+	// "github.com/sisoputnfrba/tp-golang/utils/client"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
 
-var waitGroup sync.WaitGroup
+// var waitGroup sync.WaitGroup
 
 func main() {
 
@@ -18,23 +17,22 @@ func main() {
 	utils.Configs = utils.Iniciar_configuracion("config.json")
 
 	// Inicio log
-	log := logging.IniciarLogger("filesystem.log", utils.Configs.LogLevel)
+	logger := logging.Iniciar_Logger("filesystem.log", utils.Configs.LogLevel)
 
-	log.Info("Logger iniciado")
-	slog.Info("Logger iniciado") //! Despues sacar este log
+	logger.Info("Logger iniciado")
 
 	// Iniciar filesystem como server
-	go utils.Iniciar_cpu(log)
-	waitGroup.Add(1)
+	utils.Iniciar_cpu(logger)
+	// waitGroup.Add(1)
 
 	// Handshakes a memoria
-	ipMemoryParceado, err := strconv.Atoi(utils.Configs.IpMemory)
-	if err != nil {
-		log.Error(err.Error())
+	// 	ipMemoryParceado, err := strconv.Atoi(utils.Configs.IpMemory)
+	// 	if err != nil {
+	// 		logger.Error(err.Error())
 
-	}
+	// 	}
 
-	client.Enviar_handshake(strconv.Itoa(utils.Configs.PortMemory), ipMemoryParceado, "Estableciendo handshake con Memoria desde Filesystem")
+	// 	client.Enviar_handshake(strconv.Itoa(utils.Configs.PortMemory), ipMemoryParceado, "Estableciendo handshake con Memoria desde Filesystem")
 
-	waitGroup.Wait()
+	// 	// waitGroup.Wait()
 }
