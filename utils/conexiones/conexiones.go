@@ -8,7 +8,7 @@ import (
 
 // Recibe por parametro el puerto, el handler y el logger
 func LevantarServidor(port string, handler http.Handler, logger *slog.Logger) {
-	logger.Info("Levantando servidor en el puerto", "port", port)
+	logger.Info("Levantando servidor en el puerto", "port", port) //! Arreglar el formato del logger
 	err := http.ListenAndServe(":"+port, handler)
 
 	//Manejo de errores

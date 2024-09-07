@@ -2,3 +2,14 @@ time=2024-09-04T21:36:59.966-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-04T21:37:24.486-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-04T21:38:15.502-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-04T22:04:20.028-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T21:24:30.676-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T21:24:30.681-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
+time=2024-09-06T22:16:19.037-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T22:16:19.043-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
+time=2024-09-06T22:17:47.700-03:00 level=INFO msg="Se pudo establecer la conexion, siguiendo con la funcion\n"
+time=2024-09-06T22:17:47.700-03:00 level=INFO msg="%+v\n" !BADKEY="{Mensaje:Estableciendo handshake con CPU desde kernel}"
+time=2024-09-06T22:27:12.893-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T22:31:21.311-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T22:31:21.318-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004
+time=2024-09-06T22:32:09.577-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T22:32:09.583-03:00 level=INFO msg="Levantando servidor en el puerto" port=8004

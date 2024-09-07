@@ -1,2 +1,5 @@
 time=2024-09-04T21:46:19.433-03:00 level=INFO msg="Logger iniciado"
 time=2024-09-04T22:06:33.321-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T21:31:43.790-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T21:32:22.574-03:00 level=INFO msg="Logger iniciado"
+time=2024-09-06T21:32:22.605-03:00 level=INFO msg="Levantando servidor en el puerto" port=8003
