@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/utils" // Se pone esto ya que en el go.mod esta especificado asi
-	"github.com/sisoputnfrba/tp-golang/utils/client"
+	// "github.com/sisoputnfrba/tp-golang/utils/client"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
 
@@ -28,7 +28,7 @@ func main() {
 	waitGroup.Add(1)
 
 	// Handshake a kernel
-	client.Enviar_handshake(utils.Configs.PortKernel, utils.Configs.KernelIP, Logger)
+	// client.Enviar_handshake(utils.Configs.PortKernel,utils.Configs.IpKernel, "Estableciendo handshake con Kernel desde CPU")
 
 	waitGroup.Wait()
 }
