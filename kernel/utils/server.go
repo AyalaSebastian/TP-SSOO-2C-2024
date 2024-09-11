@@ -12,10 +12,8 @@ import (
 func Iniciar_kernel(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
-	// Ejemplos de como agregar handlers
+	// Endpoints
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
-	//mux.HandleFunc("/leer", leerHandler)
-	//mux.HandleFunc("/escribir", escribirHandler)
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 

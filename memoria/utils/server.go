@@ -12,9 +12,8 @@ import (
 func Iniciar_memoria(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
+	// Endpoints
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
-	//mux.HandleFunc("/leer", leerHandler)
-	//mux.HandleFunc("/escribir", escribirHandler)
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 

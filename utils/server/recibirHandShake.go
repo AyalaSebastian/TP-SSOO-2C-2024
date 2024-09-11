@@ -31,5 +31,3 @@ func Recibir_handshake(logger *slog.Logger) http.HandlerFunc {
 		w.Write([]byte("HANDSHAKE OK"))
 	}
 }
-
-//func RecibirHandshake(w http.ResponseWriter, r *http.Request) {}

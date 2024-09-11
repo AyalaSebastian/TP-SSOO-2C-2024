@@ -12,10 +12,8 @@ import (
 func Iniciar_cpu(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
-	// Aca van a ir todos los handlers
-
+	// Endpoints
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
-	//mux.HandleFunc("/escribir", escribirHandler)
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 }
