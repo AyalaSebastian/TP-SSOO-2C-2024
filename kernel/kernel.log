@@ -11,3 +11,6 @@ time=2024-09-07T19:16:03.690-03:00 level=INFO msg="Hola! Soy el módulo kernel"
 time=2024-09-07T19:16:03.698-03:00 level=INFO msg="Levantando servidor en el puerto" port=8001
 time=2024-09-07T19:43:54.020-03:00 level=INFO msg="Hola! Soy el módulo kernel"
 time=2024-09-07T19:43:54.029-03:00 level=INFO msg="Levantando servidor en el puerto: 8001"
+time=2024-09-20T18:13:59.580-03:00 level=INFO msg="Hola! Soy el módulo kernel"
+time=2024-09-20T18:49:45.038-03:00 level=INFO msg="Hola! Soy el módulo kernel"
+time=2024-09-20T18:49:45.040-03:00 level=INFO msg="Levantando servidor en el puerto: 8001"

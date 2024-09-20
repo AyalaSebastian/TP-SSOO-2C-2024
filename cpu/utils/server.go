@@ -13,7 +13,7 @@ func Iniciar_cpu(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
 	// Endpoints
-	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
+	mux.HandleFunc("/mensaje", server.Recibir_handshake(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 }

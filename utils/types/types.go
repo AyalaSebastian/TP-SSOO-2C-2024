@@ -19,19 +19,34 @@ type TCB struct {
 }
 
 type RegCPU struct {
-	PC uint32 `json:"pc"` // Program Counter (Proxima instruccion a ejecutar)
-	AX uint32 `json:"ax"`
-	BX uint32 `json:"bx"`
-	CX uint32 `json:"cx"`
-	DX uint32 `json:"dx"`
-	EX uint32 `json:"ex"`
-	FX uint32 `json:"fx"`
-	GX uint32 `json:"gx"`
-	HX uint32 `json:"hx"`
+	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)
+	AX     uint32 `json:"ax"`     // Registro Numerico de proposito general
+	BX     uint32 `json:"bx"`     // Registro Numerico de proposito general
+	CX     uint32 `json:"cx"`     // Registro Numerico de proposito general
+	DX     uint32 `json:"dx"`     // Registro Numerico de proposito general
+	EX     uint32 `json:"ex"`     // Registro Numerico de proposito general
+	FX     uint32 `json:"fx"`     // Registro Numerico de proposito general
+	GX     uint32 `json:"gx"`     // Registro Numerico de proposito general
+	HX     uint32 `json:"hx"`     // Registro Numerico de proposito general
+	Base   uint32 `json:"base"`   // Direccion base de la particion del proceso
+	Limite uint32 `json:"limite"` // Tamanio de la particion del proceso
 }
 
 type ContextoEjecucion struct {
-	Base      int    `json:"base"`
-	Limite    int    `json:"limite"`
 	Registros RegCPU `json:"registros"`
+}
+
+type Particion struct {
+	Registros RegCPU `json:"registros"`
+}
+
+type CPU struct {
+	Contexto          ContextoEjecucion `json:"contexto"`
+	MMU               MMU               `json:"mmu"`
+	Memoria           Memoria           `json:"memoria"`
+	InstruccionActual string            `json:"instruccion_actual"`
+}
+type MMU struct {
+}
+type Memoria struct {
 }
