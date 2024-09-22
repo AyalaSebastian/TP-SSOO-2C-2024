@@ -14,6 +14,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 	// Endpoints
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
+	// mux.HandleFunc("/path", recibir_path(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
