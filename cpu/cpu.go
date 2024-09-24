@@ -4,8 +4,14 @@ import (
 
 	// "sync"
 
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sync/atomic"
+
 	"github.com/sisoputnfrba/tp-golang/cpu/utils" // Se pone esto ya que en el go.mod esta especificado asi
-	"github.com/sisoputnfrba/tp-golang/utils/client"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
 
@@ -24,10 +30,13 @@ func main() {
 	// Iniciar cpu como server en un hilo para que el programa siga su ejecicion
 	utils.Iniciar_cpu(Logger)
 
-	// "Handshake" a memoria
-	client.Enviar_handshake(utils.Configs.IpMemory, utils.Configs.PortMemory, "Estableciendo handshake con Memoria desde CPU")
-	// "Handshake" a kernel
-	client.Enviar_handshake(utils.Configs.IpKernel, utils.Configs.PortKernel, "Estableciendo handshake con Kernel desde CPU")
+
+
+/*
+
+	http.HandleFunc("POST /helloworld", ComunicacionMemoria)
+	http.ListenAndServe(":8002", nil)
+
 	// waitGroup.Add(1)
 
 	// waitGroup.Wait()
@@ -48,16 +57,14 @@ func main() {
 
 }
 
-/*
-
 type CPU struct {
-    Contexto           ContextoEjecucion `json:"contexto"`
-    MMU                MMU                `json:"mmu"`
-    Memoria            Memoria            `json:"memoria"`
-    InstruccionActual  string             `json:"instruccion_actual"`
-    Logger             *log.Logger
-    InterruptFlag      int32              // Flag para interrupciones
-    TID                int                // Identificador del TID actual
+	Contexto          ContextoEjecucion `json:"contexto"`
+	MMU               MMU               `json:"mmu"`
+	Memoria           Memoria           `json:"memoria"`
+	InstruccionActual string            `json:"instruccion_actual"`
+	Logger            *log.Logger
+	InterruptFlag     int32 // Flag para interrupciones
+	TID               int   // Identificador del TID actual
 }
 
 // Metodo para simular el ciclo de instruccion
@@ -79,6 +86,9 @@ func Fetch(cpu *utils.CPU) {
 }
 
 func (cpu *CPU) SET(registro string, valor uint32) {
+	//log obligatorio
+	cpu.Logger.Printf("## TID: %d - Ejecutando: SET - %s, %d", cpu.Contexto.TID, registro, valor)
+
 	switch registro {
 	case "PC":
 		cpu.Contexto.Registros.PC = valor
@@ -108,13 +118,21 @@ func (cpu *CPU) SET(registro string, valor uint32) {
 func (cpu *CPU) READ_MEM(registroDatos, registroDireccion string) {
 	// Implementar la logica para leer de memoria
 
+	//log obligatorio
+	cpu.Logger.Printf("## TID: %d - Acción: LEER - Dirección Física: %s", cpu.Contexto.TID, registroDireccion)
 }
 
 func (cpu *CPU) WRITE_MEM(registroDireccion, registroDatos string) {
 	// Implementar la logica para escribir en memoria
+
+	//log obligatorio
+	cpu.Logger.Printf("## TID: %d - Acción: ESCRIBIR - Dirección Física: %s", cpu.Contexto.TID, registroDireccion)
 }
 
 func (cpu *CPU) SUM(registroDestino, registroOrigen string) {
+	//log obligatorio
+	cpu.Logger.Printf("## TID: %d - Ejecutando: SUM - %s, %s", cpu.Contexto.TID, registroDestino, registroOrigen)
+
 	switch registroDestino {
 	case "PC":
 		cpu.Contexto.Registros.PC += cpu.getRegistroValor(registroOrigen)
@@ -142,6 +160,9 @@ func (cpu *CPU) SUM(registroDestino, registroOrigen string) {
 }
 
 func (cpu *CPU) SUB(registroDestino, registroOrigen string) {
+	//log obligatorio
+	cpu.Logger.Printf("## TID: %d - Ejecutando: SUB - %s, %s", cpu.Contexto.TID, registroDestino, registroOrigen)
+
 	switch registroDestino {
 	case "PC":
 		cpu.Contexto.Registros.PC -= cpu.getRegistroValor(registroOrigen)
@@ -169,6 +190,9 @@ func (cpu *CPU) SUB(registroDestino, registroOrigen string) {
 }
 
 func (cpu *CPU) JNZ(registro string, instruccion uint32) {
+	//log obligatorio
+	cpu.Logger.Printf("## TID: %d - Ejecutando: JNZ - %s, %d", cpu.Contexto.TID, registro, instruccion)
+
 	if cpu.getRegistroValor(registro) != 0 {
 		cpu.Contexto.Registros.PC = instruccion
 	}
@@ -179,6 +203,7 @@ func (cpu *CPU) LOG(registro string) {
 	cpu.Logger.Printf("Valor de %s: %d", registro, valor)
 }
 
+// obtener el valor del registro pedido
 func (cpu *CPU) getRegistroValor(registro string) uint32 {
 	switch registro {
 	case "PC":
@@ -280,4 +305,6 @@ func (cpu *CPU) devolverTIDAlKernel() {
 
     // Chequear interrupciones
     cpu.checkInterrupt()
+*/
+
 */
