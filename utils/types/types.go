@@ -4,6 +4,7 @@ type HandShake struct {
 	Mensaje string `json:"mensaje"`
 }
 
+// --------------------------------- KERNEL ---------------------------------
 type PCB struct {
 	PID    uint32   `json:"pid"`
 	TCBs   []TCB    `json:"tcb"`
@@ -18,6 +19,12 @@ type TCB struct {
 	Registros RegCPU `json:"registros"` //! (Verificar si esta bien)
 }
 
+type PathTamanio struct {
+	Path    string `json:"path"`
+	Tamanio int    `json:"tamanio"`
+}
+
+// --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)
 	AX     uint32 `json:"ax"`     // Registro Numerico de proposito general
