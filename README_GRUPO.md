@@ -1,6 +1,6 @@
-# formato para q sea mas legible el codigo 
-1. Variables en camelCase
-2. Funciones con separadas con _ 
+# Formato para que sea mas legible el codigo 
+1. Variables en camelCase (si la variable es global PascalCase)
+2. Funciones separadas con _ 
 
 
 # Preguntas para los soportes
