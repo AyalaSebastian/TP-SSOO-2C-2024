@@ -1,10 +1,11 @@
-package utils
+package server
 
 import (
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/sisoputnfrba/tp-golang/kernel/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/server"
 )
@@ -15,6 +16,6 @@ func Iniciar_kernel(logger *slog.Logger) {
 	// Endpoints
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
 
-	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
+	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
