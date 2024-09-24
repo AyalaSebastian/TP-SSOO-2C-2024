@@ -28,3 +28,5 @@ time=2024-09-20T18:51:05.700-03:00 level=INFO msg="Se pudo establecer la conexio
 time=2024-09-20T18:51:05.701-03:00 level=INFO msg="{Mensaje:Estableciendo handshake con Memoria desde CPU}"
 time=2024-09-20T18:51:05.702-03:00 level=INFO msg="Se pudo establecer la conexion, siguiendo con la funcion"
 time=2024-09-20T18:51:05.702-03:00 level=INFO msg="{Mensaje:Estableciendo handshake con Kernel desde CPU}"
+time=2024-09-23T23:47:24.353-03:00 level=INFO msg="Hola! Soy el módulo memoria"
+time=2024-09-23T23:47:24.360-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
