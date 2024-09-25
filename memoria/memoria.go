@@ -10,9 +10,6 @@ func main() {
 	utils.Configs = utils.Iniciar_configuracion("config.json")
 	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
 
-	// Solo lo puse para probar el logger, después lo sacamos
-	logger.Info("Hola! Soy el módulo memoria")
-
 	// Inicializamos la memoria (Lo levantamos como servidor)
 	utils.Iniciar_memoria(logger)
 
