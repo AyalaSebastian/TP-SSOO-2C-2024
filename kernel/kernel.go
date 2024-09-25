@@ -36,8 +36,8 @@ func main() {
 	crear_proceso(archivoPseudocodigo, tamanioProceso, 0, logger)
 
 	// Iniciamos Kernel como server
-	server.Iniciar_kernel(logger)
 
+	server.Iniciar_kernel(logger)
 }
 
 // Acá para mi hay que mandar el path a memoria para que saque las instrucciones del archivo de pseudocódigo y acá mismo armar el PCB con el TCB y todo
@@ -60,3 +60,21 @@ func crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 }
 
 // tcb := generadores.Generar_TCB(&pcb, 0)
+
+//todo Lo que tiene que hacer la funcion
+//Para la creación de hilos, el Kernel deberá informar a la Memoria y luego
+//ingresarlo directamente a la cola de READY correspondiente, según su nivel de prioridad.
+
+func crear_hilo() {
+
+}
+
+//todo Lo que tiene que hacer la funcion
+//Al momento de finalizar un hilo, el Kernel deberá informar a la Memoria la finalización del mismo y
+//deberá mover al estado READY a todos los hilos que se encontraban bloqueados por ese TID. De esta
+//manera, se desbloquean aquellos hilos bloqueados por THREAD_JOIN y por mutex tomados por el
+//hilo finalizado (en caso que hubiera).
+
+func finalizar_hilo() {
+
+}

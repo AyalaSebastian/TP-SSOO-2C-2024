@@ -14,9 +14,9 @@ type PCB struct {
 type TCB struct {
 	TID       int    `json:"tid"`
 	Prioridad int    `json:"prioridad"`
-	Estado    string `json:"estado"`    //Puede ser "NEW", "READY", "EXECUTE", "BLOCKED", "EXIT" (En mayusculas)
-	PID       uint32 `json:"pid"`       //PID del proceso al que pertenece
-	Registros RegCPU `json:"registros"` //! (Verificar si esta bien)
+	Estado    string `json:"estado"` //Puede ser "NEW", "READY", "EXECUTE", "BLOCKED", "EXIT" (En mayusculas)
+	PID       uint32 `json:"pid"`    //PID del proceso al que pertenece
+	Registros RegCPU `json:"registros"`
 }
 
 type PathTamanio struct {

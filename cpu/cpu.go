@@ -306,5 +306,3 @@ func (cpu *CPU) devolverTIDAlKernel() {
     // Chequear interrupciones
     cpu.checkInterrupt()
 */
-
-*/

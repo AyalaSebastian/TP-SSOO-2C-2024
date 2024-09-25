@@ -25,7 +25,7 @@ func Recibir_handshake(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		logger.Info("Se pudo establecer la conexion, siguiendo con la funcion")
-		logger.Info(fmt.Sprintf("%+v", mensaje))
+		logger.Info(fmt.Sprintf("%+v", mensaje.Mensaje))
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("HANDSHAKE OK"))
