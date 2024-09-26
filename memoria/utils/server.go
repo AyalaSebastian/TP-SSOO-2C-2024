@@ -17,6 +17,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	// Endpoints
 	mux.HandleFunc("POST /crear-proceso", Crear_proceso(logger))
 	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", Finalizar_proceso(logger))
+	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
@@ -56,4 +57,32 @@ func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
 		w.Write([]byte("OK"))
 	}
 
+}
+
+func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var infoHilo types.EnviarHiloAMemoria
+		err := json.NewDecoder(r.Body).Decode(&infoHilo)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Aca va toda la logica para crear el hilo pag(22)
+
+		// En caso de haberse creado el hilo
+
+		respuesta, err := json.Marshal("OK")
+		if err != nil {
+			http.Error(w, "Error al codificar los datos como JSON", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(respuesta)
+
+		logger.Info(fmt.Sprintf("## Hilo Creado - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
+	}
 }

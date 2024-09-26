@@ -70,19 +70,28 @@ func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 //ingresarlo directamente a la cola de READY correspondiente, según su nivel de prioridad.
 
 // Recibo de la cpu el archivo de instrucciones y la prioridad
-func Crear_hilo() {
+func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 
-	// 					Crear TID
+	// Crear TCB
+	pcb := utils.Obtener_PCB_por_PID(utils.Execute.PID)
+	var reg types.RegCPU
 
-	// primero obtengo el pcb al cual estoy haciendo referencia (lleva el registro el kernel)
+	tcb := generadores.Generar_TCB(pcb, prioridad, reg)
 
-	//	Los reg cpu los crea directamente la memoria
+	//	Informar memoria
+	infoMemoria := types.EnviarHiloAMemoria{
+		TID:  tcb.TID,
+		PID:  pcb.PID,
+		Path: path,
+	}
+	if client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "/CREAR_HILO", logger) != true {
+		panic("Error la crear hilo")
+	}
 
-	//				 Informar memoria
+	// Ingresar a la cola de READY
+	utils.Encolar(&ColaReady, tcb) //! Vamos a tener que modificar esto por el nivel de prioridad
 
-	//
-
-	// 			Ingresar a la cola de READY
+	logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY"), pcb.PID, tcb.TID)
 }
 
 // Le envio el archivo de pseudocodigo como me viene a la memoria
@@ -93,6 +102,13 @@ func Crear_hilo() {
 //manera, se desbloquean aquellos hilos bloqueados por THREAD_JOIN y por mutex tomados por el
 //hilo finalizado (en caso que hubiera).
 
+// No recibo parametros
 func Finalizar_hilo() {
+
+	// Informar a la memoria la finalizacion de un hilo
+
+	// Quitar de la lista de los TCBs del PCB al finalizado
+
+	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
 
 }

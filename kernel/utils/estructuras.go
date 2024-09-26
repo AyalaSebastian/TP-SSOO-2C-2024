@@ -7,6 +7,14 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
+// Hilo ejecutando actualmente
+type ExecuteActual struct {
+	PID uint32 `json:"pid"`
+	TID uint32 `json:"tid"`
+}
+
+var Execute ExecuteActual
+
 // Mapa para almacenar los PCB con su PID como clave
 var MapaPCB map[uint32]types.PCB
 
@@ -61,10 +69,4 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]ty
 	delete(MapaPCB, pid)
 	logger.Info(fmt.Sprintf("Todos los TCBs del PCB con PID %d han sido liberados", pcb.PID))
 	return true
-}
-
-// Registro que el kernel lleva del proceso ejecutando actualmente
-type ExecuteActual struct {
-	PID uint32 `json:"pid"`
-	TID uint32 `json:"tid"`
 }

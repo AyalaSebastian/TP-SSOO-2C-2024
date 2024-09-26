@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-
-	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
 // Devuelve true en caso de que la respuesta del servidor sea exitosa, false en caso contrario
@@ -61,10 +59,6 @@ func Enviar_QueryPath[T any](dato T, ip string, puerto int, endpoint string, log
 	}
 
 	return true // Indica que la respuesta fue exitosa
-}
-
-func Pedir_pid_a_cpu(ip string, puerto int, logger *slog.Logger) types.PCB {
-
 }
 
 func Informar_memoria_creacion_hilo() {

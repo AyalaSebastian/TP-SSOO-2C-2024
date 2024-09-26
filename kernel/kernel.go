@@ -38,5 +38,8 @@ func main() {
 	planificador.Finalizar_proceso(1, logger)
 
 	// Iniciamos Kernel como server
+
+	planificador.Crear_hilo(archivoPseudocodigo, 0, logger)
+
 	server.Iniciar_kernel(logger)
 }

@@ -24,9 +24,10 @@ type PathTamanio struct {
 	Tamanio int    `json:"tamanio"`
 }
 
-type HiloInfoMemoria struct {
+type EnviarHiloAMemoria struct {
+	TID  uint32 `json:"tid"`
+	PID  uint32 `json:"pid"`
 	Path string `json:"path"`
-	TID  int    `json:"tid"`
 }
 
 // --------------------------------- CPU ---------------------------------

@@ -22,13 +22,18 @@ func Generar_PCB() types.PCB {
 }
 
 // Genera un nuevo TCB y lo añade al PCB recibido por parámetro (pasar el pcb con &).
-func Generar_TCB(pcb *types.PCB, prioridad int) types.TCB {
+func Generar_TCB(pcb *types.PCB, prioridad int, reg types.RegCPU) types.TCB {
+
 	tid := len(pcb.TCBs) // Usamos la longitud actual de TCBs para generar el próximo TID.
 	tidUint32 := uint32(tid)
+
 	tcb := types.TCB{
 		TID:       tidUint32,
 		Prioridad: prioridad,
+		PID:       pcb.PID,
+		Registros: reg,
 	}
-	pcb.TCBs = append(pcb.TCBs, tcb) // Añadimos el nuevo TCB al PCB.
+
+	pcb.TCBs = append(pcb.TCBs, tcb) // Aniadimos el nuevo TCB al PCB.
 	return tcb
 }
