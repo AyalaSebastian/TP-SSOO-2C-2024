@@ -33,7 +33,7 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 			w.Write([]byte("Error al decodificar mensaje"))
 			return
 		}
-		logger.Info(fmt.Sprintf("Me llegaron los siguientes datos: %+v", magic))
+		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros: %+v", magic))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria CREE el proceso (Está en pagina 20 y 21 del enunciado)
 
@@ -47,7 +47,7 @@ func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pid := r.PathValue("pid") //Recibimos el pid a finalizar
 
-		logger.Info(fmt.Sprintf("Me llegaron los siguientes datos: %+v", pid))
+		logger.Info(fmt.Sprintf("Me llegaron los siguientes datos: PID = %+v", pid))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria FINALICE el proceso (Está en pagina 21 del enunciado)
 
