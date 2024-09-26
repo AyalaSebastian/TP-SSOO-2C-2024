@@ -31,7 +31,6 @@ func Enviar_Body[T any](dato T, ip string, puerto int, endpoint string, logger *
 		return false // Indica que la respuesta no fue exitosa
 	}
 
-	logger.Info(fmt.Sprintf("Respuesta del servidor: %s", resp.Status))
 	return true // Indica que la respuesta fue exitosa
 }
 

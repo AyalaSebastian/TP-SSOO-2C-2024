@@ -20,6 +20,9 @@ func main() {
 	// Inicializamos las colas de procesos
 	planificador.Inicializar_colas()
 
+	// Inicializamos el mapa de PCBs
+	utils.InicializarPCBMapGlobal()
+
 	// Obtener los parametros del primer proceso a ejecutar
 	archivoPseudocodigo := os.Args[1]
 	tamanioProceso, err := strconv.Atoi(os.Args[2])
@@ -30,6 +33,9 @@ func main() {
 
 	// Creación del proceso inicial
 	planificador.Crear_proceso(archivoPseudocodigo, tamanioProceso, 0, logger)
+
+	// Para probar la funcion de finalizar proceso nomás
+	planificador.Finalizar_proceso(1, logger)
 
 	// Iniciamos Kernel como server
 	server.Iniciar_kernel(logger)
