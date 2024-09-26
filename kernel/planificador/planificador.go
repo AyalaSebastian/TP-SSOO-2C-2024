@@ -65,9 +65,23 @@ func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 //Para la creación de hilos, el Kernel deberá informar a la Memoria y luego
 //ingresarlo directamente a la cola de READY correspondiente, según su nivel de prioridad.
 
+// Recibo de la cpu el archivo de instrucciones y la prioridad
 func Crear_hilo() {
 
+	// 					Crear TID
+
+	// primero obtengo el pcb al cual estoy haciendo referencia (lo pido a cpu)
+
+	//	Los reg cpu los crea directamente la memoria
+
+	//				 Informar memoria
+
+	//
+
+	// 			Ingresar a la cola de READY
 }
+
+// Le envio el archivo de pseudocodigo como me viene a la memoria
 
 //todo Lo que tiene que hacer la funcion
 //Al momento de finalizar un hilo, el Kernel deberá informar a la Memoria la finalización del mismo y

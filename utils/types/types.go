@@ -24,6 +24,11 @@ type PathTamanio struct {
 	Tamanio int    `json:"tamanio"`
 }
 
+type HiloInfoMemoria struct {
+	Path string `json:"path"`
+	TID  int    `json:"tid"`
+}
+
 // --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)
