@@ -62,3 +62,9 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]ty
 	logger.Info(fmt.Sprintf("Todos los TCBs del PCB con PID %d han sido liberados", pcb.PID))
 	return true
 }
+
+// Registro que el kernel lleva del proceso ejecutando actualmente
+type ExecuteActual struct {
+	PID uint32 `json:"pid"`
+	TID uint32 `json:"tid"`
+}

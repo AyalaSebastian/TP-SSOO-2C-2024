@@ -74,7 +74,7 @@ func Crear_hilo() {
 
 	// 					Crear TID
 
-	// primero obtengo el pcb al cual estoy haciendo referencia (lo pido a cpu)
+	// primero obtengo el pcb al cual estoy haciendo referencia (lleva el registro el kernel)
 
 	//	Los reg cpu los crea directamente la memoria
 
