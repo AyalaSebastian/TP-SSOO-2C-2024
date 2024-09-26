@@ -34,7 +34,7 @@ func main() {
 	// Creación del proceso inicial
 	planificador.Crear_proceso(archivoPseudocodigo, tamanioProceso, 0, logger)
 
-	// Para probar la funcion de finalizar proceso nomás
+	// Solo para probar la funcion de finalizar proceso, esto no va aca
 	planificador.Finalizar_proceso(1, logger)
 
 	// Iniciamos Kernel como server
