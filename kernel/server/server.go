@@ -19,7 +19,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	// Endpoints
 	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
 	mux.HandleFunc("POST /PROCESS_CREATE", PROCESS_CREATE(logger))
-
+	mux.HandleFunc("POST /PROCESS_EXIT", PROCESS_DESTROY(logger))
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
@@ -42,4 +42,8 @@ func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	}
+}
+
+func PROCESS_DESTROY {
+
 }
