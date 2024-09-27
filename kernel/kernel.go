@@ -8,6 +8,8 @@ import (
 	"github.com/sisoputnfrba/tp-golang/kernel/planificador"
 	"github.com/sisoputnfrba/tp-golang/kernel/server"
 	"github.com/sisoputnfrba/tp-golang/kernel/utils"
+
+	// "github.com/sisoputnfrba/tp-golang/utils/generadores"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
 
@@ -39,7 +41,14 @@ func main() {
 
 	// Iniciamos Kernel como server
 
-	planificador.Crear_hilo(archivoPseudocodigo, 0, logger)
+	// pcb := generadores.Generar_PCB()
+	// pcb.PID = 0
+	// utils.MapaPCB[pcb.PID] = pcb
+
+	// utils.Execute.PID = 0
+	// utils.Execute.TID = 0
+
+	// planificador.Crear_hilo("hola", 0, logger)
 
 	server.Iniciar_kernel(logger)
 }

@@ -63,6 +63,7 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger.Info("## Crear Hilo")
 		var infoHilo types.EnviarHiloAMemoria
 		err := json.NewDecoder(r.Body).Decode(&infoHilo)
 

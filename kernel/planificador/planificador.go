@@ -31,9 +31,10 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
 		parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio}
 		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
+		var reg types.RegCPU
 
 		if success {
-			tcb := generadores.Generar_TCB(&pcb, prioridad)
+			tcb := generadores.Generar_TCB(&pcb, prioridad, reg)
 			pcb.TCBs = append(pcb.TCBs, tcb)
 			utils.Encolar(&ColaReady, tcb)
 			// tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
@@ -74,9 +75,13 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 
 	// Crear TCB
 	pcb := utils.Obtener_PCB_por_PID(utils.Execute.PID)
+	if pcb == nil {
+		panic("No se encontro el PCB")
+	}
 	var reg types.RegCPU
 
 	tcb := generadores.Generar_TCB(pcb, prioridad, reg)
+	slog.Info(fmt.Sprintf("Se genero %d, %d,%d,%d", tcb.TID, tcb.Prioridad, tcb.PID, tcb.Registros.AX))
 
 	//	Informar memoria
 	infoMemoria := types.EnviarHiloAMemoria{
@@ -84,14 +89,14 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 		PID:  pcb.PID,
 		Path: path,
 	}
-	if client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "/CREAR_HILO", logger) != true {
+	if !client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "CREAR_HILO", logger) {
 		panic("Error la crear hilo")
 	}
 
 	// Ingresar a la cola de READY
 	utils.Encolar(&ColaReady, tcb) //! Vamos a tener que modificar esto por el nivel de prioridad
 
-	logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY"), pcb.PID, tcb.TID)
+	logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 }
 
 // Le envio el archivo de pseudocodigo como me viene a la memoria
