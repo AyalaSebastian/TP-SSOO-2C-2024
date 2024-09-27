@@ -31,10 +31,9 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
 		parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio}
 		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
-		var reg types.RegCPU
 
 		if success {
-			tcb := generadores.Generar_TCB(&pcb, prioridad, reg)
+			tcb := generadores.Generar_TCB(&pcb, prioridad)
 			pcb.TCBs = append(pcb.TCBs, tcb)
 			utils.Encolar(&ColaReady, tcb)
 			// tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
@@ -78,9 +77,8 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 	if pcb == nil {
 		panic("No se encontro el PCB")
 	}
-	var reg types.RegCPU
 
-	tcb := generadores.Generar_TCB(pcb, prioridad, reg)
+	tcb := generadores.Generar_TCB(pcb, prioridad)
 	slog.Info(fmt.Sprintf("Se genero %d, %d,%d,%d", tcb.TID, tcb.Prioridad, tcb.PID, tcb.Registros.AX))
 
 	//	Informar memoria
