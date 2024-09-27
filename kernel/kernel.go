@@ -39,8 +39,6 @@ func main() {
 	// Solo para probar la funcion de finalizar proceso, esto no va aca
 	planificador.Finalizar_proceso(1, logger)
 
-	// Iniciamos Kernel como server
-
 	// pcb := generadores.Generar_PCB()
 	// pcb.PID = 0
 	// utils.MapaPCB[pcb.PID] = pcb
@@ -50,5 +48,6 @@ func main() {
 
 	// planificador.Crear_hilo("hola", 0, logger)
 
+	// Iniciamos Kernel como server
 	server.Iniciar_kernel(logger)
 }
