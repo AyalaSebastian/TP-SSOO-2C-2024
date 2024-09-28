@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/sisoputnfrba/tp-golang/kernel/planificador"
 	"github.com/sisoputnfrba/tp-golang/kernel/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
-	"github.com/sisoputnfrba/tp-golang/utils/server"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
@@ -17,9 +17,8 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
 	// Endpoints
-	mux.HandleFunc("/handshake", server.Recibir_handshake(logger))
 	mux.HandleFunc("POST /PROCESS_CREATE", PROCESS_CREATE(logger))
-	mux.HandleFunc("POST /PROCESS_EXIT", PROCESS_DESTROY(logger))
+	mux.HandleFunc("PUT /PROCESS_EXIT", PROCESS_DESTROY(logger))
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
@@ -44,6 +43,14 @@ func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func PROCESS_DESTROY {
+func PROCESS_DESTROY(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pid := r.PathValue("pid")                //Recibimos el pid a finalizar
+		val, _ := strconv.ParseUint(pid, 10, 32) //Convierto el pid a uint32 ya que viene en String
+		parsePid := uint32(val)
+		planificador.Finalizar_proceso(parsePid, logger)
 
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	}
 }

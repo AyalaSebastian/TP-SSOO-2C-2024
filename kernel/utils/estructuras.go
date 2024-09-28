@@ -39,7 +39,7 @@ func Eliminar_TCBs_de_cola(pcb *types.PCB, cola *[]types.TCB, logger *slog.Logge
 		if tcb.PID != pcb.PID {
 			nuevaCola = append(nuevaCola, tcb) // Mantiene los TCBs que no pertenecen al PCB actual
 		} else {
-			logger.Info(fmt.Sprintf("TCB con ID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
+			logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
 		}
 	}
 	*cola = nuevaCola
