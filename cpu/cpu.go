@@ -31,8 +31,48 @@ func main() {
 	utils.Iniciar_cpu(Logger)
 
 
-
 /*
+
+	//inicio cpu
+
+	//recibir TIP y PID de kernel
+
+	//solicitarle el contexto de ejecucion a memoria para poder inciar la ejecucion
+
+	//recibir el contexto de ejecucion de memoria
+
+	//iniciar la ejecucion
+
+	//para instrucciones que interactuan tendra que traducir 
+	//las direcciones lógicas (propias del proceso) 
+	//a direcciones físicas (propias de la memoria). 
+	//Para ello simulará la existencia de una MMU.
+
+	//Durante el transcurso de la ejecución de un HILO,
+	//se irá actualizando su Contexto de Ejecución
+	//donde se informará a la Memoria bajo los siguientes escenarios:
+	//finalización del mismo (PROCESS_EXIT o THREAD_EXIT), 
+	//ejecutar una llamada al Kernel (syscall), 
+	//deber ser desalojado (interrupción) o por la ocurrencia de un error Segmentation Fault.
+
+	//como hacer una Syscall
+
+	//donde hay Lectura/Escritura de Memoria
+
+//fetch: le pido a memoria la instruccion que sigue que esta en el program counter(registro PC)
+
+	// en READ_MEM le dice a memoria leeme esto o solo lo pasa a registro datos
+	//y para que lo lee?
+
+	//Al finalizar el ciclo, el PC deberá ser actualizado sumándole 1 
+	//en caso de que éste no haya sido modificado por la instrucción.
+	//habla solo de JNZ ?
+
+	//Check Interrupt: si kernel nos envia el TID se 
+	//actualiza el contexto de ejecucion en memoria 
+	//y	devolver el TID al Kernel con ¿motivo de la interrupcion?
+
+
 
 	http.HandleFunc("POST /helloworld", ComunicacionMemoria)
 	http.ListenAndServe(":8002", nil)
@@ -283,7 +323,7 @@ func (cpu *CPU) devolverTIDAlKernel() {
 }
 
 //dentro del main
-/*
+
 	// Cargar configuracion desde config.json
     contexto, err := cargarConfiguracion("config.json")
     if err != nil {
@@ -305,4 +345,5 @@ func (cpu *CPU) devolverTIDAlKernel() {
 
     // Chequear interrupciones
     cpu.checkInterrupt()
+
 */
