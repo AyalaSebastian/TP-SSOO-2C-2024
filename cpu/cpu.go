@@ -4,13 +4,6 @@ import (
 
 	// "sync"
 
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"sync/atomic"
-
 	"github.com/sisoputnfrba/tp-golang/cpu/utils" // Se pone esto ya que en el go.mod esta especificado asi
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
@@ -30,12 +23,13 @@ func main() {
 	// Iniciar cpu como server en un hilo para que el programa siga su ejecicion
 	utils.Iniciar_cpu(Logger)
 
+}
 
 /*
 
 	//inicio cpu
 
-	//recibir TIP y PID de kernel
+	//esperando a recibir TIP y PID de kernel
 
 	//solicitarle el contexto de ejecucion a memoria para poder inciar la ejecucion
 
@@ -43,16 +37,16 @@ func main() {
 
 	//iniciar la ejecucion
 
-	//para instrucciones que interactuan tendra que traducir 
-	//las direcciones lógicas (propias del proceso) 
-	//a direcciones físicas (propias de la memoria). 
+	//para instrucciones que interactuan tendra que traducir
+	//las direcciones lógicas (propias del proceso)
+	//a direcciones físicas (propias de la memoria).
 	//Para ello simulará la existencia de una MMU.
 
 	//Durante el transcurso de la ejecución de un HILO,
 	//se irá actualizando su Contexto de Ejecución
 	//donde se informará a la Memoria bajo los siguientes escenarios:
-	//finalización del mismo (PROCESS_EXIT o THREAD_EXIT), 
-	//ejecutar una llamada al Kernel (syscall), 
+	//finalización del mismo (PROCESS_EXIT o THREAD_EXIT),
+	//ejecutar una llamada al Kernel (syscall),
 	//deber ser desalojado (interrupción) o por la ocurrencia de un error Segmentation Fault.
 
 	//como hacer una Syscall
@@ -64,12 +58,12 @@ func main() {
 	// en READ_MEM le dice a memoria leeme esto o solo lo pasa a registro datos
 	//y para que lo lee?
 
-	//Al finalizar el ciclo, el PC deberá ser actualizado sumándole 1 
+	//Al finalizar el ciclo, el PC deberá ser actualizado sumándole 1
 	//en caso de que éste no haya sido modificado por la instrucción.
 	//habla solo de JNZ ?
 
-	//Check Interrupt: si kernel nos envia el TID se 
-	//actualiza el contexto de ejecucion en memoria 
+	//Check Interrupt: si kernel nos envia el TID se
+	//actualiza el contexto de ejecucion en memoria
 	//y	devolver el TID al Kernel con ¿motivo de la interrupcion?
 
 
