@@ -45,8 +45,23 @@ func Eliminar_TCBs_de_cola(pcb *types.PCB, cola *[]types.TCB, logger *slog.Logge
 	*cola = nuevaCola
 }
 
+// ! ACA
+func Eliminar_TCBs_de_cola_Block(pcb *types.PCB, cola *[]Bloqueado, logger *slog.Logger) {
+	var nuevaCola []Bloqueado
+	// Itera la cola buscando los TCBs que pertenecen al PCB actual
+	for _, tcb := range *cola {
+		if tcb.PID != pcb.PID {
+			nuevaCola = append(nuevaCola, tcb) // Mantiene los TCBs que no pertenecen al PCB actual
+		} else {
+			logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
+		}
+	}
+	*cola = nuevaCola
+}
+
 // Busca los TCBs del PCB en las colas de Ready y Blocked y los mueve a la cola de Exit
-func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]types.TCB, colaExit *[]types.TCB, logger *slog.Logger) bool {
+// ! ACA
+func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]Bloqueado, colaExit *[]types.TCB, logger *slog.Logger) bool {
 
 	pcb := Obtener_PCB_por_PID(pid)
 	if pcb == nil {
@@ -56,7 +71,8 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]ty
 
 	// Elimina TCBs de la cola de ready y blocked si es que hubiera
 	Eliminar_TCBs_de_cola(pcb, colaReady, logger)
-	Eliminar_TCBs_de_cola(pcb, colaBlocked, logger)
+	Eliminar_TCBs_de_cola_Block(pcb, colaBlocked, logger) //! ACA
+	// Eliminar_TCBs_de_cola(pcb, colaBlocked, logger)
 
 	// Mueve todos los TCBs del PCB a la cola de exit
 	for _, tcb := range pcb.TCBs {
@@ -69,4 +85,22 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]ty
 	delete(MapaPCB, pid)
 	logger.Info(fmt.Sprintf("Todos los TCBs del PCB con PID %d han sido liberados", pcb.PID))
 	return true
+}
+
+// Estructuras para manejar los bloqueados
+type Motivo int
+
+const ( // Esto funciona mas o menos como el enum de c
+	THREAD_JOIN Motivo = iota // Vale 0
+	Mutex                     // Vale 1
+)
+
+// Como no se puede hacer un slice con un struc generico, hago que el QuienFue sea un string
+// Y cuando necesite que sea un uint32 lo parseo
+// ACLARACIONES: EL QUIENFUE SE PASA SIEMPRE COMO STRING
+type Bloqueado struct {
+	PID      uint32 `json:"pid"`
+	TID      uint32 `json:"tid"`
+	Motivo   Motivo `json:"motivo"`
+	QuienFue string `json:"quien_fue"` // si es THREAD_JOIN es un uint32, si es Mutex es un string
 }

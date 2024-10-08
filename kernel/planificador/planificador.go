@@ -10,15 +10,15 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-var ColaNew []types.PCB   //Cola de procesos nuevos (Manejada por FIFO)
-var ColaReady []types.TCB // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
-var ColaBlocked []types.TCB
-var ColaExit []types.TCB //Cola de procesos finalizados
+var ColaNew []types.PCB           //Cola de procesos nuevos (Manejada por FIFO)
+var ColaReady []types.TCB         // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
+var ColaBlocked []utils.Bloqueado //! ACA
+var ColaExit []types.TCB          //Cola de procesos finalizados
 
 func Inicializar_colas() {
 	ColaNew = []types.PCB{}
 	ColaReady = []types.TCB{}
-	ColaBlocked = []types.TCB{}
+	ColaBlocked = []utils.Bloqueado{} //! ACA
 	ColaExit = []types.TCB{}
 }
 
@@ -64,10 +64,6 @@ func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 	}
 }
 
-//todo Lo que tiene que hacer la funcion
-//Para la creación de hilos, el Kernel deberá informar a la Memoria y luego
-//ingresarlo directamente a la cola de READY correspondiente, según su nivel de prioridad.
-
 // Recibo de la cpu el archivo de instrucciones y la prioridad
 func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 
@@ -104,13 +100,25 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 //manera, se desbloquean aquellos hilos bloqueados por THREAD_JOIN y por mutex tomados por el
 //hilo finalizado (en caso que hubiera).
 
-// No recibo parametros
-func Finalizar_hilo() {
+func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 
-	// Informar a la memoria la finalizacion de un hilo
-
-	// Quitar de la lista de los TCBs del PCB al finalizado
+	// Informar memoria
+	infoMemoria := types.PIDTID{
+		TID: TID,
+		PID: PID,
+	}
+	if !client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "FINALIZAR_HILO", logger) {
+		panic("Error al crear hilo")
+	}
 
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
 
+	//! ANOTACIONES DE COMO SEGUIR:
+	// ! RECORRER LA COLA DE BLOQUEADOS POR DEL PROCESO, Y FIJARME SI HAY ALGUNO BLOQUEADO POR EL ESTE TID
+	//! REVISAR SI ESTE HILO TIENE ALGUN MUTEX, SI LO TENGO LO LIBERO
+
+	// Primero obtener los pid:tid de los que estan bloqueados por el TID
+	// Luego mandarlos a la lista de ready
+
+	// Quitar de la lista de los TCBs del PCB al finalizado
 }

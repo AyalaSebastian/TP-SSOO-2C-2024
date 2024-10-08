@@ -29,6 +29,11 @@ type EnviarHiloAMemoria struct {
 	Path string `json:"path"`
 }
 
+type PIDTID struct {
+	TID uint32 `json:"tid"`
+	PID uint32 `json:"pid"`
+}
+
 // --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)

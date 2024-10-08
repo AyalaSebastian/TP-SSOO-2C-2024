@@ -18,6 +18,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /crear-proceso", Crear_proceso(logger))
 	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", Finalizar_proceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
+	mux.HandleFunc("PATCH /FINALIZAR_HILO", Finalizar_hilo(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
@@ -63,7 +64,6 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		logger.Info("## Crear Hilo")
 		var infoHilo types.EnviarHiloAMemoria
 		err := json.NewDecoder(r.Body).Decode(&infoHilo)
 
@@ -73,6 +73,9 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Aca va toda la logica para crear el hilo pag(22)
+
+		pidParceado := strconv.Itoa(int(infoHilo.PID))
+		logger.Info("## Hilo Creado - (PID:TID) - (%d:%d)", pidParceado, infoHilo.TID)
 
 		// En caso de haberse creado el hilo
 
@@ -85,5 +88,35 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 		w.Write(respuesta)
 
 		logger.Info(fmt.Sprintf("## Hilo Creado - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
+	}
+}
+
+func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var infoHilo types.PIDTID
+		err := json.NewDecoder(r.Body).Decode(&infoHilo)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Aca va toda la logica para finalizar el hilo
+
+		pidParceado := strconv.Itoa(int(infoHilo.PID))
+		logger.Info("## Hilo Destruido - (PID:TID) - (%d:%d)", pidParceado, infoHilo.TID)
+
+		// En caso de haberse finalizado el hilo
+		respuesta, err := json.Marshal("OK")
+		if err != nil {
+			http.Error(w, "Error al codificar los datos como JSON", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(respuesta)
+
+		logger.Info(fmt.Sprintf("## Hilo Finalizado - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
 	}
 }
