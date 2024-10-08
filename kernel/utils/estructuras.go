@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -32,6 +33,7 @@ func Obtener_PCB_por_PID(pid uint32) *types.PCB {
 	return &pcb
 }
 
+// En caso de querer eliminar de Block, usar la otra func
 func Eliminar_TCBs_de_cola(pcb *types.PCB, cola *[]types.TCB, logger *slog.Logger) {
 	var nuevaCola []types.TCB
 	// Itera la cola buscando los TCBs que pertenecen al PCB actual
@@ -45,7 +47,6 @@ func Eliminar_TCBs_de_cola(pcb *types.PCB, cola *[]types.TCB, logger *slog.Logge
 	*cola = nuevaCola
 }
 
-// ! ACA
 func Eliminar_TCBs_de_cola_Block(pcb *types.PCB, cola *[]Bloqueado, logger *slog.Logger) {
 	var nuevaCola []Bloqueado
 	// Itera la cola buscando los TCBs que pertenecen al PCB actual
@@ -59,8 +60,21 @@ func Eliminar_TCBs_de_cola_Block(pcb *types.PCB, cola *[]Bloqueado, logger *slog
 	*cola = nuevaCola
 }
 
+func Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(tcb Bloqueado, cola *[]Bloqueado, logger *slog.Logger) {
+	var nuevaCola []Bloqueado
+
+	for _, tcbCola := range *cola {
+		if tcb.PID != tcbCola.PID {
+			nuevaCola = append(nuevaCola, tcbCola) // Mantiene los TCBs que no pertenecen al PCB actual
+		} else if tcb.PID == tcbCola.PID && tcb.TID != tcbCola.TID {
+			nuevaCola = append(nuevaCola, tcbCola)
+		}
+		logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
+	}
+	*cola = nuevaCola
+}
+
 // Busca los TCBs del PCB en las colas de Ready y Blocked y los mueve a la cola de Exit
-// ! ACA
 func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]Bloqueado, colaExit *[]types.TCB, logger *slog.Logger) bool {
 
 	pcb := Obtener_PCB_por_PID(pid)
@@ -85,6 +99,37 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]Bl
 	delete(MapaPCB, pid)
 	logger.Info(fmt.Sprintf("Todos los TCBs del PCB con PID %d han sido liberados", pcb.PID))
 	return true
+}
+
+// ! Si anda mal probar ponerle los punteors a las colas y el map -- Revisar los punteros de las funciones -- Revisar la asignacion de valores
+// Se lo saque porque en go los map, slices y punteros ya son referencias, por lo cual
+// no es necesario pasarlos como punteros
+func Librerar_Bloqueados_De_Hilo(colaBloqueados []Bloqueado, mapaPCBS map[uint32]types.PCB, colaReady []types.TCB, tcb types.TCB, logger *slog.Logger) {
+
+	for _, bloqueado := range colaBloqueados {
+
+		if bloqueado.PID == tcb.PID && bloqueado.Motivo == THREAD_JOIN {
+			num, err := strconv.ParseUint(bloqueado.QuienFue, 10, 32)
+			if err != nil {
+				panic(err)
+			}
+			num32 := uint32(num)
+			if num32 == tcb.TID {
+				Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(bloqueado, &colaBloqueados, logger)
+				Encolar(&colaReady, mapaPCBS[bloqueado.PID].TCBs[bloqueado.TID])
+				logger.Info(fmt.Sprintf("TCB con TID %d y PID %d, Bloqueado por THREAD_JOIN movido a la cola de Ready", bloqueado.TID, bloqueado.PID))
+			}
+		} else if bloqueado.PID == tcb.PID && bloqueado.Motivo == Mutex {
+
+			if mapaPCBS[tcb.PID].Mutexs[bloqueado.QuienFue] == strconv.Itoa(int(tcb.TID)) {
+				mapaPCBS[bloqueado.PID].Mutexs[bloqueado.QuienFue] = strconv.Itoa(int(bloqueado.TID))
+				Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(bloqueado, &colaBloqueados, logger)
+				Encolar(&colaReady, mapaPCBS[bloqueado.PID].TCBs[bloqueado.TID])
+				logger.Info(fmt.Sprintf("TCB con TID %d y PID %d, Bloqueado por Mutex movido a la cola de Ready", bloqueado.TID, bloqueado.PID))
+			}
+		}
+	}
+
 }
 
 // Estructuras para manejar los bloqueados

@@ -6,13 +6,13 @@ type HandShake struct {
 
 // --------------------------------- KERNEL ---------------------------------
 type PCB struct {
-	PID    uint32   `json:"pid"`
-	TCBs   []TCB    `json:"tcb"`
-	Mutexs []string `json:"mutexs"` // los podemos representar con 0 y 1 (como el bitarray)
+	PID    uint32            `json:"pid"`
+	TCBs   []TCB             `json:"tcb"`
+	Mutexs map[string]string `json:"mutexs"` // el valor es libre o tid que lo tiene
 }
 
 type TCB struct {
-	TID       uint32 `json:"tid"`
+	TID       uint32 `json:"tid"` // EL TID TAMBIEN ES SU POSICION EN EL SLICE DE TCBs
 	Prioridad int    `json:"prioridad"`
 	// Estado    string `json:"estado"` //Puede ser "NEW", "READY", "EXECUTE", "BLOCKED", "EXIT" (En mayusculas)
 	PID uint32 `json:"pid"` //PID del proceso al que pertenece

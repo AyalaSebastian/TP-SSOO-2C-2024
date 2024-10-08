@@ -14,10 +14,11 @@ func Generar_PID() uint32 {
 
 // Genera un PCB con un PID único y con las listas de TCBs y Mutexs vacías.
 func Generar_PCB() types.PCB {
+	mutex := make(map[string]string)
 	return types.PCB{
 		PID:    Generar_PID(),
 		TCBs:   []types.TCB{},
-		Mutexs: []string{},
+		Mutexs: mutex,
 	}
 }
 

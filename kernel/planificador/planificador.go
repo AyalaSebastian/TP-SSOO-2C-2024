@@ -10,15 +10,15 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-var ColaNew []types.PCB           //Cola de procesos nuevos (Manejada por FIFO)
-var ColaReady []types.TCB         // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
-var ColaBlocked []utils.Bloqueado //! ACA
-var ColaExit []types.TCB          //Cola de procesos finalizados
+var ColaNew []types.PCB   //Cola de procesos nuevos (Manejada por FIFO)
+var ColaReady []types.TCB // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
+var ColaBlocked []utils.Bloqueado
+var ColaExit []types.TCB //Cola de procesos finalizados
 
 func Inicializar_colas() {
 	ColaNew = []types.PCB{}
 	ColaReady = []types.TCB{}
-	ColaBlocked = []utils.Bloqueado{} //! ACA
+	ColaBlocked = []utils.Bloqueado{}
 	ColaExit = []types.TCB{}
 }
 
@@ -100,7 +100,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 //manera, se desbloquean aquellos hilos bloqueados por THREAD_JOIN y por mutex tomados por el
 //hilo finalizado (en caso que hubiera).
 
-func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
+func Finalizar_hilo(TID uint32, PID uint32, mapaPCBS map[uint32]types.PCB, logger *slog.Logger) {
 
 	// Informar memoria
 	infoMemoria := types.PIDTID{
@@ -110,15 +110,15 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	if !client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "FINALIZAR_HILO", logger) {
 		panic("Error al crear hilo")
 	}
+	logger.Info("Se comunico a memoria la finalizacion del hilo")
 
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
+	utils.Librerar_Bloqueados_De_Hilo(ColaBlocked, mapaPCBS, ColaReady, mapaPCBS[PID].TCBs[TID], logger)
+	//! Ojo al piojo con esta funcion
+	logger.Info("Se movieron los hilos bloqueados por el hilo finalizado a READY")
 
-	//! ANOTACIONES DE COMO SEGUIR:
-	// ! RECORRER LA COLA DE BLOQUEADOS POR DEL PROCESO, Y FIJARME SI HAY ALGUNO BLOQUEADO POR EL ESTE TID
-	//! REVISAR SI ESTE HILO TIENE ALGUN MUTEX, SI LO TENGO LO LIBERO
+	// Quitar de la lista de los TCBs del PCB
+	utils.Sacar_TCB_Del_Slice(mapaPCBS, PID, TID, logger)
 
-	// Primero obtener los pid:tid de los que estan bloqueados por el TID
-	// Luego mandarlos a la lista de ready
-
-	// Quitar de la lista de los TCBs del PCB al finalizado
+	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
 }
