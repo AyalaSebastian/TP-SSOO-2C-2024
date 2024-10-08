@@ -18,7 +18,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /crear-proceso", Crear_proceso(logger))
 	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", Finalizar_proceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
-	mux.HandleFunc("PATCH /FINALIZAR_HILO", Finalizar_hilo(logger))
+	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
@@ -105,9 +105,6 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 
 		// Aca va toda la logica para finalizar el hilo
 
-		pidParceado := strconv.Itoa(int(infoHilo.PID))
-		logger.Info("## Hilo Destruido - (PID:TID) - (%d:%d)", pidParceado, infoHilo.TID)
-
 		// En caso de haberse finalizado el hilo
 		respuesta, err := json.Marshal("OK")
 		if err != nil {
@@ -116,7 +113,6 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
-
-		logger.Info(fmt.Sprintf("## Hilo Finalizado - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
+		logger.Info(fmt.Sprintf("## Hilo Destruido - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
 	}
 }

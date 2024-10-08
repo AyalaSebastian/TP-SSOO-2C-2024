@@ -100,7 +100,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 //manera, se desbloquean aquellos hilos bloqueados por THREAD_JOIN y por mutex tomados por el
 //hilo finalizado (en caso que hubiera).
 
-func Finalizar_hilo(TID uint32, PID uint32, mapaPCBS map[uint32]types.PCB, logger *slog.Logger) {
+func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 
 	// Informar memoria
 	infoMemoria := types.PIDTID{
@@ -108,17 +108,25 @@ func Finalizar_hilo(TID uint32, PID uint32, mapaPCBS map[uint32]types.PCB, logge
 		PID: PID,
 	}
 	if !client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "FINALIZAR_HILO", logger) {
-		panic("Error al crear hilo")
+		panic("Error al Finalizar hilo")
 	}
 	logger.Info("Se comunico a memoria la finalizacion del hilo")
 
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
-	utils.Librerar_Bloqueados_De_Hilo(ColaBlocked, mapaPCBS, ColaReady, mapaPCBS[PID].TCBs[TID], logger)
+
+	if &ColaBlocked == nil || &ColaReady == nil {
+		logger.Error("Colas de Bloqueados o Ready nulas - ACA ESTA EL ERROR")
+	} else {
+		logger.Info("Colas de Bloqueados y Ready no nulas - Aca no")
+	}
+
+	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, &ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
 	//! Ojo al piojo con esta funcion
+
 	logger.Info("Se movieron los hilos bloqueados por el hilo finalizado a READY")
 
 	// Quitar de la lista de los TCBs del PCB
-	utils.Sacar_TCB_Del_Slice(mapaPCBS, PID, TID, logger)
+	utils.Sacar_TCB_Del_Slice(&utils.MapaPCB, PID, TID, logger)
 
 	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
 }
