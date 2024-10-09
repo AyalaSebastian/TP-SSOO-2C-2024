@@ -7,7 +7,7 @@ type HandShake struct {
 // --------------------------------- KERNEL ---------------------------------
 type PCB struct {
 	PID    uint32            `json:"pid"`
-	TCBs   []TCB             `json:"tcb"`
+	TCBs   map[uint32]TCB    `json:"tcb"`
 	Mutexs map[string]string `json:"mutexs"` // el valor es libre o tid que lo tiene
 }
 

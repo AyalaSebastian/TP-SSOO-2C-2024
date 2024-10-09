@@ -35,8 +35,8 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		if success {
 			tcb := generadores.Generar_TCB(&pcb, prioridad)
 			utils.Encolar(&ColaReady, tcb)
-
-			logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID)) // tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
+			// tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
+			logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 		} else {
 			logger.Error("No se pudo asignar espacio en memoria para el proceso")
 			utils.Encolar(&ColaNew, pcb)
@@ -113,20 +113,10 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	logger.Info("Se comunico a memoria la finalizacion del hilo")
 
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
-
-	if &ColaBlocked == nil || &ColaReady == nil {
-		logger.Error("Colas de Bloqueados o Ready nulas - ACA ESTA EL ERROR")
-	} else {
-		logger.Info("Colas de Bloqueados y Ready no nulas - Aca no")
-	}
-
 	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, &ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
-	//! Ojo al piojo con esta funcion
-
-	logger.Info("Se movieron los hilos bloqueados por el hilo finalizado a READY")
 
 	// Quitar de la lista de los TCBs del PCB
-	utils.Sacar_TCB_Del_Slice(&utils.MapaPCB, PID, TID, logger)
+	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
 
 	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
 }
