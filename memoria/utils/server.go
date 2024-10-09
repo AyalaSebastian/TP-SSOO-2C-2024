@@ -19,7 +19,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", Finalizar_proceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
-
+	mux.HandleFunc("POST /memory-dump", Memory_dump(logger))
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
 }
@@ -114,5 +114,11 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
 		logger.Info(fmt.Sprintf("## Hilo Destruido - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
+	}
+}
+
+func Memory_dump(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Acá va el desarrollo del memory dump
 	}
 }

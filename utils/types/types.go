@@ -34,6 +34,12 @@ type PIDTID struct {
 	PID uint32 `json:"pid"`
 }
 
+type ProcessCreateParams struct {
+	Path      string `json:"path"`
+	Tamanio   int    `json:"tamanio"`
+	Prioridad int    `json:"prioridad"`
+}
+
 // --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)
