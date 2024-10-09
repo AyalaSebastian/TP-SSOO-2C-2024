@@ -22,7 +22,8 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("PUT /PROCESS_EXIT", PROCESS_EXIT(logger))
 	mux.HandleFunc("POST /THREAD_CREATE", THREAD_CREATE(logger))
 	// mux.HandleFunc("VERBO /THREAD_JOIN", planificador.Crear_hilo(logger))
-	// mux.HandleFunc("VERBO /THREAD_CANCEL", planificador.Finalizar_hilo(logger))
+	mux.HandleFunc("VERBO /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
+	mux.HandleFunc("DELETE /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
@@ -82,10 +83,11 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 
 // Syscalls referidas a hilos
 
+// BODY - VERBO POST
 func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Agarramos los parametros del body
-		logger.Info("Se recibio un THREAD_CREATE")
 		var params types.ThreadCreateParams
 		err := json.NewDecoder(r.Body).Decode(&params)
 		if err != nil {
@@ -96,6 +98,53 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 
 		// Creamos el hilo
 		planificador.Crear_hilo(params.Path, params.Prioridad, logger)
+
+		// Respondemos con un OK
+		respuesta, err := json.Marshal("OK")
+		if err != nil {
+			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(respuesta)
+	}
+}
+
+// QUERY PATH - VERBO DELETE
+func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Eliminamos el hilo que esta ejecutando actualmente
+		logger.Info("Se recibio un THREAD_EXIT")
+
+		// Finalizamos el hilo
+		planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
+
+		// Respondemos con un OK
+		respuesta, err := json.Marshal("OK")
+		if err != nil {
+			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(respuesta)
+	}
+}
+
+// QUERY PATH - VERBO DELETE
+// EL TID A ELIMINAR SE MANDA POR PARAMETRO DE LA URL EJ: /THREAD_CANCEL/1
+func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Tomamos el valor del tid de la variable de la URL
+		tid := r.PathValue("tid")
+
+		// Finalizamos el hilo
+		tidNum, err := strconv.Atoi(tid)
+		if err != nil {
+			http.Error(w, "Error al convertir el TID a numero", http.StatusBadRequest)
+			return
+		}
+
+		planificador.Finalizar_hilo(uint32(tidNum), utils.Execute.PID, logger)
 
 		// Respondemos con un OK
 		respuesta, err := json.Marshal("OK")
