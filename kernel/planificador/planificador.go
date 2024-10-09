@@ -35,8 +35,8 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		if success {
 			tcb := generadores.Generar_TCB(&pcb, prioridad)
 			utils.Encolar(&ColaReady, tcb)
-			// tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
-			logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
+
+			logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID)) // tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
 		} else {
 			logger.Error("No se pudo asignar espacio en memoria para el proceso")
 			utils.Encolar(&ColaNew, pcb)
