@@ -10,6 +10,70 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
+// Variable global para almacenar el contexto de ejecución
+var ReceivedContextoEjecucion *types.ContextoEjecucion = nil
+
+// Función para obtener el contexto de ejecución
+//func GetContextoEjecucion() *types.ContextoEjecucion {
+//	return contextosEjecucion
+//}
+
+// Función que solicita el contexto de ejecución al módulo de memoria
+func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid uint32, logger *slog.Logger) error {
+	url := fmt.Sprintf("http://%s:%d/contexto", ipMemory, portMemory) // URL del módulo de memoria
+
+	// Crear la estructura PIDTID con los valores recibidos
+	pidTid := struct {
+		TID uint32 `json:"tid"`
+		PID uint32 `json:"pid"`
+	}{TID: tid, PID: pid}
+
+	// Codificarla en JSON
+	jsonData, err := json.Marshal(pidTid)
+	if err != nil {
+		logger.Error("Error al codificar TID y PID a JSON: ", err)
+		return err
+	}
+
+	// Crear la solicitud POST
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		logger.Error("Error al crear la solicitud: ", err)
+		return err
+	}
+
+	// Establecer los encabezados
+	req.Header.Set("Content-Type", "application/json")
+
+	// Enviar la solicitud
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Error al enviar la solicitud al módulo de memoria: ", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error(fmt.Sprintf("Error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode))
+		return fmt.Errorf("Error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode)
+	}
+
+	// Decodificar la respuesta
+	var contexto types.ContextoEjecucion
+	err = json.NewDecoder(resp.Body).Decode(&contexto)
+	if err != nil {
+		logger.Error("Error al decodificar el contexto de ejecución: ", err)
+		return err
+	}
+
+	// Asignar el contexto recibido a la variable global
+	ReceivedContextoEjecucion = &contexto
+	logger.Info("Contexto de ejecución recibido con éxito")
+
+	return nil
+}
+
 func Enviar_parametros_contexto(ip string, puerto int, path string, tamanio int, logger *slog.Logger) bool {
 	mensaje := types.PathTamanio{Path: path, Tamanio: tamanio}
 	body, err := json.Marshal(mensaje)
