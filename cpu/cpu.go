@@ -4,7 +4,13 @@ import (
 
 	// "sync"
 
-	"github.com/sisoputnfrba/tp-golang/cpu/utils" // Se pone esto ya que en el go.mod esta especificado asi
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/sisoputnfrba/tp-golang/cpu/client"
+	"github.com/sisoputnfrba/tp-golang/cpu/server"
+	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
 
@@ -21,7 +27,35 @@ func main() {
 	Logger.Info("Logger iniciado")
 
 	// Iniciar cpu como server en un hilo para que el programa siga su ejecicion
-	utils.Iniciar_cpu(Logger)
+	server.Iniciar_cpu(Logger)
+
+	// Esperar hasta recibir el TID y PID
+	Logger.Info("Esperando TID y PID del Kernel...")
+
+	/*   OTRA OPCION
+	// Comprobar que ReceivedPIDTID no sea nil
+	if server.ReceivedPIDTID == nil {
+		Logger.Error("No se recibió TID y PID del módulo kernel")
+		os.Exit(1) // Salir si no hay TID y PID
+	}
+	*/
+
+	// Bucle de espera hasta que receivedTCB esté asignado
+	for server.ReceivedPIDTID == nil { // Revisamos el estado de la variable desde el paquete server
+		time.Sleep(100 * time.Millisecond) // Pausa pequeña para evitar que el bucle sea intensivo
+	}
+
+	// Una vez recibido el TID y PID, continuamos la ejecución
+	pidtid := server.ReceivedPIDTID
+	Logger.Info(fmt.Sprintf("Recibido TID: %d, PID: %d", pidtid.TID, pidtid.PID))
+
+	// Pido el contexto de ejecucion a memoria
+	Logger.Info("Esperando Contexto de ejecucion a Memoria...")
+	err := client.SolicitarContextoEjecucion(utils.Configs.IpMemory, utils.Configs.PortMemory, server.ReceivedPIDTID.PID, server.ReceivedPIDTID.TID, Logger)
+	if err != nil {
+		Logger.Error("No se pudo obtener el contexto de ejecución: ", err)
+		os.Exit(1) // Salir si hay un error
+	}
 
 }
 
