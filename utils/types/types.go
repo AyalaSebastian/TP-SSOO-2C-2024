@@ -40,6 +40,11 @@ type ProcessCreateParams struct {
 	Prioridad int    `json:"prioridad"`
 }
 
+type ThreadCreateParams struct {
+	Path      string `json:"path"`
+	Prioridad int    `json:"prioridad"`
+}
+
 // --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)

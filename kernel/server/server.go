@@ -20,7 +20,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	// Endpoints
 	mux.HandleFunc("POST /PROCESS_CREATE", PROCESS_CREATE(logger))
 	mux.HandleFunc("PUT /PROCESS_EXIT", PROCESS_EXIT(logger))
-	// mux.HandleFunc("VERBO /THREAD_CREATE", planificador.Crear_hilo(logger))
+	mux.HandleFunc("POST /THREAD_CREATE", THREAD_CREATE(logger))
 	// mux.HandleFunc("VERBO /THREAD_JOIN", planificador.Crear_hilo(logger))
 	// mux.HandleFunc("VERBO /THREAD_CANCEL", planificador.Finalizar_hilo(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
@@ -28,6 +28,8 @@ func Iniciar_kernel(logger *slog.Logger) {
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
+
+// Syscall referidas a procesos
 
 func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -75,5 +77,32 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 			planificador.Finalizar_proceso(utils.Execute.PID, logger)
 			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", parametros.PID))
 		}
+	}
+}
+
+// Syscalls referidas a hilos
+
+func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Agarramos los parametros del body
+		logger.Info("Se recibio un THREAD_CREATE")
+		var params types.ThreadCreateParams
+		err := json.NewDecoder(r.Body).Decode(&params)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Creamos el hilo
+		planificador.Crear_hilo(params.Path, params.Prioridad, logger)
+
+		// Respondemos con un OK
+		respuesta, err := json.Marshal("OK")
+		if err != nil {
+			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(respuesta)
 	}
 }

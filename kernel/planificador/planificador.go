@@ -72,9 +72,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 	if pcb == nil {
 		panic("No se encontro el PCB")
 	}
-
 	tcb := generadores.Generar_TCB(pcb, prioridad)
-	slog.Info(fmt.Sprintf("Se genero %d, %d, %d", tcb.TID, tcb.Prioridad, tcb.PID))
 
 	//	Informar memoria
 	infoMemoria := types.EnviarHiloAMemoria{
@@ -92,14 +90,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 	logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 }
 
-// Le envio el archivo de pseudocodigo como me viene a la memoria
-
-//todo Lo que tiene que hacer la funcion
-//Al momento de finalizar un hilo, el Kernel deberá informar a la Memoria la finalización del mismo y
-//deberá mover al estado READY a todos los hilos que se encontraban bloqueados por ese TID. De esta
-//manera, se desbloquean aquellos hilos bloqueados por THREAD_JOIN y por mutex tomados por el
-//hilo finalizado (en caso que hubiera).
-
+// Finalizar hilo
 func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 
 	// Informar memoria
