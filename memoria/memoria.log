@@ -15,3 +15,6 @@ time=2024-10-08T12:36:41.338-03:00 level=INFO msg="## Hilo Destruido - (PID:TID)
 time=2024-10-08T12:37:30.778-03:00 level=INFO msg="## Hilo Destruido - (PID:TID) - (1:0)"
 time=2024-10-08T12:46:15.549-03:00 level=INFO msg="## Hilo Destruido - (PID:TID) - (1:0)"
 time=2024-10-08T12:47:00.681-03:00 level=INFO msg="## Hilo Destruido - (PID:TID) - (1:0)"
+time=2024-10-09T09:39:49.779-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
+time=2024-10-09T09:40:50.375-03:00 level=INFO msg="## Hilo Destruido - (PID:TID) - (1:0)"
+time=2024-10-09T09:43:11.408-03:00 level=INFO msg="## Hilo Destruido - (PID:TID) - (1:0)"

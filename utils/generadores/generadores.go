@@ -6,6 +6,8 @@ import (
 
 var PidCounter uint32 = 0
 
+// MapaParaTcbs := make(map[string]int)
+
 // Genera un PID único (el tipo de dato uint32 es para que no tome valore negativos).
 func Generar_PID() uint32 {
 	PidCounter++
@@ -15,6 +17,8 @@ func Generar_PID() uint32 {
 // Genera un PCB con un PID único y con las listas de TCBs y Mutexs vacías.
 func Generar_PCB() types.PCB {
 	mutex := make(map[string]string)
+	// tcbs := make(map[uint32]types.TCB)
+	// countTCB := 0
 	return types.PCB{
 		PID:    Generar_PID(),
 		TCBs:   []types.TCB{},

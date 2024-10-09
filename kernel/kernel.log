@@ -1,3 +1,3 @@
-time=2024-10-08T12:46:15.552-03:00 level=INFO msg="Se comunico a memoria la finalizacion del hilo"
-time=2024-10-08T12:47:00.682-03:00 level=INFO msg="Se comunico a memoria la finalizacion del hilo"
-time=2024-10-08T12:47:00.696-03:00 level=INFO msg="Colas de Bloqueados y Ready no nulas - Aca no"
+
+time=2024-10-09T09:43:11.408-03:00 level=INFO msg="Se comunico a memoria la finalizacion del hilo"
+time=2024-10-09T09:43:11.413-03:00 level=INFO msg="Colas de Bloqueados y Ready no nulas - Aca no"
