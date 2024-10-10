@@ -14,7 +14,7 @@ type ExecuteActual struct {
 	TID uint32 `json:"tid"`
 }
 
-var Execute ExecuteActual
+var Execute *ExecuteActual
 
 // Mapa para almacenar los PCB con su PID como clave
 var MapaPCB map[uint32]types.PCB

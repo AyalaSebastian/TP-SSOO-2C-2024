@@ -22,7 +22,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("PUT /PROCESS_EXIT", PROCESS_EXIT(logger))
 	mux.HandleFunc("POST /THREAD_CREATE", THREAD_CREATE(logger))
 	mux.HandleFunc("PATCH /THREAD_JOIN/{tid}", THREAD_JOIN(logger))
-	mux.HandleFunc("VERBO /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
+	mux.HandleFunc("DELETE /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
 	mux.HandleFunc("DELETE /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
@@ -70,13 +70,16 @@ func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
+		utils.Execute = nil
 		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
-		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID, Motivo: utils.THREAD_JOIN} // Motivo hay que cambiarlo
+		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID} // Motivo hay que cambiarlo
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
 		// Esto va?? logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
 		if success {
-
-			//utils.Encolar(&planificador.ColaReady, proceso:=types.TCB{}) // Desencolo el hilo que estaba en la cola de blocked y lo paso a ready (tengo que darle algunas vueltas a esto)
+			desbloqueado := utils.Desencolar(&planificador.ColaBlocked)
+			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
+			tcb := pcb.TCBs[desbloqueado.TID]
+			utils.Encolar(&planificador.ColaReady, tcb)
 		} else {
 			planificador.Finalizar_proceso(utils.Execute.PID, logger)
 			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", parametros.PID))
