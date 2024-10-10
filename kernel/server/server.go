@@ -291,30 +291,67 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		// Tomamos el valor del tid de la variable de la URL
-// 		mutexName := r.PathValue("mutex")
+// Query path - Verbo PATCH
+// Si el mutex no existe responde con "HILO_FINALIZADO" y finaliza el hilo
+// Si el mutex se le asigna a un hilo responde "MUTEX_ASIGNADO"
+// Si el mutex queda libre responde "MUTEX_LIBRE"
+// Si el hilo no posee el mutex responde "HILO_NO_POSEE_MUTEX"
+func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-// 		// Verificamos que el mutex exista - si NO existe mandamos el hilo a Exit
-// 		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName]
-// 		if !existe {
-// 			planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
-// 			respuesta, err := json.Marshal("HILO_FINALIZADO")
-// 			if err != nil {
-// 				http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
-// 			}
-// 			w.WriteHeader(http.StatusOK)
-// 			w.Write(respuesta)
-// 		}
+		// Tomamos el valor del tid de la variable de la URL
+		mutexName := r.PathValue("mutex")
 
-// 		// Liberamos el mutex
-// 		utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = "LIBRE"
-// 		respuesta, err := json.Marshal("MUTEX_LIBERADO")
-// 		if err != nil {
-// 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
-// 		}
-// 		w.WriteHeader(http.StatusOK)
-// 		w.Write(respuesta)
-// 	}
-// }
+		// Verificamos que el mutex exista caso contrario mandamos el hilo a exit
+		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName]
+		if !existe {
+			planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
+			respuesta, err := json.Marshal("HILO_FINALIZADO")
+			if err != nil {
+				http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write(respuesta)
+			return
+		}
+
+		// Si el mutex existe, lo asignamos o liberamos segun corresponda
+		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] == strconv.Itoa(int(utils.Execute.TID)) {
+			for _, bloqueado := range planificador.ColaBlocked {
+				// Si alguien quiere el mutex
+				count := 0
+				if bloqueado.PID == utils.Execute.PID && bloqueado.Motivo == utils.Mutex && bloqueado.QuienFue == mutexName {
+					count++
+					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = strconv.Itoa(int(bloqueado.TID))
+					utils.Desencolar(&planificador.ColaBlocked)
+					respuesta, err := json.Marshal("MUTEX_ASIGNADO")
+					if err != nil {
+						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+					}
+					w.WriteHeader(http.StatusOK)
+					w.Write(respuesta)
+					return
+				}
+				// Si el mutex no lo necesita nadie
+				if count == 0 {
+					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = "LIBRE"
+					respuesta, err := json.Marshal("MUTEX_LIBRE")
+					if err != nil {
+						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+					}
+					w.WriteHeader(http.StatusOK)
+					w.Write(respuesta)
+					return
+				}
+			}
+		}
+
+		// Si el mutex existe y no esta tomado por el hilo q invoca la syscall
+		respuesta, err := json.Marshal("HILO_NO_POSEE_MUTEX")
+		if err != nil {
+			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(respuesta)
+	}
+}
