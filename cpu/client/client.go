@@ -31,14 +31,14 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 	// Codificarla en JSON
 	jsonData, err := json.Marshal(pidTid)
 	if err != nil {
-		logger.Error("Error al codificar TID y PID a JSON: ", err)
+		logger.Error("Error al codificar TID y PID a JSON: ", slog.Any("error", err))
 		return err
 	}
 
 	// Crear la solicitud POST
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		logger.Error("Error al crear la solicitud: ", err)
+		logger.Error("Error al crear la solicitud: ", slog.Any("error", err))
 		return err
 	}
 
@@ -49,21 +49,21 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error("Error al enviar la solicitud al módulo de memoria: ", err)
+		logger.Error("Error al enviar la solicitud al módulo de memoria: ", slog.Any("error", err))
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		logger.Error(fmt.Sprintf("Error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode))
-		return fmt.Errorf("Error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode)
+		return fmt.Errorf("error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode)
 	}
 
 	// Decodificar la respuesta
 	var contexto types.ContextoEjecucion
 	err = json.NewDecoder(resp.Body).Decode(&contexto)
 	if err != nil {
-		logger.Error("Error al decodificar el contexto de ejecución: ", err)
+		logger.Error("Error al decodificar el contexto de ejecución: ", slog.Any("error", err))
 		return err
 	}
 
@@ -74,6 +74,84 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 	return nil
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////               FETCH INSTRUCCIONES               /////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+// Variable global para almacenar la instrucción obtenida
+var Instruccion string
+
+// Función Fetch para obtener la próxima instrucción
+func Fetch(ipMemory string, portMemory int, tid uint32, logger *slog.Logger) error {
+	if ReceivedContextoEjecucion == nil {
+		logger.Error("No se ha recibido el contexto de ejecución. Imposible realizar Fetch.")
+		return fmt.Errorf("contexto de ejecución no disponible")
+	}
+
+	// Obtener el valor del PC (Program Counter) de la variable global
+	pc := ReceivedContextoEjecucion.Registros.PC
+
+	// Crear la estructura de solicitud
+	requestData := struct {
+		PC  uint32 `json:"pc"`
+		TID uint32 `json:"tid"`
+	}{PC: pc, TID: tid}
+
+	// Serializar los datos en JSON
+	jsonData, err := json.Marshal(requestData)
+	if err != nil {
+		logger.Error("Error al codificar PC y TID a JSON: ", slog.Any("error", err))
+		return err
+	}
+
+	// Crear la URL del módulo de Memoria
+	url := fmt.Sprintf("http://%s:%d/instruccion", ipMemory, portMemory)
+
+	// Crear la solicitud POST
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		logger.Error("Error al crear la solicitud: ", slog.Any("error", err))
+		return err
+	}
+
+	// Establecer el encabezado de la solicitud
+	req.Header.Set("Content-Type", "application/json")
+
+	// Enviar la solicitud
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Error al enviar la solicitud de Fetch: ", slog.Any("error", err))
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Verificar si la respuesta fue exitosa
+	if resp.StatusCode != http.StatusOK {
+		logger.Error(fmt.Sprintf("Error en la respuesta de Fetch: Código de estado %d", resp.StatusCode))
+		return fmt.Errorf("error en la respuesta de Fetch: Código de estado %d", resp.StatusCode)
+	}
+
+	// Decodificar la respuesta para obtener la instrucción
+	var fetchedInstruction struct {
+		Instruccion string `json:"instruccion"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&fetchedInstruction)
+	if err != nil {
+		logger.Error("Error al decodificar la instrucción recibida: ", slog.Any("error", err))
+		return err
+	}
+
+	// Guardar la instrucción en la variable global
+	Instruccion = fetchedInstruction.Instruccion
+
+	// Log de Fetch exitoso
+	logger.Info(fmt.Sprintf("Fetch Instrucción: “## TID: %d - FETCH - Program Counter: %d”", tid, pc))
+
+	return nil
+}
+
+/*
 func Enviar_parametros_contexto(ip string, puerto int, path string, tamanio int, logger *slog.Logger) bool {
 	mensaje := types.PathTamanio{Path: path, Tamanio: tamanio}
 	body, err := json.Marshal(mensaje)
@@ -99,3 +177,5 @@ func Enviar_parametros_contexto(ip string, puerto int, path string, tamanio int,
 	logger.Info(fmt.Sprintf("Respuesta del servidor: %s", resp.Status))
 	return true // Indica que la respuesta fue exitosa
 }
+*/
+
