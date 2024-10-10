@@ -22,7 +22,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("PUT /PROCESS_EXIT", PROCESS_EXIT(logger))
 	mux.HandleFunc("POST /THREAD_CREATE", THREAD_CREATE(logger))
 	mux.HandleFunc("PATCH /THREAD_JOIN/{tid}", THREAD_JOIN(logger))
-	mux.HandleFunc("VERBO /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
+	mux.HandleFunc("DELETE /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
 	mux.HandleFunc("DELETE /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
@@ -109,6 +109,7 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+
 	}
 }
 
@@ -253,6 +254,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			return
 		}
 
 		// Tomamos el mutex si esta libre
@@ -265,6 +267,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			return
 		}
 
 		// Si no esta libre, bloqueamos el hilo
@@ -279,7 +282,36 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			return
 		}
 
 	}
 }
+
+// func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		// Tomamos el valor del tid de la variable de la URL
+// 		mutexName := r.PathValue("mutex")
+
+// 		// Verificamos que el mutex exista - si NO existe mandamos el hilo a Exit
+// 		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName]
+// 		if !existe {
+// 			planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
+// 			respuesta, err := json.Marshal("HILO_FINALIZADO")
+// 			if err != nil {
+// 				http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+// 			}
+// 			w.WriteHeader(http.StatusOK)
+// 			w.Write(respuesta)
+// 		}
+
+// 		// Liberamos el mutex
+// 		utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = "LIBRE"
+// 		respuesta, err := json.Marshal("MUTEX_LIBERADO")
+// 		if err != nil {
+// 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
+// 		}
+// 		w.WriteHeader(http.StatusOK)
+// 		w.Write(respuesta)
+// 	}
+// }
