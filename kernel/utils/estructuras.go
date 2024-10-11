@@ -4,9 +4,17 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
+
+// Struct para manejar las peticiones de IO
+type SolicitudIO struct {
+	TID       uint32    `json:"tid"`       // ID del hilo que realizó la solicitud
+	Duracion  int       `json:"duracion"`  // Duración de la solicitud (en milisegundos)
+	Timestamp time.Time `json:"timestamp"` // Indica el momento en el que se realizó la solicitud
+}
 
 // Hilo ejecutando actualmente
 type ExecuteActual struct {

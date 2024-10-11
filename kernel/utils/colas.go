@@ -7,12 +7,12 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-// Uso [T any] para poder encolar y desencolar tanto PCBs como TCBs
-
+// Agrega un elemento a la cola (IMPORTANTE: la cola debe coincidar con el tipo de elemento)
 func Encolar[T any](cola *[]T, elemento T) {
 	*cola = append(*cola, elemento)
 }
 
+// Desencola un elemento de la cola y retorna ese elemento
 func Desencolar[T any](cola *[]T) T {
 	if len(*cola) == 0 {
 		var vacio T
@@ -43,4 +43,14 @@ func Sacar_TCB_Del_Map(mapaPCBS *map[uint32]types.PCB, pid uint32, tid uint32, l
 
 	// Actualizamos el PCB en el mapa de PCBs
 	(*mapaPCBS)[pid] = pcb
+}
+
+// Devuelve dos valores, el primero es la solicitud y el segundo es un booleano que indica si la cola está vacía
+func Proxima_solicitud(cola *[]SolicitudIO) (SolicitudIO, bool) {
+	if len(*cola) == 0 {
+		return SolicitudIO{}, false
+	}
+	solicitud := (*cola)[0]
+	*cola = (*cola)[1:] // Remueve la primera solicitud del slice
+	return solicitud, true
 }

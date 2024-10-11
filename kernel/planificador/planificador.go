@@ -3,6 +3,7 @@ package planificador
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/sisoputnfrba/tp-golang/kernel/client"
 	"github.com/sisoputnfrba/tp-golang/kernel/utils"
@@ -14,6 +15,7 @@ var ColaNew []types.PCB   //Cola de procesos nuevos (Manejada por FIFO)
 var ColaReady []types.TCB // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
 var ColaBlocked []utils.Bloqueado
 var ColaExit []types.TCB //Cola de procesos finalizados
+var ColaIO []utils.SolicitudIO
 
 func Inicializar_colas() {
 	ColaNew = []types.PCB{}
@@ -110,4 +112,26 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
 
 	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
+}
+
+// Función que procesa las solicitudes de E/S de la cola (Hay que mandarlo con una go routine)
+func Procesar_cola_IO(colaIO *[]utils.SolicitudIO, logger *slog.Logger) {
+	for {
+		solicitud, haySolicitudes := utils.Proxima_solicitud(colaIO)
+		if haySolicitudes {
+			// Simular la duración de la E/S
+			logger.Info(fmt.Sprintf("Procesando E/S para TID %d durante %d ms", solicitud.TID, solicitud.Duracion))
+			time.Sleep(time.Duration(solicitud.Duracion) * time.Millisecond)
+
+			// Una vez terminada la E/S, desbloquear el hilo
+			desbloqueado := utils.Desencolar(&ColaBlocked)
+			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
+			tcb := pcb.TCBs[desbloqueado.TID]
+			utils.Encolar(&ColaReady, tcb)
+			logger.Info(fmt.Sprintf("E/S completada para TID %d", solicitud.TID))
+		} else {
+			// No hay solicitudes en la cola, esperar un tiempo antes de volver a chequear
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }

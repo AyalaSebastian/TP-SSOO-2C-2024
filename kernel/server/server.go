@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/sisoputnfrba/tp-golang/kernel/client"
 	"github.com/sisoputnfrba/tp-golang/kernel/planificador"
@@ -28,6 +29,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
 	mux.HandleFunc("PATCH /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
 	//mux.HandleFunc("PATCH /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
+	mux.HandleFunc("PUT /IO{ms}", IO(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
@@ -72,7 +74,7 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
 		utils.Execute = nil
 		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
-		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID} // Motivo hay que cambiarlo
+		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
 		// Esto va?? logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
 		if success {
@@ -81,7 +83,10 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 			tcb := pcb.TCBs[desbloqueado.TID]
 			utils.Encolar(&planificador.ColaReady, tcb)
 		} else {
-			planificador.Finalizar_proceso(utils.Execute.PID, logger)
+			desbloqueado := utils.Desencolar(&planificador.ColaBlocked)
+			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
+			tcb := pcb.TCBs[desbloqueado.TID]
+			planificador.Finalizar_proceso(tcb.PID, logger)
 			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", parametros.PID))
 		}
 	}
@@ -353,5 +358,24 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+	}
+}
+
+func IO(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		valor := r.PathValue("ms")
+		tiempo, _ := strconv.Atoi(valor) //Convierto el tiempo a numero
+		solicitud := utils.SolicitudIO{
+			TID:       utils.Execute.TID,
+			Duracion:  tiempo,
+			Timestamp: time.Now(),
+		}
+		utils.Encolar(&planificador.ColaIO, solicitud)
+		utils.Encolar(&planificador.ColaBlocked, utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID}) // Acá me falta el motivo pero no se como ponerlo
+		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: IO", utils.Execute.PID, utils.Execute.TID))
+		utils.Execute = nil
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
 	}
 }
