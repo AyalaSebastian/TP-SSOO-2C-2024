@@ -3,8 +3,8 @@ package main
 import (
 
 	// "sync"
-
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -64,6 +64,21 @@ func main() {
 		Logger.Error(fmt.Sprintf("Error en la etapa de Fetch: %v", err))
 		os.Exit(1) // Salir si hay un error en Fetch
 	}
+
+}
+
+func checkInterrupt(tid uint32) {
+	if recibidoInterrupcionTID() == tid {
+		//actualizo contexto en memoria
+		actualizarContextoEnMemoria(tid)
+		//devuelvo tid a kernell con motivo de interrupcion
+		log.Printf("Interrupcion en Tid %d", contexto.Tid)
+		return
+	}
+	return
+}
+
+func actualizarContextoEnMemoria(tid uint32) {
 
 }
 

@@ -1,32 +1,28 @@
-package main
+package mmu
 
-/*
 import (
 	"errors"
 	"log"
 )
 
-var (
-	particiones map[int]Particion
-	contextos   map[int]ContextoEjecucion
-)
+const LimiteParticion int = 4
 
-func traducirDireccion(tid, direccionLogica int) (int, error) {
-	//particion, existe := particiones[tid]
+func traducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32) (uint32, error) {
+	particion, existe := particiones[tid]
 	if !existe {
 		return 0, errors.New("partición no encontrada")
 	}
 
-	if direccionLogica >= particion.Limite {
+	if direccionLogica >= limite {
 		actualizarContextoSegmentationFault(tid)
 		return 0, errors.New("segmentation fault")
 	}
 
-	direccionFisica := particion.Base + direccionLogica
+	direccionFisica := base + direccionLogica
 	return direccionFisica, nil
 }
 
-func actualizarContextoSegmentationFault(tid int) {
+func actualizarContextoSegmentationFault(tid uint32) {
 	contexto, existe := contextos[tid]
 	if !existe {
 		log.Printf("Contexto de ejecución no encontrado para Tid %d", tid)
@@ -39,4 +35,3 @@ func actualizarContextoSegmentationFault(tid int) {
 	// Devolver el Tid al Kernel con motivo de Segmentation Fault
 	log.Printf("Segmentation Fault en Tid %d", contexto.Tid)
 }
-*/
