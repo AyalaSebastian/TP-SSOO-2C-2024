@@ -366,6 +366,7 @@ func IO(logger *slog.Logger) http.HandlerFunc {
 		valor := r.PathValue("ms")
 		tiempo, _ := strconv.Atoi(valor) //Convierto el tiempo a numero
 		solicitud := utils.SolicitudIO{
+			PID:       utils.Execute.PID,
 			TID:       utils.Execute.TID,
 			Duracion:  tiempo,
 			Timestamp: time.Now(),

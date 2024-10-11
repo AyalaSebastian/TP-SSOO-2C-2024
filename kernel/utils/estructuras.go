@@ -11,6 +11,7 @@ import (
 
 // Struct para manejar las peticiones de IO
 type SolicitudIO struct {
+	PID       uint32    `json:"pid"`       // ID del proceso que realizó la solicitud
 	TID       uint32    `json:"tid"`       // ID del hilo que realizó la solicitud
 	Duracion  int       `json:"duracion"`  // Duración de la solicitud (en milisegundos)
 	Timestamp time.Time `json:"timestamp"` // Indica el momento en el que se realizó la solicitud
@@ -147,6 +148,7 @@ type Motivo int
 const ( // Esto funciona mas o menos como el enum de c
 	THREAD_JOIN Motivo = iota // Vale 0
 	Mutex                     // Vale 1
+	IO                        // Vale 2
 )
 
 // Como no se puede hacer un slice con un struc generico, hago que el QuienFue sea un string
