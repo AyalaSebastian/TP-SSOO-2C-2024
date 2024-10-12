@@ -16,6 +16,7 @@ var ColaReady []types.TCB // Aca tengo dudas de como es, no me queda claro si la
 var ColaBlocked []utils.Bloqueado
 var ColaExit []types.TCB //Cola de procesos finalizados
 var ColaIO []utils.SolicitudIO
+var MapColasMultinivel map[int][]types.TCB
 
 func Inicializar_colas() {
 	ColaNew = []types.PCB{}
@@ -23,6 +24,7 @@ func Inicializar_colas() {
 	ColaBlocked = []utils.Bloqueado{}
 	ColaExit = []types.TCB{}
 	ColaIO = []utils.SolicitudIO{}
+	MapColasMultinivel = make(map[int][]types.TCB)
 }
 
 // Acá para mi hay que mandar el path a memoria para que saque las instrucciones del archivo de pseudocódigo y acá mismo armar el PCB con el TCB y todo
@@ -134,5 +136,91 @@ func Procesar_cola_IO(colaIO *[]utils.SolicitudIO, logger *slog.Logger) {
 			// No hay solicitudes en la cola, esperar un tiempo antes de volver a chequear
 			time.Sleep(100 * time.Millisecond)
 		}
+	}
+}
+
+// -------------------------------------- PLANIFICADORES CORTO PLAZO --------------------------------------
+
+func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
+	switch config.SchedulerAlgorithm {
+	case "FIFO":
+		logger.Info("Iniciando planificador FIFO")
+		go FIFO(logger)
+	case "PRIORIDADES":
+		logger.Info("Iniciando planificador por Prioridades")
+		go PRIORIDADES(logger)
+	case "CMN":
+		logger.Info("Iniciando planificador CMN")
+		go COLAS_MULTINIVEL(logger)
+	default:
+		logger.Info("Tipo de planificador no reconocido. Usando FIFO por defecto.")
+		go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
+	}
+}
+
+func FIFO(logger *slog.Logger) {
+	for {
+		// mutex.Lock()
+		if utils.Execute != nil { // Si hay un proceso en ejecución, no hacer nada
+			time.Sleep(1 * time.Second) // Espera antes de volver a intentar
+			continue
+		}
+		// Si no hay nada en la cola de ready, no hacer nada
+		if len(ColaReady) == 0 {
+			// mutex.Unlock()
+			logger.Info("No hay procesos en la cola de Ready")
+			time.Sleep(1 * time.Second) // Espera antes de volver a intentar
+			continue
+		}
+		// Lo sacamos de la cola de Ready
+		proximo := utils.Desencolar(&ColaReady)
+		// Lo ponemos a "ejecutar"
+		utils.Execute = &utils.ExecuteActual{
+			PID: proximo.PID,
+			TID: proximo.TID,
+		}
+		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+		// mutex.Unlock()
+	}
+}
+
+func PRIORIDADES(logger *slog.Logger) {
+	for {
+		// mutex.Lock()
+		if len(ColaReady) > 0 {
+			siguienteHilo := ColaReady[0]
+			// Vamos buscando el hilo de menor prioridad
+			for _, tcb := range ColaReady {
+				if tcb.Prioridad < siguienteHilo.Prioridad {
+					siguienteHilo = tcb
+				}
+		}
+		if utils.Execute == nil || siguienteHilo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+			utils.Execute = &utils.ExecuteActual{
+				PID: siguienteHilo.PID,
+				TID: siguienteHilo.TID,
+			}
+			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+			
+		}
+	}
+
+}
+
+func COLAS_MULTINIVEL_Mandar_A_Ejecuta(logger *slog.Logger) {
+	//! Definir el map con las prioridades
+	// con un condicional para ver si esa prioridad existe
+	
+
+}
+
+func Meter_A_Planificar_Colas_Multinivel(tcb types.TCB,logger *slog.Logger){
+	
+	// Verifico si ya existe la cola con la prioridad del 
+i
+	_,existe := MapColasMultinivel[tcb.Prioridad]
+	
+/	if !existe{ 
+		MapColasMultinivel[tcb.Prioridad] = []types.TCB{}
 	}
 }

@@ -14,8 +14,7 @@ type PCB struct {
 type TCB struct {
 	TID       uint32 `json:"tid"` // EL TID TAMBIEN ES SU POSICION EN EL SLICE DE TCBs
 	Prioridad int    `json:"prioridad"`
-	// Estado    string `json:"estado"` //Puede ser "NEW", "READY", "EXECUTE", "BLOCKED", "EXIT" (En mayusculas)
-	PID uint32 `json:"pid"` //PID del proceso al que pertenece
+	PID       uint32 `json:"pid"` //PID del proceso al que pertenece
 }
 
 type PathTamanio struct {
