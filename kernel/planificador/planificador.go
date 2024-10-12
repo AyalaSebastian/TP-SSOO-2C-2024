@@ -194,43 +194,38 @@ func PRIORIDADES(logger *slog.Logger) {
 				if tcb.Prioridad < siguienteHilo.Prioridad {
 					siguienteHilo = tcb
 				}
-		}
-		if utils.Execute == nil || siguienteHilo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
-			if utils.Execute != nil {
-				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.Execute.Prioridad))
 			}
-			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
-			utils.Execute = &utils.ExecuteActual{
-				PID: siguienteHilo.PID,
-				TID: siguienteHilo.TID,
-			}
-			// Remueve el hilo seleccionado de la cola de READY
-			for i, tcb := range ColaReady {
-				if tcb.TID == siguienteHilo.TID {
-					utils.ColaReady = append(utils.ColaReady[:i], utils.ColaReady[i+1:]...)
-					break
+			if utils.Execute == nil || siguienteHilo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+				if utils.Execute != nil {
+					logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
 				}
+				logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
+				utils.Execute = &utils.ExecuteActual{
+					PID: siguienteHilo.PID,
+					TID: siguienteHilo.TID,
+				}
+				// Remueve el hilo seleccionado de la cola de READY
+				for i, tcb := range ColaReady {
+					if tcb.TID == siguienteHilo.TID {
+						ColaReady = append(ColaReady[:i], ColaReady[i+1:]...)
+						break
+					}
+				}
+				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+				// mutex.Unlock()
 			}
-			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-			// mutex.Unlock()
 		}
 	}
 }
 
-func COLAS_MULTINIVEL_Mandar_A_Ejecutar(logger *slog.Logger) {
+func COLAS_MULTINIVEL(logger *slog.Logger) {
 	//! Definir el map con las prioridades
 	// con un condicional para ver si esa prioridad existe
-	
 
 }
 
-func Meter_A_Planificar_Colas_Multinivel(tcb types.TCB,logger *slog.Logger){
-	
-	// Verifico si ya existe la cola con la prioridad del 
-i
-	_,existe := MapColasMultinivel[tcb.Prioridad]
-	
-/	if !existe{ 
-		MapColasMultinivel[tcb.Prioridad] = []types.TCB{}
-	}
+func Meter_A_Planificar_Colas_Multinivel(tcb types.TCB, logger *slog.Logger) {
+
+	// Agrego el tcb a la cola correspondiente, si no existe la cola se crea automáticamente
+	MapColasMultinivel[tcb.Prioridad] = append(MapColasMultinivel[tcb.Prioridad], tcb)
 }
