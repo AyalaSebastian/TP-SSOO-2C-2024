@@ -135,7 +135,16 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 		*/
-		w.WriteHeader(http.StatusOK)
+        var req
+        err := json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+
+        w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	}
 }
@@ -143,15 +152,32 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 // Coms con CPU
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+        var req
+        err := json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("OK"))
 	
 	}
 }
 
 func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		var req
+        err := json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+        
+        w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	
 	}
@@ -159,7 +185,14 @@ func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
 
 func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+        var req
+        err := json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+        w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	
 	}
@@ -167,14 +200,31 @@ func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+        var req
+        err := json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+    
+        w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	
 	}
 }
 func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+    var req
+        err := json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+        w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	
 	}
