@@ -26,7 +26,6 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 //Coms con KERNEL
 
-
 func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -62,7 +61,6 @@ func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
 	}
 
 }
-
 
 func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 
@@ -116,24 +114,23 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	
-		//w.Write(respuesta)
+		//w.Write([]byte("OK"))
+
+		w.Write(respuesta)
 		logger.Info(fmt.Sprintf("## Hilo Destruido - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
 	}
 }
 
-
 func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-//		decoder := json.NewDecoder(r.Body)
+		//		decoder := json.NewDecoder(r.Body)
 		/*
-		if err != nil {
-			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Error al decodificar mensaje"))
-			return
-		}
+			if err != nil {
+				logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Error al decodificar mensaje"))
+				return
+			}
 		*/
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -145,7 +142,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 
@@ -153,7 +150,7 @@ func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 
@@ -161,7 +158,7 @@ func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 
@@ -169,15 +166,13 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
-
-

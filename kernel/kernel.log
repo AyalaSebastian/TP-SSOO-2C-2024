@@ -1,1 +1,10 @@
-
+time=2024-10-12T14:47:11.658-03:00 level=INFO msg="## (1:0) Se crea el proceso - Estado: NEW"
+time=2024-10-12T14:47:11.665-03:00 level=INFO msg="## (1:0) Se crea el Hilo - Estado: READY"
+time=2024-10-12T14:47:11.665-03:00 level=INFO msg="## (1:0) - Bloqueado por: IO"
+time=2024-10-12T14:47:11.672-03:00 level=INFO msg="Procesando E/S para TID 0 durante 5000 ms"
+time=2024-10-12T15:23:09.482-03:00 level=INFO msg="## (1:0) Se crea el proceso - Estado: NEW"
+time=2024-10-12T15:23:09.491-03:00 level=INFO msg="## (1:0) Se crea el Hilo - Estado: READY"
+time=2024-10-12T15:23:09.491-03:00 level=INFO msg="## (1:0) - Bloqueado por: IO"
+time=2024-10-12T15:23:23.797-03:00 level=INFO msg="Procesando E/S para TID 0 durante 5000 ms"
+time=2024-10-12T15:23:25.106-03:00 level=INFO msg="Levantando servidor en el puerto: 8001"
+time=2024-10-12T15:24:26.491-03:00 level=INFO msg="E/S completada para TID 0"
