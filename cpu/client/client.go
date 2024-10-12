@@ -150,6 +150,35 @@ func Fetch(ipMemory string, portMemory int, tid uint32, logger *slog.Logger) err
 
 	return nil
 }
+func DevolverTIDAlKernel(tid uint32, logger slog.Logger) bool {
+	cliente := &http.Client{}
+	url := fmt.Sprintf("http://%s:%d/%s/%v", "127.0.0.1", 8001, "THREAD_JOIN", tid)
+	req, err := http.NewRequest("PATCH", url, nil)
+	if err != nil {
+		return false
+	}
+	// Establecer el encabezado Content-Type
+	req.Header.Set("Content-Type", "application/json")
+
+	// Enviar la solicitud
+	resp, err := cliente.Do(req)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al enviar la solicitud: %v", err))
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("La respuesta del servidor no fue OK")
+		return false // Indica que la respuesta no fue exitosa
+	}
+
+	return true
+}
+
+func ActualizarContextoDeEjecucion(tid uint32, Logger slog.Logger) {
+
+}
 
 /*
 func Enviar_parametros_contexto(ip string, puerto int, path string, tamanio int, logger *slog.Logger) bool {
@@ -178,4 +207,3 @@ func Enviar_parametros_contexto(ip string, puerto int, path string, tamanio int,
 	return true // Indica que la respuesta fue exitosa
 }
 */
-

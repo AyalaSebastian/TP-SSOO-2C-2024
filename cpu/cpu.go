@@ -4,7 +4,7 @@ import (
 
 	// "sync"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -67,19 +67,18 @@ func main() {
 
 }
 
-func checkInterrupt(tid uint32) {
-	if recibidoInterrupcionTID() == tid {
+func checkInterrupt(tid uint32, Logger slog.Logger) {
+
+	server.ReciboInterrupcionTID(Logger)
+	if server.ReceivedInterrupt == tid {
 		//actualizo contexto en memoria
-		actualizarContextoEnMemoria(tid)
+		client.ActualizarContextoDeEjecucion(tid, Logger)
 		//devuelvo tid a kernell con motivo de interrupcion
-		log.Printf("Interrupcion en Tid %d", contexto.Tid)
+		Logger.Info("llega interrupcion al puerto Interrupt")
+		client.DevolverTIDAlKernel(tid, Logger)
 		return
 	}
 	return
-}
-
-func actualizarContextoEnMemoria(tid uint32) {
-
 }
 
 /*
