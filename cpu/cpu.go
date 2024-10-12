@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
+	"github.com/sisoputnfrba/tp-golang/cpu/cpuInstruction"
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
@@ -222,7 +223,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		// Asignar el valor al registro
-		AsignarValorRegistro(registro, uint32(valor), logger)
+		cpuInstruction.AsignarValorRegistro(registro, uint32(valor), logger)
 
 	case "READ_MEM":
 		if len(args) != 2 {
@@ -249,7 +250,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		SumarRegistros(registroDestino, registroOrigen, logger)
+		cpuInstruction.SumarRegistros(registroDestino, registroOrigen, logger)
 
 	case "SUB":
 		if len(args) != 2 {
@@ -258,7 +259,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		RestarRegistros(registroDestino, registroOrigen, logger)
+		cpuInstruction.RestarRegistros(registroDestino, registroOrigen, logger)
 
 	case "JNZ":
 		if len(args) != 2 {
@@ -267,7 +268,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registro := args[0]
 		instruccion := args[1]
-		SaltarSiNoCero(registro, instruccion, logger)
+		cpuInstruction.SaltarSiNoCero(registro, instruccion, logger)
 
 	case "LOG":
 		if len(args) != 1 {
@@ -275,7 +276,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		registro := args[0]
-		LogRegistro(registro, logger)
+		cpuInstruction.LogRegistro(registro, logger)
 
 	default:
 		logger.Error(fmt.Sprintf("Operación desconocida: %s", operacion))
@@ -284,7 +285,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 func checkInterrupt(tid uint32, Logger slog.Logger) {
 
-	server.ReciboInterrupcionTID(Logger)
+	server.ReciboInterrupcionTID(&Logger)
 	if server.ReceivedInterrupt == tid {
 		//actualizo contexto en memoria
 		client.ActualizarContextoDeEjecucion(tid, Logger)
