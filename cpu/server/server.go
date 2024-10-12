@@ -18,6 +18,8 @@ func Iniciar_cpu(logger *slog.Logger) {
 
 	// Endpoints
 	mux.HandleFunc("/mensaje", server.Recibir_handshake(logger))
+	mux.HandleFunc("POST /EJECUTAR_KERNEL", WAIT_FOR_TID_PID(logger))
+
 	//mux.HandleFunc("POST /comunicacion-memoria", ComunicacionMemoria(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
