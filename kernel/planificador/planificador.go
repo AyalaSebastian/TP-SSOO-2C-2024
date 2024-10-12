@@ -189,25 +189,35 @@ func PRIORIDADES(logger *slog.Logger) {
 		// mutex.Lock()
 		if len(ColaReady) > 0 {
 			siguienteHilo := ColaReady[0]
-			// Vamos buscando el hilo de menor prioridad
+			// Vamos buscando el hilo de menor prioridad (esto a su vez cumple que si hay otro de igual prioridad, desempata por el primero que llegó)
 			for _, tcb := range ColaReady {
 				if tcb.Prioridad < siguienteHilo.Prioridad {
 					siguienteHilo = tcb
 				}
 		}
 		if utils.Execute == nil || siguienteHilo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+			if utils.Execute != nil {
+				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.Execute.Prioridad))
+			}
+			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
 			utils.Execute = &utils.ExecuteActual{
 				PID: siguienteHilo.PID,
 				TID: siguienteHilo.TID,
 			}
+			// Remueve el hilo seleccionado de la cola de READY
+			for i, tcb := range ColaReady {
+				if tcb.TID == siguienteHilo.TID {
+					utils.ColaReady = append(utils.ColaReady[:i], utils.ColaReady[i+1:]...)
+					break
+				}
+			}
 			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-			
+			// mutex.Unlock()
 		}
 	}
-
 }
 
-func COLAS_MULTINIVEL_Mandar_A_Ejecuta(logger *slog.Logger) {
+func COLAS_MULTINIVEL_Mandar_A_Ejecutar(logger *slog.Logger) {
 	//! Definir el map con las prioridades
 	// con un condicional para ver si esa prioridad existe
 	
