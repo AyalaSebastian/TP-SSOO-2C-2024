@@ -22,6 +22,7 @@ func Inicializar_colas() {
 	ColaReady = []types.TCB{}
 	ColaBlocked = []utils.Bloqueado{}
 	ColaExit = []types.TCB{}
+	ColaIO = []utils.SolicitudIO{}
 }
 
 // Acá para mi hay que mandar el path a memoria para que saque las instrucciones del archivo de pseudocódigo y acá mismo armar el PCB con el TCB y todo

@@ -27,6 +27,8 @@ func Iniciar_cpu(logger *slog.Logger) {
 // Variable global para almacenar el PID y TID
 var ReceivedPIDTID *types.PIDTID = nil
 
+var ReceivedInterrupt uint32
+
 // Getter para acceder a la variable global ReceivedPIDTID
 //func GetReceivedPIDTID() *types.PIDTID {
 //	return receivedPIDTID
@@ -57,6 +59,33 @@ func WAIT_FOR_TID_PID(logger *slog.Logger) http.HandlerFunc {
 		// Responder con éxito
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("TID y PID recibidos"))
+	}
+}
+
+func ReciboInterrupcionTID(Logger slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		var interrupt uint32
+
+		// Intentamos decodificar el cuerpo de la solicitud
+		err := decoder.Decode(&interrupt)
+		if err != nil {
+			// Log de error en caso de fallo al decodificar
+			Logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Error al decodificar mensaje"))
+			return
+		}
+
+		// Log de la información recibida si la decodificación fue exitosa
+		Logger.Info(fmt.Sprintf("Recibido interrupcion: %d", interrupt))
+
+		// Asignar a la variable global
+		ReceivedInterrupt = interrupt
+
+		// Responder con éxito
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("TID  recibido"))
 	}
 }
 
