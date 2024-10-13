@@ -1,6 +1,7 @@
 package generadores
 
 import (
+	"github.com/sisoputnfrba/tp-golang/kernel/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
@@ -45,6 +46,7 @@ func Generar_TCB(pcb *types.PCB, prioridad int) types.TCB {
 		TID:       tid,
 		Prioridad: prioridad,
 		PID:       pcb.PID,
+		Quantum:   utils.Configs.Quantum,
 	}
 
 	pcb.TCBs[tid] = tcb

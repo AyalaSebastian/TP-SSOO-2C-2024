@@ -15,6 +15,7 @@ type TCB struct {
 	TID       uint32 `json:"tid"` // EL TID TAMBIEN ES SU POSICION EN EL SLICE DE TCBs
 	Prioridad int    `json:"prioridad"`
 	PID       uint32 `json:"pid"` //PID del proceso al que pertenece
+	Quantum   int    `json:"quantum"`
 }
 
 type PathTamanio struct {

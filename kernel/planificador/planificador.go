@@ -219,9 +219,78 @@ func PRIORIDADES(logger *slog.Logger) {
 }
 
 func COLAS_MULTINIVEL(logger *slog.Logger) {
-	//! Definir el map con las prioridades
-	// con un condicional para ver si esa prioridad existe
 
+	for {
+
+		proximo, hayAlguien := seleccionarSiguienteHilo()
+
+		// Si no hay nadie en la cola de ready
+		if !hayAlguien {
+			// mutex.Unlock()
+			logger.Info("No hay procesos en la cola de Ready")
+			time.Sleep(1 * time.Second) // Espera antes de volver a intentar
+			continue
+		}
+
+		// Si hay alguien en la cola de ready
+		if utils.Execute == nil || proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+			if utils.Execute != nil {
+				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
+				// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
+
+			}
+			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
+			utils.Execute = &utils.ExecuteActual{
+				PID: proximo.PID,
+				TID: proximo.TID,
+			}
+
+			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+
+			// Temporizador para el quantum
+			quantum := time.Duration(utils.Configs.Quantum) * time.Millisecond
+			timer := time.NewTimer(quantum)
+
+			//! No es la mejor implementacion por la carga de la cpu
+			for {
+				select {
+				case <-timer.C: // Aca lo que pasa cuando se finaliza el quantum
+					logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d por fin de Quantum", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
+					Meter_A_Planificar_Colas_Multinivel(utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID], logger)
+					utils.Execute = nil
+					break
+				default:
+					// Aquí verificamos el estado del hilo
+					_, existe := utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID]
+					if !existe {
+						logger.Info("Hilo terminado")
+						timer.Stop() // Detenemos el temporizador si el hilo terminó
+						break
+					}
+
+					// Si el hilo no ha terminado, podrías usar una breve pausa para evitar un bucle de alta carga
+					time.Sleep(10 * time.Millisecond) // Pausa breve para evitar un bucle apretado
+				}
+			}
+			// mutex.Unlock()
+		}
+	}
+}
+
+func seleccionarSiguienteHilo() (types.TCB, bool) {
+
+	// Recorremos las colas desde la de mayor prioridad hasta la menor
+	for prioridad := 0; prioridad <= len(MapColasMultinivel); prioridad++ {
+		if len(MapColasMultinivel[prioridad]) > 0 {
+			// Tomar el primer hilo de la cola
+			siguienteHilo := MapColasMultinivel[prioridad][0]
+
+			// Removerlo de la cola y colocarlo al final
+			MapColasMultinivel[prioridad] = append(MapColasMultinivel[prioridad][1:], siguienteHilo)
+			return siguienteHilo, true
+		}
+	}
+	return types.TCB{}, false // No hay hilos disponibles
 }
 
 func Meter_A_Planificar_Colas_Multinivel(tcb types.TCB, logger *slog.Logger) {

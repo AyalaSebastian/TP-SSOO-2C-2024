@@ -1,12 +1,17 @@
 package cpuInstruction
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strconv"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
+	"github.com/sisoputnfrba/tp-golang/cpu/mmu"
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
+	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 )
 
 // Función para asignar el valor a un registro
@@ -144,4 +149,158 @@ func obtenerValorRegistro(registro string, logger *slog.Logger) uint32 {
 		logger.Error(fmt.Sprintf("Registro desconocido: %s", registro))
 		return 0
 	}
+}
+
+// Función para leer un valor de una dirección física de memoria y almacenarlo en un registro
+func LeerMemoria(registroDatos, registroDireccion string, logger *slog.Logger) {
+	// Obtener una referencia a los registros
+	registros := &client.ReceivedContextoEjecucion.Registros
+
+	// Obtener el valor de la dirección lógica del registro de dirección
+	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
+
+	// Traducir la dirección lógica a una dirección física usando la MMU
+	base := registros.Base
+	limite := registros.Limite
+	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, *logger)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en READ_MEM: %v", err))
+		return
+	}
+
+	// Log obligatorio de Lectura de Memoria
+	logger.Info(fmt.Sprintf("## TID: %d - Acción: LEER - Dirección Física: %d", server.ReceivedPIDTID.TID, direccionFisica))
+
+	// Crear la estructura de solicitud para el módulo de Memoria
+	requestData := struct {
+		DireccionFisica uint32 `json:"direccion_fisica"`
+		TID             uint32 `json:"tid"`
+	}{
+		DireccionFisica: direccionFisica,
+		TID:             server.ReceivedPIDTID.TID,
+	}
+
+	// Serializar los datos en JSON
+	jsonData, err := json.Marshal(requestData)
+	if err != nil {
+		logger.Error("Error al serializar la solicitud de READ_MEM", slog.Any("error", err))
+		return
+	}
+
+	// Crear la URL del módulo de Memoria
+	url := fmt.Sprintf("http://%s:%d/read_mem", utils.Configs.IpMemory, utils.Configs.PortMemory)
+
+	// Crear la solicitud POST
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		logger.Error("Error al crear la solicitud de READ_MEM", slog.Any("error", err))
+		return
+	}
+
+	// Establecer el encabezado de la solicitud
+	req.Header.Set("Content-Type", "application/json")
+
+	// Enviar la solicitud
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Error al enviar la solicitud de READ_MEM", slog.Any("error", err))
+		return
+	}
+	defer resp.Body.Close()
+
+	// Verificar si la respuesta fue exitosa
+	if resp.StatusCode != http.StatusOK {
+		logger.Error(fmt.Sprintf("Error en la respuesta de READ_MEM: Código de estado %d", resp.StatusCode))
+		return
+	}
+
+	// Decodificar la respuesta para obtener el valor leído
+	var responseData struct {
+		Valor uint32 `json:"valor"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&responseData)
+	if err != nil {
+		logger.Error("Error al decodificar el valor leído de memoria", slog.Any("error", err))
+		return
+	}
+
+	// Almacenar el valor leído en el registro correspondiente
+	AsignarValorRegistro(registroDatos, responseData.Valor, logger)
+
+	// Log de la instrucción ejecutada
+	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: READ_MEM - Dirección Física: %d, Valor Leído: %d”", server.ReceivedPIDTID.TID, direccionFisica, responseData.Valor))
+}
+
+// Función para escribir un valor de un registro en una dirección física de memoria
+func EscribirMemoria(registroDireccion, registroDatos string, logger *slog.Logger) {
+	// Obtener una referencia a los registros
+	registros := &client.ReceivedContextoEjecucion.Registros
+
+	// Obtener el valor de la dirección lógica y el valor de datos de los registros
+	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
+	valorDatos := obtenerValorRegistro(registroDatos, logger)
+
+	// Traducir la dirección lógica a una dirección física usando la MMU
+	base := registros.Base
+	limite := registros.Limite
+	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, *logger)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en WRITE_MEM: %v", err))
+		return
+	}
+
+	// Log obligatorio de Escritura de Memoria
+	logger.Info(fmt.Sprintf("## TID: %d - Acción: ESCRIBIR - Dirección Física: %d", server.ReceivedPIDTID.TID, direccionFisica))
+
+	// Crear la estructura de solicitud para el módulo Memoria
+	requestData := struct {
+		DireccionFisica uint32 `json:"direccion_fisica"`
+		Valor           uint32 `json:"valor"`
+		TID             uint32 `json:"tid"`
+	}{
+		DireccionFisica: direccionFisica,
+		Valor:           valorDatos,
+		TID:             server.ReceivedPIDTID.TID,
+	}
+
+	// Serializar los datos en JSON
+	jsonData, err := json.Marshal(requestData)
+	if err != nil {
+		logger.Error("Error al serializar la solicitud de WRITE_MEM", slog.Any("error", err))
+		return
+	}
+
+	// Crear la URL del módulo de Memoria
+	ipMemory := "127.0.0.1" // La IP del módulo de Memoria
+	portMemory := 8080      // El puerto del módulo de Memoria
+	url := fmt.Sprintf("http://%s:%d/write_mem", ipMemory, portMemory)
+
+	// Crear la solicitud POST
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		logger.Error("Error al crear la solicitud de WRITE_MEM", slog.Any("error", err))
+		return
+	}
+
+	// Establecer el encabezado de la solicitud
+	req.Header.Set("Content-Type", "application/json")
+
+	// Enviar la solicitud
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Error al enviar la solicitud de WRITE_MEM", slog.Any("error", err))
+		return
+	}
+	defer resp.Body.Close()
+
+	// Verificar si la respuesta fue exitosa
+	if resp.StatusCode != http.StatusOK {
+		logger.Error(fmt.Sprintf("Error en la respuesta de WRITE_MEM: Código de estado %d", resp.StatusCode))
+		return
+	}
+
+	// Log de la instrucción ejecutada
+	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: WRITE_MEM - Dirección Física: %d, Valor: %d”", server.ReceivedPIDTID.TID, direccionFisica, valorDatos))
 }
