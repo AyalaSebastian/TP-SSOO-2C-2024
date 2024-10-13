@@ -28,22 +28,25 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
 	mux.HandleFunc("PATCH /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
-	//mux.HandleFunc("PATCH /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
+	mux.HandleFunc("PATCH /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
 	mux.HandleFunc("PUT /IO/{ms}", IO(logger))
+
+	mux.HandleFunc("PUT /recibir-desalojo", Recibir_desalojo(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
 
-// Syscall referidas a procesos
+// Syscalls referidas a procesos
 
 func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: PROCESS_CREATE", utils.Execute.PID, utils.Execute.TID))
 		decoder := json.NewDecoder(r.Body)
 		var magic types.ProcessCreateParams
 		err := decoder.Decode(&magic)
 		if err != nil {
-			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Error al decodificar mensaje"))
 			return
@@ -57,10 +60,7 @@ func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 
 func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// pid := r.PathValue("pid")                //Recibimos el pid a finalizar
-		// val, _ := strconv.ParseUint(pid, 10, 32) //Convierto el pid a uint32 ya que viene en String
-		// parsePid := uint32(val)
-		// Comenté lo de arriba porque el enunciado no dice que se le pasa el pid como parametro, entonces si el que hace la syscall es el hilo ejecutando, lo sacamos de la variable execute
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: PROCESS_EXIT", utils.Execute.PID, utils.Execute.TID))
 		pid := utils.Execute.PID
 		planificador.Finalizar_proceso(pid, logger)
 
@@ -71,6 +71,7 @@ func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 
 func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: DUMP_MEMORY", utils.Execute.PID, utils.Execute.TID))
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
 		utils.Execute = nil
 		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
@@ -97,7 +98,7 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 // BODY - VERBO POST
 func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_CREATE", utils.Execute.PID, utils.Execute.TID))
 		// Agarramos los parametros del body
 		var params types.ThreadCreateParams
 		err := json.NewDecoder(r.Body).Decode(&params)
@@ -124,7 +125,7 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 // QUERY PATH - VERBO DELETE
 func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_EXIT", utils.Execute.PID, utils.Execute.TID))
 		// Eliminamos el hilo que esta ejecutando actualmente
 		logger.Info("Se recibio un THREAD_EXIT")
 
@@ -145,7 +146,7 @@ func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 // EL TID A ELIMINAR SE MANDA POR PARAMETRO DE LA URL EJ: /THREAD_CANCEL/1
 func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_CANCEL", utils.Execute.PID, utils.Execute.TID))
 		// Tomamos el valor del tid de la variable de la URL
 		tid := r.PathValue("tid")
 
@@ -173,7 +174,7 @@ func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
 // SI NO EXISTE EL TID, SE RESPONDE CON "CONTINUAR_EJECUCION", SI EXISTE SE RESPONDE CON "OK"
 func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
 		// Tomamos el valor del tid de la variable de la URL
 		tid := r.PathValue("tid")
 
@@ -215,7 +216,7 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 // Si ya existe responde con "MUTEX_YA_EXISTE", si no existe lo crea y responde con "OK"
 func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_CREATE", utils.Execute.PID, utils.Execute.TID))
 		// Tomamos el valor del tid de la variable de la URL
 		mutexName := r.PathValue("mutex")
 
@@ -248,7 +249,7 @@ func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 // 3. Si el mutex esta ocupado, bloquea el hilo y responde con "HILO_BLOQUEADO"
 func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_LOCK", utils.Execute.PID, utils.Execute.TID))
 		// Tomamos el valor del tid de la variable de la URL
 		mutexName := r.PathValue("mutex")
 
@@ -303,7 +304,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 // Si el hilo no posee el mutex responde "HILO_NO_POSEE_MUTEX"
 func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_UNLOCK", utils.Execute.PID, utils.Execute.TID))
 		// Tomamos el valor del tid de la variable de la URL
 		mutexName := r.PathValue("mutex")
 
@@ -363,6 +364,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 
 func IO(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: IO", utils.Execute.PID, utils.Execute.TID))
 		valor := r.PathValue("ms")
 		tiempo, _ := strconv.Atoi(valor) //Convierto el tiempo a numero
 		solicitud := utils.SolicitudIO{
@@ -375,6 +377,30 @@ func IO(logger *slog.Logger) http.HandlerFunc {
 		utils.Encolar(&planificador.ColaBlocked, utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID}) // Acá me falta el motivo pero no se como ponerlo
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: IO", utils.Execute.PID, utils.Execute.TID))
 		utils.Execute = nil
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	}
+}
+
+func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		var magic types.HiloDesalojado
+		err := decoder.Decode(&magic)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar hilo desalojado: %s", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Error al decodificar mensaje"))
+			return
+		}
+		if magic.Motivo == "FIN QUANTUM" {
+			utils.Encolar(&planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+			//planificadorCortoPlazo.Unlock()
+		} else {
+			utils.Encolar(&planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID]) // Esto probablente haya que cambiarlo ya que si se desaloja por prioridad va a ir a una cola especifica
+			//planificadorCortoPlazo.Unlock()
+		}
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))

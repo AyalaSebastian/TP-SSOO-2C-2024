@@ -45,6 +45,12 @@ type ThreadCreateParams struct {
 	Prioridad int    `json:"prioridad"`
 }
 
+type HiloDesalojado struct {
+	TID    uint32 `json:"tid"`
+	PID    uint32 `json:"pid"`
+	Motivo string `json:"motivo"`
+}
+
 // --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)
