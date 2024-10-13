@@ -68,11 +68,7 @@ func WAIT_FOR_TID_PID(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-<<<<<<< HEAD
-func ReciboInterrupcionTID(Logger *slog.Logger) http.HandlerFunc {
-=======
 func ReciboInterrupcionTID(logger *slog.Logger) http.HandlerFunc {
->>>>>>> 191e6d93a759754d0359f43dd456d6dfdfee06fa
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		var interrupt uint32

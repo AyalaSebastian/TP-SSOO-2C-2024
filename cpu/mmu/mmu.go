@@ -8,7 +8,7 @@ import (
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
 )
 
-func TraducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32, Logger slog.Logger) (uint32, error) {
+func TraducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32, Logger *slog.Logger) (uint32, error) {
 	/*
 		particion, existe := particiones[tid]
 		if !existe {
