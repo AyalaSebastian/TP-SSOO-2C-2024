@@ -78,3 +78,10 @@ type MMU struct {
 }
 type Memoria struct {
 }
+// --------------------------------- Memoria ---------------------------------
+
+type UpdateMemoria struct {
+    PID   int    `json:"pid"`
+    TID   int    `json:"tid"`
+    RegCPU RegCPU `json:"regCPU"` // Nuevos valores de los registros a actualizar
+}

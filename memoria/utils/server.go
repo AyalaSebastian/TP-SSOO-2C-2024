@@ -26,7 +26,6 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 //Coms con KERNEL
 
-
 func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -62,7 +61,6 @@ func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
 	}
 
 }
-
 
 func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 
@@ -116,24 +114,23 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	
-		//w.Write(respuesta)
+		//w.Write([]byte("OK"))
+
+		w.Write(respuesta)
 		logger.Info(fmt.Sprintf("## Hilo Destruido - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
 	}
 }
 
-
 func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-//		decoder := json.NewDecoder(r.Body)
+		//		decoder := json.NewDecoder(r.Body)
 		/*
-		if err != nil {
-			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Error al decodificar mensaje"))
-			return
-		}
+			if err != nil {
+				logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Error al decodificar mensaje"))
+				return
+			}
 		*/
         var req
         err := json.NewDecoder(r.Body).Decode(&req)
@@ -159,7 +156,8 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
+        Actualizar_Contexto(req.PID, req.TID)
+        
         w.WriteHeader(http.StatusOK)
         w.Write([]byte("OK"))
 	
@@ -168,18 +166,33 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 
 func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req
+		var req types.RegCPU
         err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+        regCPU, err := Ver_Contexto(req.PID, req.TID)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusNotFound)
+            return
+        }
+        ipCPU := "127.0.0.1" //Cambiar por referencia a archivo config
+        puertoCPU := 8004
 
+
+
+
+        exito := client.Enviar_Body(regCPU, conf, puertoCPU, endpointCPU, logger)
+        if !exito {
+            http.Error(w, "Error al enviar el contexto al CPU", http.StatusInternalServerError)
+            return
+        }
         
         w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 
@@ -194,7 +207,7 @@ func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 		}
         w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 
@@ -211,7 +224,7 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
     
         w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
 func Write_Mem(logger *slog.Logger) http.HandlerFunc {
@@ -226,8 +239,6 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 
         w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-	
+
 	}
 }
-
-

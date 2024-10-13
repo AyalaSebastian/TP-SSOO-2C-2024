@@ -29,7 +29,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
 	mux.HandleFunc("PATCH /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
 	//mux.HandleFunc("PATCH /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
-	mux.HandleFunc("PUT /IO{ms}", IO(logger))
+	mux.HandleFunc("PUT /IO/{ms}", IO(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
