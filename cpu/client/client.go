@@ -74,9 +74,9 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 	return nil
 }
 
-func DevolverTIDAlKernel(tid uint32, logger slog.Logger) bool {
+func DevolverTIDAlKernel(tid uint32, logger slog.Logger,endpoint string , motivo string) bool {
 	cliente := &http.Client{}
-	url := fmt.Sprintf("http://%s:%d/%s/%v", "127.0.0.1", 8001, "THREAD_JOIN", tid)
+	url := fmt.Sprintf("http://%s:%d/%s/%v", "127.0.0.1", 8001, endpoint,(tid,motivo))
 	req, err := http.NewRequest("PATCH", url, nil)
 	if err != nil {
 		return false

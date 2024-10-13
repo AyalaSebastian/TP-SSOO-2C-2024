@@ -23,6 +23,9 @@ func Iniciar_cpu(logger *slog.Logger) {
 
 	//mux.HandleFunc("POST /comunicacion-memoria", ComunicacionMemoria(logger))
 
+	mux.HandleFunc("POST /TID_PID", WAIT_FOR_TID_PID(logger))
+	mux.HandleFunc("POST /INTERRUPT", ReciboInterrupcionTID(logger))
+
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
@@ -65,7 +68,11 @@ func WAIT_FOR_TID_PID(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+<<<<<<< HEAD
 func ReciboInterrupcionTID(Logger *slog.Logger) http.HandlerFunc {
+=======
+func ReciboInterrupcionTID(logger *slog.Logger) http.HandlerFunc {
+>>>>>>> 191e6d93a759754d0359f43dd456d6dfdfee06fa
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		var interrupt uint32
@@ -74,14 +81,14 @@ func ReciboInterrupcionTID(Logger *slog.Logger) http.HandlerFunc {
 		err := decoder.Decode(&interrupt)
 		if err != nil {
 			// Log de error en caso de fallo al decodificar
-			Logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Error al decodificar mensaje"))
 			return
 		}
 
 		// Log de la información recibida si la decodificación fue exitosa
-		Logger.Info(fmt.Sprintf("Recibido interrupcion: %d", interrupt))
+		logger.Info(fmt.Sprintf("Recibido interrupcion: %d", interrupt))
 
 		// Asignar a la variable global
 		ReceivedInterrupt = interrupt

@@ -8,9 +8,7 @@ import (
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
 )
 
-const LimiteParticion int = 4
-
-func traducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32, Logger slog.Logger) (uint32, error) {
+func TraducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32, Logger slog.Logger) (uint32, error) {
 	/*
 		particion, existe := particiones[tid]
 		if !existe {
@@ -37,7 +35,7 @@ func actualizarContextoSegmentationFault(tid uint32, Logger slog.Logger) {
 	// Aquí se puede agregar la lógica necesaria para actualizar el contexto
 
 	// Devolver el Tid al Kernel con motivo de Segmentation Fault
-	if client.DevolverTIDAlKernel(tid, Logger) == true {
+	if client.DevolverTIDAlKernel(tid, Logger, "THREAD_INTERRUPT", "Segmentation Fault") == true {
 		log.Printf("Segmentation Fault en Tid %d", tid)
 	}
 	return
