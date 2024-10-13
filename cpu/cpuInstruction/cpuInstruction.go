@@ -162,7 +162,7 @@ func LeerMemoria(registroDatos, registroDireccion string, logger *slog.Logger) {
 	// Traducir la dirección lógica a una dirección física usando la MMU
 	base := registros.Base
 	limite := registros.Limite
-	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, *logger)
+	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en READ_MEM: %v", err))
 		return
@@ -244,7 +244,7 @@ func EscribirMemoria(registroDireccion, registroDatos string, logger *slog.Logge
 	// Traducir la dirección lógica a una dirección física usando la MMU
 	base := registros.Base
 	limite := registros.Limite
-	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, *logger)
+	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en WRITE_MEM: %v", err))
 		return
