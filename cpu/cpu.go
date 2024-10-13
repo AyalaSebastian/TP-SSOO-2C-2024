@@ -208,6 +208,27 @@ func Decode(instruccion string, logger *slog.Logger) {
 // Función global que representa el estado de los registros de la CPU
 var contextoEjecucion types.ContextoEjecucion
 
+type estructuraEmpty struct {
+}
+type estructuraTid struct {
+	tid uint32
+}
+type estructuraTiempo struct {
+	tiempo float32
+}
+type estructuraRecurso struct {
+	recurso string
+}
+type estructuraProcessCreate struct {
+	archivoInstrucciones string
+	tamanio              int
+	PrioridadTID0        int
+}
+type estructuraThreadCreate struct {
+	archivoInstrucciones string
+	Prioridad            int
+}
+
 // Función Execute para ejecutar la instrucción decodificada
 func Execute(operacion string, args []string, logger *slog.Logger) {
 	switch operacion {
@@ -232,7 +253,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDatos := args[0]
 		registroDireccion := args[1]
-		LeerMemoria(registroDatos, registroDireccion, logger)
+		cpuInstruction.LeerMemoria(registroDatos, registroDireccion, logger)
 
 	case "WRITE_MEM":
 		if len(args) != 2 {
@@ -241,7 +262,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDireccion := args[0]
 		registroDatos := args[1]
-		EscribirMemoria(registroDireccion, registroDatos, logger)
+		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, logger)
 
 	case "SUM":
 		if len(args) != 2 {
@@ -278,20 +299,79 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		registro := args[0]
 		cpuInstruction.LogRegistro(registro, logger)
 
+	case "DUMP_MEMORY":
+
+		//	Informar memoria
+		dumpMemory := estructuraEmpty{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "DUMP_MEMORY", logger)
+		client.CederControlAKernell(dumpMemory, "DUMP_MEMORY", logger)
+	case "IO":
+		//	Informar memoria
+		io := estructuraTiempo{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "IO", logger)
+		client.CederControlAKernell(io, "IO", logger)
+	case "PROCESS_CREATE":
+
+		//	Informar memoria
+		processCreate := estructuraProcessCreate{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "PROCESS_CREATE", logger)
+		client.CederControlAKernell(processCreate, "PROCESS_CREATE", logger)
+	case "THREAD_CREATE":
+
+		//	Informar memoria
+		threadCreate := estructuraThreadCreate{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_CREATE", logger)
+		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
+	case "THREAD_JOIN":
+		//	Informar memoria
+		threadJoin := estructuraTid{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_JOIN", logger)
+		client.CederControlAKernell(threadJoin, "THREAD_JOIN", logger)
+	case "THREAD_CANCEL":
+		//	Informar memoria
+		threadCancel := estructuraTid{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_CANCEL", logger)
+		client.CederControlAKernell(threadCancel, "THREAD_CANCEL", logger)
+	case "MUTEX_CREATE":
+		//	Informar memoria
+		mutexCreate := estructuraRecurso{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "MUTEX_CREATE", logger)
+		client.CederControlAKernell(mutexCreate, "MUTEX_CREATE", logger)
+	case "MUTEX_LOCK":
+		//	Informar memoria
+		mutexLock := estructuraRecurso{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "MUTEX_LOCK", logger)
+		client.CederControlAKernell(mutexLock, "MUTEX_LOCK", logger)
+	case "MUTEX_UNLOCK":
+		//	Informar memoria
+		mutexUnlock := estructuraRecurso{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "MUTEX_UNLOCK", logger)
+		client.CederControlAKernell(mutexUnlock, "MUTEX_UNLOCK", logger)
+	case "THREAD_EXIT":
+		//	Informar memoria
+		threadExit := estructuraEmpty{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_EXIT", logger)
+		client.CederControlAKernell(threadExit, "THREAD_EXIT", logger)
+	case "PROCESS_EXIT":
+		//	Informar memoria
+		processExit := estructuraEmpty{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "PROCESS_EXIT", logger)
+		client.CederControlAKernell(processExit, "PROCESS_EXIT", logger)
 	default:
 		logger.Error(fmt.Sprintf("Operación desconocida: %s", operacion))
+
 	}
 }
 
-func checkInterrupt(tid uint32, Logger slog.Logger) {
+func checkInterrupt(tid uint32, Logger *slog.Logger) {
 
-	server.ReciboInterrupcionTID(&Logger)
+	server.ReciboInterrupcionTID(Logger)
 	if server.ReceivedInterrupt == tid {
 		//actualizo contexto en memoria
-		client.ActualizarContextoDeEjecucion(tid, Logger)
+		client.EnviarContextoDeEjecucion(tid, "THREAD_UPLOAD", Logger)
 		//devuelvo tid a kernell con motivo de interrupcion
 		Logger.Info("llega interrupcion al puerto Interrupt")
-		client.DevolverTIDAlKernel(tid, Logger)
+		client.DevolverTIDAlKernel(tid, Logger, "THREAD_INTERRUPT", "Interrupcion ")
 		return
 	}
 	return

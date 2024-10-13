@@ -8,7 +8,7 @@ import (
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
 )
 
-func traducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32, Logger slog.Logger) (uint32, error) {
+func traducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite uint32, Logger *slog.Logger) (uint32, error) {
 	/*
 		particion, existe := particiones[tid]
 		if !existe {
@@ -24,7 +24,7 @@ func traducirDireccion(tid uint32, direccionLogica uint32, base uint32, limite u
 	return direccionFisica, nil
 }
 
-func actualizarContextoSegmentationFault(tid uint32, Logger slog.Logger) {
+func actualizarContextoSegmentationFault(tid uint32, Logger *slog.Logger) {
 	/*	contexto, existe := contextos[tid]
 		if !existe {
 			log.Printf("Contexto de ejecución no encontrado para Tid %d", tid)
