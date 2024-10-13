@@ -34,11 +34,11 @@ func Enviar_Body[T any](dato T, ip string, puerto int, endpoint string, logger *
 	return true // Indica que la respuesta fue exitosa
 }
 
-// IMPORTANTE! Es QueryPath, no se le pasa un Body. Tener en cuenta que tiene verbo PATCH, de ultima si necesitamos otro verbo podemos hacerla mas generica
-func Enviar_QueryPath[T any](dato T, ip string, puerto int, endpoint string, logger *slog.Logger) bool {
+// IMPORTANTE! Es QueryPath, no se le pasa un Body
+func Enviar_QueryPath[T any](dato T, ip string, puerto int, endpoint string, verbo string, logger *slog.Logger) bool {
 	cliente := &http.Client{}
 	url := fmt.Sprintf("http://%s:%d/%s/%v", ip, puerto, endpoint, dato)
-	req, err := http.NewRequest("PATCH", url, nil)
+	req, err := http.NewRequest("verbo", url, nil)
 	if err != nil {
 		return false
 	}

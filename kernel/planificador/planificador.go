@@ -54,7 +54,7 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 // Se le pasa el pid del proceso a finalizar
 func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 
-	success := client.Enviar_QueryPath(pid, utils.Configs.IpMemory, utils.Configs.PortMemory, "finalizar-proceso", logger)
+	success := client.Enviar_QueryPath(pid, utils.Configs.IpMemory, utils.Configs.PortMemory, "finalizar-proceso", "PATCH", logger)
 
 	if success {
 		OK := utils.Enviar_proceso_a_exit(pid, &ColaReady, &ColaBlocked, &ColaExit, logger)
@@ -162,14 +162,15 @@ func FIFO(logger *slog.Logger) {
 	for {
 		// mutex.Lock()
 		if utils.Execute != nil { // Si hay un proceso en ejecución, no hacer nada
-			time.Sleep(1 * time.Second) // Espera antes de volver a intentar
+			// mutex.Unlock()
+			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
 		// Si no hay nada en la cola de ready, no hacer nada
 		if len(ColaReady) == 0 {
 			// mutex.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
-			time.Sleep(1 * time.Second) // Espera antes de volver a intentar
+			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
 		// Lo sacamos de la cola de Ready
@@ -195,9 +196,12 @@ func PRIORIDADES(logger *slog.Logger) {
 					siguienteHilo = tcb
 				}
 			}
+			// Vemos si no hay nadie ejecutando o si la prioridad del siguiente hilo es mayor
 			if utils.Execute == nil || siguienteHilo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
 				if utils.Execute != nil {
 					logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
+					// Enviamos la interrupción de desalojo por Prioridades
+					client.Enviar_QueryPath(utils.Execute.TID, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPT", "POST", logger)
 				}
 				logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
 				utils.Execute = &utils.ExecuteActual{
@@ -214,6 +218,9 @@ func PRIORIDADES(logger *slog.Logger) {
 				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 				// mutex.Unlock()
 			}
+		} else { // En caso de que ningun proceso tenga mayor prioridad que el que está ejecutando se libera el mutex
+			// mutex.Unlock()
+			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 		}
 	}
 }
@@ -228,7 +235,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		if !hayAlguien {
 			// mutex.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
-			time.Sleep(1 * time.Second) // Espera antes de volver a intentar
+			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
 
@@ -268,7 +275,6 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 						break
 					}
 
-					// Si el hilo no ha terminado, podrías usar una breve pausa para evitar un bucle de alta carga
 					time.Sleep(10 * time.Millisecond) // Pausa breve para evitar un bucle apretado
 				}
 			}
