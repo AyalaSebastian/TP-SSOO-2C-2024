@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
+	"github.com/sisoputnfrba/tp-golang/cpu/cpuInstruction"
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
@@ -207,6 +208,27 @@ func Decode(instruccion string, logger *slog.Logger) {
 // Función global que representa el estado de los registros de la CPU
 var contextoEjecucion types.ContextoEjecucion
 
+type estructuraEmpty struct {
+}
+type estructuraTid struct {
+	tid uint32
+}
+type estructuraTiempo struct {
+	tiempo float32
+}
+type estructuraRecurso struct {
+	recurso string
+}
+type estructuraProcessCreate struct {
+	archivoInstrucciones string
+	tamanio              int
+	PrioridadTID0        int
+}
+type estructuraThreadCreate struct {
+	archivoInstrucciones string
+	Prioridad            int
+}
+
 // Función Execute para ejecutar la instrucción decodificada
 func Execute(operacion string, args []string, logger *slog.Logger) {
 	switch operacion {
@@ -222,7 +244,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		// Asignar el valor al registro
-		AsignarValorRegistro(registro, uint32(valor), logger)
+		cpuInstruction.AsignarValorRegistro(registro, uint32(valor), logger)
 
 	case "READ_MEM":
 		if len(args) != 2 {
@@ -231,7 +253,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDatos := args[0]
 		registroDireccion := args[1]
-		LeerMemoria(registroDatos, registroDireccion, logger)
+		cpuInstruction.LeerMemoria(registroDatos, registroDireccion, logger)
 
 	case "WRITE_MEM":
 		if len(args) != 2 {
@@ -240,7 +262,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDireccion := args[0]
 		registroDatos := args[1]
-		EscribirMemoria(registroDireccion, registroDatos, logger)
+		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, logger)
 
 	case "SUM":
 		if len(args) != 2 {
@@ -249,7 +271,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		SumarRegistros(registroDestino, registroOrigen, logger)
+		cpuInstruction.SumarRegistros(registroDestino, registroOrigen, logger)
 
 	case "SUB":
 		if len(args) != 2 {
@@ -258,7 +280,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		RestarRegistros(registroDestino, registroOrigen, logger)
+		cpuInstruction.RestarRegistros(registroDestino, registroOrigen, logger)
 
 	case "JNZ":
 		if len(args) != 2 {
@@ -267,7 +289,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registro := args[0]
 		instruccion := args[1]
-		SaltarSiNoCero(registro, instruccion, logger)
+		cpuInstruction.SaltarSiNoCero(registro, instruccion, logger)
 
 	case "LOG":
 		if len(args) != 1 {
@@ -275,22 +297,81 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		registro := args[0]
-		LogRegistro(registro, logger)
+		cpuInstruction.LogRegistro(registro, logger)
 
+	case "DUMP_MEMORY":
+
+		//	Informar memoria
+		dumpMemory := estructuraEmpty{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "DUMP_MEMORY", logger)
+		client.CederControlAKernell(dumpMemory, "DUMP_MEMORY", logger)
+	case "IO":
+		//	Informar memoria
+		io := estructuraTiempo{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "IO", logger)
+		client.CederControlAKernell(io, "IO", logger)
+	case "PROCESS_CREATE":
+
+		//	Informar memoria
+		processCreate := estructuraProcessCreate{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "PROCESS_CREATE", logger)
+		client.CederControlAKernell(processCreate, "PROCESS_CREATE", logger)
+	case "THREAD_CREATE":
+
+		//	Informar memoria
+		threadCreate := estructuraThreadCreate{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_CREATE", logger)
+		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
+	case "THREAD_JOIN":
+		//	Informar memoria
+		threadJoin := estructuraTid{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_JOIN", logger)
+		client.CederControlAKernell(threadJoin, "THREAD_JOIN", logger)
+	case "THREAD_CANCEL":
+		//	Informar memoria
+		threadCancel := estructuraTid{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_CANCEL", logger)
+		client.CederControlAKernell(threadCancel, "THREAD_CANCEL", logger)
+	case "MUTEX_CREATE":
+		//	Informar memoria
+		mutexCreate := estructuraRecurso{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "MUTEX_CREATE", logger)
+		client.CederControlAKernell(mutexCreate, "MUTEX_CREATE", logger)
+	case "MUTEX_LOCK":
+		//	Informar memoria
+		mutexLock := estructuraRecurso{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "MUTEX_LOCK", logger)
+		client.CederControlAKernell(mutexLock, "MUTEX_LOCK", logger)
+	case "MUTEX_UNLOCK":
+		//	Informar memoria
+		mutexUnlock := estructuraRecurso{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "MUTEX_UNLOCK", logger)
+		client.CederControlAKernell(mutexUnlock, "MUTEX_UNLOCK", logger)
+	case "THREAD_EXIT":
+		//	Informar memoria
+		threadExit := estructuraEmpty{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "THREAD_EXIT", logger)
+		client.CederControlAKernell(threadExit, "THREAD_EXIT", logger)
+	case "PROCESS_EXIT":
+		//	Informar memoria
+		processExit := estructuraEmpty{}
+		client.EnviarContextoDeEjecucion(contextoEjecucion, "PROCESS_EXIT", logger)
+		client.CederControlAKernell(processExit, "PROCESS_EXIT", logger)
 	default:
 		logger.Error(fmt.Sprintf("Operación desconocida: %s", operacion))
+
 	}
 }
 
-func checkInterrupt(tid uint32, Logger slog.Logger) {
+func checkInterrupt(tid uint32, Logger *slog.Logger) {
 
 	server.ReciboInterrupcionTID(Logger)
 	if server.ReceivedInterrupt == tid {
 		//actualizo contexto en memoria
-		client.ActualizarContextoDeEjecucion(tid, Logger)
+		client.EnviarContextoDeEjecucion(tid, "THREAD_UPLOAD", Logger)
 		//devuelvo tid a kernell con motivo de interrupcion
 		Logger.Info("llega interrupcion al puerto Interrupt")
-		client.DevolverTIDAlKernel(tid, Logger)
+		client.DevolverTIDAlKernel(tid, Logger, "THREAD_INTERRUPT", "Interrupcion ")
 		return
 	}
 	return
@@ -336,270 +417,5 @@ func checkInterrupt(tid uint32, Logger slog.Logger) {
 	//Check Interrupt: si kernel nos envia el TID se
 	//actualiza el contexto de ejecucion en memoria
 	//y	devolver el TID al Kernel con ¿motivo de la interrupcion?
-
-
-
-	http.HandleFunc("POST /helloworld", ComunicacionMemoria)
-	http.ListenAndServe(":8002", nil)
-
-	// waitGroup.Add(1)
-
-	// waitGroup.Wait()
-
-	//LOGGERS OBLIGATORIOS
-	//Obtencion Contexto Ejecucion
-	//Logger.Info("TID: ",TID," - Solicito Contexto Ejecucion")
-	//Actualizacion de Contexto de Ejecucion
-	//Logger.Info("TID: ",TID," - Actualizo Contexto Ejecucion")
-	//Interrupcion Recibida
-	//Logger.Info("LLega Interrupcion Al Puerto Interrupt")
-	//Fetch Instuccion
-	//Logger.Info("TID:",TID,"- FETCH","- Program Counter: ",ProgramCounter)
-	//instruccion Ejecutada
-	//Logger.Info("TID: ",TID,"- Ejecutando:",Instruccion,Parametros)
-	//lectura/escritura de memoria
-	//.Info("TID",TID,"- Accion:",Accion,"- Direccion Fisica:",DireccionFisica)
-
-}
-
-
-// Metodo para simular el ciclo de instruccion
-func CicloInstruccion() {
-	var cpu *utils.CPU
-	cpu.Fetch()
-	cpu.Decode()
-	cpu.Execute()
-	cpu.CheckInterrupt()
-}
-
-// Metodo Fetch
-func Fetch(cpu *utils.CPU) {
-	fmt.Println("Fetch: Obtener la instruccion de la memoria")
-	instruccion := cpu.memoria.ObtenerInstruccion(cpu.contexto.ProgramCounter)
-	fmt.Printf("Instruccion obtenida: %s\n", instruccion)
-	// Actualizar el Program Counter
-	cpu.contexto.ProgramCounter++
-}
-
-func (cpu *CPU) SET(registro string, valor uint32) {
-	//log obligatorio
-	cpu.Logger.Printf("## TID: %d - Ejecutando: SET - %s, %d", cpu.Contexto.TID, registro, valor)
-
-	switch registro {
-	case "PC":
-		cpu.Contexto.Registros.PC = valor
-	case "AX":
-		cpu.Contexto.Registros.AX = valor
-	case "BX":
-		cpu.Contexto.Registros.BX = valor
-	case "CX":
-		cpu.Contexto.Registros.CX = valor
-	case "DX":
-		cpu.Contexto.Registros.DX = valor
-	case "EX":
-		cpu.Contexto.Registros.EX = valor
-	case "FX":
-		cpu.Contexto.Registros.FX = valor
-	case "GX":
-		cpu.Contexto.Registros.GX = valor
-	case "HX":
-		cpu.Contexto.Registros.HX = valor
-	case "Base":
-		cpu.Contexto.Registros.Base = valor
-	case "Limite":
-		cpu.Contexto.Registros.Limite = valor
-	}
-}
-
-func (cpu *CPU) READ_MEM(registroDatos, registroDireccion string) {
-	// Implementar la logica para leer de memoria
-
-	//log obligatorio
-	cpu.Logger.Printf("## TID: %d - Acción: LEER - Dirección Física: %s", cpu.Contexto.TID, registroDireccion)
-}
-
-func (cpu *CPU) WRITE_MEM(registroDireccion, registroDatos string) {
-	// Implementar la logica para escribir en memoria
-
-	//log obligatorio
-	cpu.Logger.Printf("## TID: %d - Acción: ESCRIBIR - Dirección Física: %s", cpu.Contexto.TID, registroDireccion)
-}
-
-func (cpu *CPU) SUM(registroDestino, registroOrigen string) {
-	//log obligatorio
-	cpu.Logger.Printf("## TID: %d - Ejecutando: SUM - %s, %s", cpu.Contexto.TID, registroDestino, registroOrigen)
-
-	switch registroDestino {
-	case "PC":
-		cpu.Contexto.Registros.PC += cpu.getRegistroValor(registroOrigen)
-	case "AX":
-		cpu.Contexto.Registros.AX += cpu.getRegistroValor(registroOrigen)
-	case "BX":
-		cpu.Contexto.Registros.BX += cpu.getRegistroValor(registroOrigen)
-	case "CX":
-		cpu.Contexto.Registros.CX += cpu.getRegistroValor(registroOrigen)
-	case "DX":
-		cpu.Contexto.Registros.DX += cpu.getRegistroValor(registroOrigen)
-	case "EX":
-		cpu.Contexto.Registros.EX += cpu.getRegistroValor(registroOrigen)
-	case "FX":
-		cpu.Contexto.Registros.FX += cpu.getRegistroValor(registroOrigen)
-	case "GX":
-		cpu.Contexto.Registros.GX += cpu.getRegistroValor(registroOrigen)
-	case "HX":
-		cpu.Contexto.Registros.HX += cpu.getRegistroValor(registroOrigen)
-	case "Base":
-		cpu.Contexto.Registros.Base += cpu.getRegistroValor(registroOrigen)
-	case "Limite":
-		cpu.Contexto.Registros.Limite += cpu.getRegistroValor(registroOrigen)
-	}
-}
-
-func (cpu *CPU) SUB(registroDestino, registroOrigen string) {
-	//log obligatorio
-	cpu.Logger.Printf("## TID: %d - Ejecutando: SUB - %s, %s", cpu.Contexto.TID, registroDestino, registroOrigen)
-
-	switch registroDestino {
-	case "PC":
-		cpu.Contexto.Registros.PC -= cpu.getRegistroValor(registroOrigen)
-	case "AX":
-		cpu.Contexto.Registros.AX -= cpu.getRegistroValor(registroOrigen)
-	case "BX":
-		cpu.Contexto.Registros.BX -= cpu.getRegistroValor(registroOrigen)
-	case "CX":
-		cpu.Contexto.Registros.CX -= cpu.getRegistroValor(registroOrigen)
-	case "DX":
-		cpu.Contexto.Registros.DX -= cpu.getRegistroValor(registroOrigen)
-	case "EX":
-		cpu.Contexto.Registros.EX -= cpu.getRegistroValor(registroOrigen)
-	case "FX":
-		cpu.Contexto.Registros.FX -= cpu.getRegistroValor(registroOrigen)
-	case "GX":
-		cpu.Contexto.Registros.GX -= cpu.getRegistroValor(registroOrigen)
-	case "HX":
-		cpu.Contexto.Registros.HX -= cpu.getRegistroValor(registroOrigen)
-	case "Base":
-		cpu.Contexto.Registros.Base -= cpu.getRegistroValor(registroOrigen)
-	case "Limite":
-		cpu.Contexto.Registros.Limite -= cpu.getRegistroValor(registroOrigen)
-	}
-}
-
-func (cpu *CPU) JNZ(registro string, instruccion uint32) {
-	//log obligatorio
-	cpu.Logger.Printf("## TID: %d - Ejecutando: JNZ - %s, %d", cpu.Contexto.TID, registro, instruccion)
-
-	if cpu.getRegistroValor(registro) != 0 {
-		cpu.Contexto.Registros.PC = instruccion
-	}
-}
-
-func (cpu *CPU) LOG(registro string) {
-	valor := cpu.getRegistroValor(registro)
-	cpu.Logger.Printf("Valor de %s: %d", registro, valor)
-}
-
-// obtener el valor del registro pedido
-func (cpu *CPU) getRegistroValor(registro string) uint32 {
-	switch registro {
-	case "PC":
-		return cpu.Contexto.Registros.PC
-	case "AX":
-		return cpu.Contexto.Registros.AX
-	case "BX":
-		return cpu.Contexto.Registros.BX
-	case "CX":
-		return cpu.Contexto.Registros.CX
-	case "DX":
-		return cpu.Contexto.Registros.DX
-	case "EX":
-		return cpu.Contexto.Registros.EX
-	case "FX":
-		return cpu.Contexto.Registros.FX
-	case "GX":
-		return cpu.Contexto.Registros.GX
-	case "HX":
-		return cpu.Contexto.Registros.HX
-	case "Base":
-		return cpu.Contexto.Registros.Base
-	case "Limite":
-		return cpu.Contexto.Registros.Limite
-	default:
-		return 0
-	}
-}
-
-func (cpu *CPU) execute(instruccion string, args ...interface{}) {
-	switch instruccion {
-	case "SET":
-		cpu.SET(args[0].(string), args[1].(uint32))
-	case "READ_MEM":
-		cpu.READ_MEM(args[0].(string), args[1].(string))
-	case "WRITE_MEM":
-		cpu.WRITE_MEM(args[0].(string), args[1].(string))
-	case "SUM":
-		cpu.SUM(args[0].(string), args[1].(string))
-	case "SUB":
-		cpu.SUB(args[0].(string), args[1].(string))
-	case "JNZ":
-		cpu.JNZ(args[0].(string), args[1].(uint32))
-	case "LOG":
-		cpu.LOG(args[0].(string))
-	}
-}
-
-func cargarConfiguracion(ruta string) (ContextoEjecucion, error) {
-	var contexto ContextoEjecucion
-	file, err := ioutil.ReadFile(ruta)
-	if err != nil {
-		return contexto, err
-	}
-	err = json.Unmarshal(file, &contexto)
-	return contexto, err
-}
-
-func (cpu *CPU) checkInterrupt() {
-	if atomic.LoadInt32(&cpu.InterruptFlag) != 0 {
-		// Actualizar el contexto de ejecucion en la memoria
-		cpu.actualizarContextoEnMemoria()
-
-		// Devolver el TID al Kernel con motivo de la interrupcion
-		cpu.devolverTIDAlKernel()
-	}
-}
-
-func (cpu *CPU) actualizarContextoEnMemoria() {
-	// Implementar la logica para actualizar el contexto de ejecucion en la memoria
-	cpu.Logger.Println("Contexto de ejecución actualizado en la memoria")
-}
-
-func (cpu *CPU) devolverTIDAlKernel() {
-	// Implementar la logica para devolver el TID al Kernel
-	cpu.Logger.Printf("TID %d devuelto al Kernel con motivo de la interrupcion", cpu.TID)
-}
-
-//dentro del main
-
-	// Cargar configuracion desde config.json
-    contexto, err := cargarConfiguracion("config.json")
-    if err != nil {
-        log.Fatalf("Error cargando configuracion: %v", err)
-    }
-
-    // Crear una instancia de CPU
-    cpu := CPU{
-        Contexto:      contexto,
-        Logger:        logger,
-        InterruptFlag: 0,
-        TID:           1, // Ejemplo de TID
-    }
-
-    // Ejemplo de ejecucion de instrucciones
-    cpu.execute("SET", "AX", 10)
-    cpu.execute("SUM", "AX", "BX")
-    cpu.execute("LOG", "AX")
-
-    // Chequear interrupciones
-    cpu.checkInterrupt()
 
 */

@@ -74,9 +74,9 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 	return nil
 }
 
-func DevolverTIDAlKernel(tid uint32, logger slog.Logger) bool {
+func DevolverTIDAlKernel(tid uint32, logger *slog.Logger, endpoint string, motivo string) bool {
 	cliente := &http.Client{}
-	url := fmt.Sprintf("http://%s:%d/%s/%v", "127.0.0.1", 8001, "THREAD_JOIN", tid)
+	url := fmt.Sprintf("http://%s:%d/%s/%v", "127.0.0.1", 8001, endpoint, tid)
 	req, err := http.NewRequest("PATCH", url, nil)
 	if err != nil {
 		return false
@@ -100,8 +100,54 @@ func DevolverTIDAlKernel(tid uint32, logger slog.Logger) bool {
 	return true
 }
 
-func ActualizarContextoDeEjecucion(tid uint32, Logger slog.Logger) {
+func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logger) bool {
 
+	body, err := json.Marshal(dato)
+	if err != nil {
+		logger.Error("Se produjo un error codificando el mensaje")
+		return false
+	}
+	//ipMemory y portMemory
+	url := fmt.Sprintf("http://%s:%d/%s", "127.0.0.1", 8002, endpoint)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8002))
+		return false
+	}
+	// Aseguramos que el body sea cerrado
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("La respuesta del servidor no fue OK")
+		return false // Indica que la respuesta no fue exitosa
+	}
+
+	return true // Indica que la respuesta fue exitosa
+}
+
+func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) bool {
+
+	body, err := json.Marshal(dato)
+	if err != nil {
+		logger.Error("Se produjo un error codificando el mensaje")
+		return false
+	}
+
+	url := fmt.Sprintf("http://%s:%d/%s", "127.0.0.1", 8001, endpoint)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8001))
+		return false
+	}
+	// Aseguramos que el body sea cerrado
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("La respuesta del servidor no fue OK")
+		return false // Indica que la respuesta no fue exitosa
+	}
+
+	return true // Indica que la respuesta fue exitosa
 }
 
 /*
