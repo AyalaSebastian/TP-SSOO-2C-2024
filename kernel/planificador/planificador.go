@@ -262,7 +262,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 			for {
 				select {
 				case <-timer.C: // Aca lo que pasa cuando se finaliza el quantum
-					logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d por fin de Quantum", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
+					logger.Info(fmt.Sprintf("## (%d:%d) Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
 					Meter_A_Planificar_Colas_Multinivel(utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID], logger)
 					utils.Execute = nil
 					break

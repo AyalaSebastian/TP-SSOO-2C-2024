@@ -198,6 +198,7 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		// Mandamos el hilo a block
 		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: tid}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
+		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: PTHREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
 
 		//! nose si no hay que eliminarlo de exec y replanificar
 
@@ -283,6 +284,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] != "LIBRE" {
 			bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.Mutex, QuienFue: mutexName}
 			utils.Encolar(&planificador.ColaBlocked, bloqueado)
+			logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: MUTEX", utils.Execute.PID, utils.Execute.TID))
 
 			// Respondemos con un HILO_BLOQUEADO
 			respuesta, err := json.Marshal("HILO_BLOQUEADO")
