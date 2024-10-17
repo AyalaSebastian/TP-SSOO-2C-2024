@@ -31,6 +31,7 @@ func Inicializar_Filesystem(logger *slog.Logger) {
 		if errrr != nil {
 			panic("Error al crear el directorio FILES")
 		}
+		return
 	}
 
 	// Si existe verifico el bloques.dat
@@ -54,6 +55,7 @@ func Inicializar_Filesystem(logger *slog.Logger) {
 				panic("Error al crear el directorio FILES")
 			}
 		}
+		return
 	}
 
 	//! Para seguir verificar si MNT_DIR y MOUNT_DIR son la misma o son separadas
