@@ -4,7 +4,6 @@ import (
 	// "strconv"
 	// "sync"
 
-	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/filesystem/utils"
 
 	// "github.com/sisoputnfrba/tp-golang/utils/client"
@@ -23,10 +22,10 @@ func main() {
 
 	logger.Info("Logger iniciado")
 
-	utils.Inicializar_Filesystem(logger)
+	utils.Inicializar_Estructura_Filesystem(logger)
 
 	// Iniciar filesystem como server
-	server.Iniciar_cpu(logger)
+	utils.Iniciar_fileSystem(logger)
 	// waitGroup.Add(1)
 
 	// Handshakes a memoria

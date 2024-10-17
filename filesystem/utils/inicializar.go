@@ -5,13 +5,13 @@ import (
 	"os"
 )
 
-func Inicializar_Filesystem(logger *slog.Logger) {
+func Inicializar_Estructura_Filesystem(logger *slog.Logger) {
 
 	// MNT_DIR y MOUNT_DIR y FILES
 
 	// Si no existe MOUNT_DIR lo creo y creo el bloques.dat
 	if !Verificar_Si_Existe(Configs.MountDir) {
-		err := os.Mkdir(Configs.MountDir, 0775) // Creo el dir
+		err := os.Mkdir(Configs.MountDir, 0755) // Creo el dir
 		if err != nil {
 			panic("Error al crear el directorio MOUNT_DIR")
 		}
@@ -27,7 +27,7 @@ func Inicializar_Filesystem(logger *slog.Logger) {
 			panic("Error al truncar el archivo de bloques")
 		}
 
-		errrr := os.Mkdir(Configs.MountDir+"/files", 0775) // Creo el dir files
+		errrr := os.Mkdir(Configs.MountDir+"/files", 0755) // Creo el dir files
 		if errrr != nil {
 			panic("Error al crear el directorio FILES")
 		}
@@ -50,7 +50,7 @@ func Inicializar_Filesystem(logger *slog.Logger) {
 		}
 
 		if !Verificar_Si_Existe(Configs.MountDir + "/files") {
-			errrr := os.Mkdir(Configs.MountDir+"/files", 0775) // Creo el dir files
+			errrr := os.Mkdir(Configs.MountDir+"/files", 0755) // Creo el dir files
 			if errrr != nil {
 				panic("Error al crear el directorio FILES")
 			}
