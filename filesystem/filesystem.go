@@ -6,6 +6,7 @@ import (
 
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/filesystem/utils"
+
 	// "github.com/sisoputnfrba/tp-golang/utils/client"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
 )
@@ -21,6 +22,8 @@ func main() {
 	logger := logging.Iniciar_Logger("filesystem.log", utils.Configs.LogLevel)
 
 	logger.Info("Logger iniciado")
+
+	utils.Inicializar_Filesystem(logger)
 
 	// Iniciar filesystem como server
 	server.Iniciar_cpu(logger)
