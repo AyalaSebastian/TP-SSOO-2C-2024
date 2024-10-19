@@ -11,15 +11,15 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-var ColaNew []types.PCB   //Cola de procesos nuevos (Manejada por FIFO)
-var ColaReady []types.TCB // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
+var ColaNew []types.ProcesoNew //Cola de procesos nuevos (Manejada por FIFO)
+var ColaReady []types.TCB      // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
 var ColaBlocked []utils.Bloqueado
 var ColaExit []types.TCB //Cola de procesos finalizados
 var ColaIO []utils.SolicitudIO
 var MapColasMultinivel map[int][]types.TCB
 
 func Inicializar_colas() {
-	ColaNew = []types.PCB{}
+	ColaNew = []types.ProcesoNew{}
 	ColaReady = []types.TCB{}
 	ColaBlocked = []utils.Bloqueado{}
 	ColaExit = []types.TCB{}
@@ -30,23 +30,51 @@ func Inicializar_colas() {
 // Acá para mi hay que mandar el path a memoria para que saque las instrucciones del archivo de pseudocódigo y acá mismo armar el PCB con el TCB y todo
 func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logger) {
 	pcb := generadores.Generar_PCB()
-	utils.MapaPCB[pcb.PID] = pcb // Guardo el PCB en el mapa de PCBs3
+	utils.MapaPCB[pcb.PID] = pcb // Guardo el PCB en el mapa de PCBs
 	logger.Info(fmt.Sprintf("## (%d:0) Se crea el proceso - Estado: NEW", pcb.PID))
 	if len(ColaNew) == 0 {
 		// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
-		parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio}
-		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
+		if !Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger) {
+			// Si no se pudo inicializar el proceso, se encola en ColaNew
+			new := types.ProcesoNew{PCB: pcb, Pseudo: pseudo, Tamanio: tamanio, Prioridad: prioridad}
+			utils.Encolar(&ColaNew, new)
+		}
+	} else {
+		// Si ya hay otros procesos esperando, simplemente encolar
+		new := types.ProcesoNew{PCB: pcb, Pseudo: pseudo, Tamanio: tamanio, Prioridad: prioridad}
+		utils.Encolar(&ColaNew, new)
+	}
+}
 
-		if success {
-			tcb := generadores.Generar_TCB(&pcb, prioridad)
-			utils.Encolar(&ColaReady, tcb)
-			// tcb.Estado = "READY" // No se si es necesario el poner estado a los TCBs, ya que el estado va a estar dado por la cola en la que se encuentra
-			logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
-		} else {
-			logger.Error("No se pudo asignar espacio en memoria para el proceso")
-			utils.Encolar(&ColaNew, pcb)
-			// Acá para mi va un semáforo que bloquee el proceso hasta que finalice un proceso y cuando finalice se desbloquee para ejecutar nuevamente
-			// Crear_Proceso(pseudo, tamanio, prioridad, logger)
+func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad int, logger *slog.Logger) bool {
+	// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
+	parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio}
+	success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
+
+	if success {
+		// Si se asigna espacio, se crea el TCB 0 y se pasa a READY
+		tcb := generadores.Generar_TCB(&pcb, prioridad)
+		utils.MapaPCB[pcb.PID] = pcb // Actualizo el PCB en el mapa de PCBs (nose si está bien asi o abria que agregar unicamente el tcb y no sobreescribir)
+		utils.Encolar(&ColaReady, tcb)
+		logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
+
+		// Desbloquear el planificador para procesar el hilo en READY
+		utils.Planificador.Unlock()
+		return true
+	}
+
+	// Si no hay espacio en memoria, devolver false
+	logger.Error("No se pudo asignar espacio en memoria para el proceso")
+	return false
+}
+
+func Reintentar_procesos(logger *slog.Logger) {
+	if len(ColaNew) > 0 {
+		// Intentar inicializar el primer proceso en ColaNew
+		new := ColaNew[0]
+		if Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger) {
+			// Si se inicializa correctamente, quitarlo de ColaNew
+			utils.Desencolar(&ColaNew)
 		}
 	}
 }
@@ -160,15 +188,15 @@ func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
 
 func FIFO(logger *slog.Logger) {
 	for {
-		// mutex.Lock()
+		utils.Planificador.Lock()
 		if utils.Execute != nil { // Si hay un proceso en ejecución, no hacer nada
-			// mutex.Unlock()
+			utils.Planificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
 		// Si no hay nada en la cola de ready, no hacer nada
 		if len(ColaReady) == 0 {
-			// mutex.Unlock()
+			utils.Planificador.Lock()
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
@@ -181,7 +209,7 @@ func FIFO(logger *slog.Logger) {
 			TID: proximo.TID,
 		}
 		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-		// mutex.Unlock()
+		utils.Planificador.Unlock()
 	}
 }
 
