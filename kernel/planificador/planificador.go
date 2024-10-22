@@ -87,8 +87,8 @@ func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 	if success {
 		OK := utils.Enviar_proceso_a_exit(pid, &ColaReady, &ColaBlocked, &ColaExit, logger)
 		if OK {
-
 			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", pid))
+			Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
 		} else {
 			logger.Error("Algo salió mal en Memoria al querer finalizar el proceso")
 		}
@@ -143,6 +143,7 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
 
 	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
+	Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
 }
 
 // Función que procesa las solicitudes de E/S de la cola (Hay que mandarlo con una go routine)
@@ -196,7 +197,7 @@ func FIFO(logger *slog.Logger) {
 		}
 		// Si no hay nada en la cola de ready, no hacer nada
 		if len(ColaReady) == 0 {
-			utils.Planificador.Lock()
+			utils.Planificador.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
