@@ -1,1 +1,3 @@
 
+time=2024-10-23T17:35:46.960-03:00 level=INFO msg="Logger iniciado"
+time=2024-10-23T17:35:46.968-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"

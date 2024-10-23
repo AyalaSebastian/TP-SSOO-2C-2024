@@ -5,14 +5,33 @@ import (
 
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
-	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-func Nueva_Memoria() *types.ContextoEjecucion {
+func main() {
+	// Inicializamos la configuracion y el logger
+	utils.Configs = utils.Iniciar_configuracion("config.json")
+	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
+
+	// Inicializamos la memoria (Lo levantamos como servidor)
+	utils.Iniciar_memoria(logger)
+
+	memory := Inicializar_Memoria()
+
+}
+
+//make([]byte, TamMemoria)
+/*
+func Inicializamos() *types.ContextoEjecucion {
 	return &types.ContextoEjecucion{
-		RegCPU: make(map[int]*types.RegCPU)
+		types.UpdateMemoria.Registros: make([]byte, utils.Configs.MemorySize),
 	}
 }
+*/
+
+func Inicializar_Memoria() []byte {
+	return make([]byte, utils.Configs.MemorySize)
+}
+
 func Nuevo_Hilo(tid int, base uint32, limite uint32) {
 	registros[tid] = &RegCPU{
 		PC:     0,
@@ -61,12 +80,7 @@ func Update_Contexto(pid uint32, tid uint32) {
 	return
 }
 
-func main() {
-	// Inicializamos la configuracion y el logger
-	utils.Configs = utils.Iniciar_configuracion("config.json")
-	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
-
-	// Inicializamos la memoria (Lo levantamos como servidor)
-	utils.Iniciar_memoria(logger)
-	memoria := Nueva_Memoria()
-}
+//PREGUNTAS PARA SOPORTE:
+//COMO REALIZAR EL ARCHIVO DE PSEUDOCODIGO
+//ARREGLAR FUNCION INICIAR MEMORIA
+// que seria : partitions": [512, 16, 32, 16, 256, 64, 128],

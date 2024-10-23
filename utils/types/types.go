@@ -99,3 +99,23 @@ type UpdateMemoria struct {
 	TID    int    `json:"tid"`
 	RegCPU RegCPU `json:"regCPU"` // Nuevos valores de los registros a actualizar
 }
+
+type ContextoEjecucionPID struct {
+	PID    int    `json:"pid"`
+	Base   uint32 `json:"base"`
+	Limite uint32 `json:"limite"`
+}
+
+type ContextoEjecucionTID struct {
+	TID                int               `json:"tid"`
+	PC                 uint32            `json:"pc"` // Program Counter (Proxima instruccion a ejecutar)
+	AX                 uint32            `json:"ax"` // Registro Numerico de proposito general
+	BX                 uint32            `json:"bx"` // Registro Numerico de proposito general
+	CX                 uint32            `json:"cx"` // Registro Numerico de proposito general
+	DX                 uint32            `json:"dx"` // Registro Numerico de proposito general
+	EX                 uint32            `json:"ex"` // Registro Numerico de proposito general
+	FX                 uint32            `json:"fx"` // Registro Numerico de proposito general
+	GX                 uint32            `json:"gx"` // Registro Numerico de proposito general
+	HX                 uint32            `json:"hx"` // Registro Numerico de proposito general
+	LISTAINSTRUCCIONES map[string]string `json:"LISTAINSTRUCCIONES"`
+}

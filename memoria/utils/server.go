@@ -20,6 +20,11 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
 	mux.HandleFunc("POST /memory-dump", Memory_dump(logger))
+
+	// Comunicacion con CPU
+	//pasa el contexto de ejecucion a cpu
+	mux.HandleFunc("POST /contexto", Obtener_Contexto(logger))
+
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
 }
@@ -146,7 +151,8 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// Coms con CPU
+// Comunicacion con CPU
+
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
         var req
@@ -164,6 +170,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+//pasa el contexto de ejecucion a cpu
 func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.RegCPU
