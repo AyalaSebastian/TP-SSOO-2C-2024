@@ -16,15 +16,14 @@ import (
 func Iniciar_cpu(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
-	// Endpoints
 	mux.HandleFunc("/mensaje", server.Recibir_handshake(logger))
+
+	// Endpoints de kernel
 	mux.HandleFunc("POST /EJECUTAR_KERNEL", WAIT_FOR_TID_PID(logger))
 	mux.HandleFunc("POST /INTERRUPCION_FIN_QUANTUM", ReciboInterrupcionTID(logger))
+	mux.HandleFunc("POST /INTERRUPT", ReciboInterrupcionTID(logger))
 
 	//mux.HandleFunc("POST /comunicacion-memoria", ComunicacionMemoria(logger))
-
-	mux.HandleFunc("POST /TID_PID", WAIT_FOR_TID_PID(logger))
-	mux.HandleFunc("POST /INTERRUPT", ReciboInterrupcionTID(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 

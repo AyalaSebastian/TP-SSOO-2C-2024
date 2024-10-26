@@ -15,15 +15,25 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
 	// Endpoints
-	mux.HandleFunc("POST /crear-proceso", Crear_proceso(logger))
-	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", Finalizar_proceso(logger))
+	mux.HandleFunc("POST /CREAR-PROCESO", Crear_proceso(logger))
+	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", Finalizar_proceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
-	mux.HandleFunc("POST /memory-dump", Memory_dump(logger))
+	mux.HandleFunc("POST /MEMORY-DUMP", Memory_dump(logger))
+
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
-	mux.HandleFunc("POST /contexto", Obtener_Contexto(logger))
+	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
+
+	//envia proxima instr a cpu fase fetch
+	mux.HandleFunc("GET /instruccion /{tid}/{pc}", Obtener_Instrucción(logger))
+
+	//recibo msj de cpu para que haga la instruccion read mem
+	mux.HandleFunc("POST /read_mem", Read_Mem(logger))
+
+	//recibo msj de cpu para que haga la instruccion write mem
+	mux.HandleFunc("POST /write_mem", Write_Mem(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 
@@ -110,6 +120,7 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
+		
 		// Aca va toda la logica para finalizar el hilo
 
 		// En caso de haberse finalizado el hilo
@@ -171,8 +182,11 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 }
 
 //pasa el contexto de ejecucion a cpu
-func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
+func Enviar_proxima_instruccion(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var tid types.ContextoEjecucionTID
+		tid := r.PathValue("tid")
+		pc := r.PathValue("pc")
 		var req types.RegCPU
         err := json.NewDecoder(r.Body).Decode(&req)
 
@@ -185,10 +199,8 @@ func Obtener_Contexto(logger *slog.Logger) http.HandlerFunc {
             http.Error(w, err.Error(), http.StatusNotFound)
             return
         }
-        ipCPU := "127.0.0.1" //Cambiar por referencia a archivo config
-        puertoCPU := 8004
-
-
+        ipCPU := Config.IpCPU //Cambiar por referencia a archivo config
+        puertoCPU := Config.PortCPU 
 
 
         exito := client.Enviar_Body(regCPU, conf, puertoCPU, endpointCPU, logger)

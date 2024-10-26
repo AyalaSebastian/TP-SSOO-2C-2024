@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
@@ -11,22 +13,16 @@ func main() {
 	// Inicializamos la configuracion y el logger
 	utils.Configs = utils.Iniciar_configuracion("config.json")
 	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
+	var instrucciones = []
 
 	// Inicializamos la memoria (Lo levantamos como servidor)
 	utils.Iniciar_memoria(logger)
 
 	memory := Inicializar_Memoria()
 
-}
+	leerArchivoPseudoCodigo(tid,utils.Configs.InstructionPath,pc,instrucciones)
 
-//make([]byte, TamMemoria)
-/*
-func Inicializamos() *types.ContextoEjecucion {
-	return &types.ContextoEjecucion{
-		types.UpdateMemoria.Registros: make([]byte, utils.Configs.MemorySize),
-	}
 }
-*/
 
 func Inicializar_Memoria() []byte {
 	return make([]byte, utils.Configs.MemorySize)
@@ -64,7 +60,7 @@ func Update_Contexto(pid uint32, tid uint32) {
 	if !existe {
 		return nil, logger.Error(fmt.Sprintf("El hilo con TID %d no existe para el proceso PID %d", tid, pid))
 	}
-	regCPU.AX = req.RegCPU.AX
+	regCPU.AX = RegCPU.AX
 	regCPU.BX = req.RegCPU.BX
 	regCPU.CX = req.RegCPU.CX
 	regCPU.DX = req.RegCPU.DX
@@ -78,6 +74,28 @@ func Update_Contexto(pid uint32, tid uint32) {
 
 	logger.Info(fmt.Sprintf("## Contexto actualizado (%d : %d)", pid, tid))
 	return
+}
+
+func leerArchivoPseudoCodigo(tid uint32,pc int,archivo string,lista_instrucciones [string]) [string]{
+	file, err := os.Open(archivo)
+	if err != nil {
+		fmt.Println("Error al abrir el archivo:", err)
+		return
+	}
+
+	// Crear un scanner para leer línea por línea
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		instruccion := scanner.Text() // Obtener la línea actual
+		instrucciones = append(lista_instrucciones, instruccion)     // Hacer algo con la línea (imprimirla en este caso)
+	}
+
+	// Manejar posibles errores durante la lectura
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error al leer el archivo:", err)
+	}
+	defer file.Close()
+	Client.Obtener_Instrucción(tid,lista_instrucciones,pc)
 }
 
 //PREGUNTAS PARA SOPORTE:
