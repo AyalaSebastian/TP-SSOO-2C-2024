@@ -12,6 +12,31 @@ func Encolar[T any](cola *[]T, elemento T) {
 	*cola = append(*cola, elemento)
 }
 
+// Esta se usa para encolar en la cola de ready, ya que se necesita saber la prioridad del proceso
+func Encolar_ColaReady(colaReady map[int][]types.TCB, tcb types.TCB) {
+	if Configs.SchedulerAlgorithm == "CMN" {
+		colaReady[tcb.Prioridad] = append(colaReady[tcb.Prioridad], tcb)
+	} else {
+		colaReady[0] = append(colaReady[0], tcb)
+	}
+}
+
+// Sirve para desencolar un TCB de la cola de ready indicando su prioridad (para FIFO y PRIORIDADES usamos 0); Retorna el elemento y un booleano que indica si fue exitoso
+func Desencolar_TCB(colasReady map[int][]types.TCB, prioridad int) (*types.TCB, bool) {
+	// Verifica si existe una cola para la prioridad dada
+	cola, existe := colasReady[prioridad]
+	if !existe || len(cola) == 0 {
+		return nil, false // No hay TCBs en la cola para esta prioridad
+	}
+
+	tcb := cola[0]
+
+	// Actualiza la cola sacando el primer elemento
+	colasReady[prioridad] = cola[1:]
+
+	return &tcb, true
+}
+
 // Desencola un elemento de la cola y retorna ese elemento
 func Desencolar[T any](cola *[]T) T {
 	if len(*cola) == 0 {
