@@ -82,7 +82,7 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 			desbloqueado := utils.Desencolar(&planificador.ColaBlocked)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
-			utils.Encolar(&planificador.ColaReady, tcb)
+			utils.Encolar_ColaReady(planificador.ColaReady, tcb)
 		} else {
 			desbloqueado := utils.Desencolar(&planificador.ColaBlocked)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
@@ -397,11 +397,11 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 		if magic.Motivo == "FIN QUANTUM" {
-			utils.Encolar(&planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
-			//planificadorCortoPlazo.Unlock()
+			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+			utils.Planificador.Unlock()
 		} else {
-			utils.Encolar(&planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID]) // Esto probablente haya que cambiarlo ya que si se desaloja por prioridad va a ir a una cola especifica
-			//planificadorCortoPlazo.Unlock()
+			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID]) // Esto probablente haya que cambiarlo ya que si se desaloja por prioridad va a ir a una cola especifica
+			utils.Planificador.Unlock()
 		}
 
 		w.WriteHeader(http.StatusOK)

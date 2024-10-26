@@ -42,20 +42,25 @@ func Obtener_PCB_por_PID(pid uint32) *types.PCB {
 	return &pcb
 }
 
-// En caso de querer eliminar de Block, usar la otra func
-func Eliminar_TCBs_de_cola(pcb *types.PCB, cola *[]types.TCB, logger *slog.Logger) {
-	var nuevaCola []types.TCB
-	// Itera la cola buscando los TCBs que pertenecen al PCB actual
-	for _, tcb := range *cola {
-		if tcb.PID != pcb.PID {
-			nuevaCola = append(nuevaCola, tcb) // Mantiene los TCBs que no pertenecen al PCB actual
-		} else {
-			logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
+// Elimina los TCBs del PCB de las multiples colas de Ready (no importa cual sea el algoritmo de planificación)
+func Eliminar_TCBs_de_cola_Ready(pcb *types.PCB, colas map[int][]types.TCB, logger *slog.Logger) {
+	// Itera sobre cada cola de prioridad
+	for prioridad, cola := range colas {
+		var nuevaCola []types.TCB
+		// Itera la cola buscando los TCBs que pertenecen al PCB actual
+		for _, tcb := range cola {
+			if tcb.PID != pcb.PID {
+				nuevaCola = append(nuevaCola, tcb) // Mantiene los TCBs que no pertenecen al PCB actual
+			} else {
+				logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola de prioridad %d", tcb.TID, tcb.PID, prioridad))
+			}
 		}
+		// Actualiza la cola en el mapa de colas
+		colas[prioridad] = nuevaCola
 	}
-	*cola = nuevaCola
 }
 
+// Elimina los TCBs del PCB de la cola de BLOCKED
 func Eliminar_TCBs_de_cola_Block(pcb *types.PCB, cola *[]Bloqueado, logger *slog.Logger) {
 	var nuevaCola []Bloqueado
 	// Itera la cola buscando los TCBs que pertenecen al PCB actual
@@ -84,7 +89,7 @@ func Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(tcb Bloqueado, cola *[]Bloqueado
 }
 
 // Busca los TCBs del PCB en las colas de Ready y Blocked y los mueve a la cola de Exit
-func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]Bloqueado, colaExit *[]types.TCB, logger *slog.Logger) bool {
+func Enviar_proceso_a_exit(pid uint32, colaReady map[int][]types.TCB, colaBlocked *[]Bloqueado, colaExit *[]types.TCB, logger *slog.Logger) bool {
 
 	pcb := Obtener_PCB_por_PID(pid)
 	if pcb == nil {
@@ -93,9 +98,8 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]Bl
 	}
 
 	// Elimina TCBs de la cola de ready y blocked si es que hubiera
-	Eliminar_TCBs_de_cola(pcb, colaReady, logger)
+	Eliminar_TCBs_de_cola_Ready(pcb, colaReady, logger)
 	Eliminar_TCBs_de_cola_Block(pcb, colaBlocked, logger)
-	// Eliminar_TCBs_de_cola(pcb, colaBlocked, logger)
 
 	// Mueve todos los TCBs del PCB a la cola de exit
 	for _, tcb := range pcb.TCBs {
@@ -113,7 +117,7 @@ func Enviar_proceso_a_exit(pid uint32, colaReady *[]types.TCB, colaBlocked *[]Bl
 // ! Si anda mal probar ponerle los punteors a las colas y el map -- Revisar los punteros de las funciones -- Revisar la asignacion de valores
 // Se lo saque porque en go los map, slices y punteros ya son referencias, por lo cual
 // no es necesario pasarlos como punteros
-func Librerar_Bloqueados_De_Hilo(colaBloqueados *[]Bloqueado, colaReady *[]types.TCB, tcb types.TCB, logger *slog.Logger) {
+func Librerar_Bloqueados_De_Hilo(colaBloqueados *[]Bloqueado, colaReady map[int][]types.TCB, tcb types.TCB, logger *slog.Logger) {
 
 	for _, bloqueado := range *colaBloqueados {
 
@@ -126,7 +130,7 @@ func Librerar_Bloqueados_De_Hilo(colaBloqueados *[]Bloqueado, colaReady *[]types
 			num32 := uint32(num)
 			if num32 == tcb.TID {
 				Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(bloqueado, colaBloqueados, logger)
-				Encolar(colaReady, MapaPCB[bloqueado.PID].TCBs[bloqueado.TID])
+				Encolar_ColaReady(colaReady, MapaPCB[bloqueado.PID].TCBs[bloqueado.TID])
 				logger.Info(fmt.Sprintf("TCB con TID %d y PID %d, Bloqueado por THREAD_JOIN movido a la cola de Ready", bloqueado.TID, bloqueado.PID))
 			}
 		} else if bloqueado.PID == tcb.PID && bloqueado.Motivo == Mutex {
@@ -134,7 +138,7 @@ func Librerar_Bloqueados_De_Hilo(colaBloqueados *[]Bloqueado, colaReady *[]types
 			if MapaPCB[tcb.PID].Mutexs[bloqueado.QuienFue] == strconv.Itoa(int(tcb.TID)) {
 				MapaPCB[bloqueado.PID].Mutexs[bloqueado.QuienFue] = strconv.Itoa(int(bloqueado.TID))
 				Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(bloqueado, colaBloqueados, logger)
-				Encolar(colaReady, MapaPCB[bloqueado.PID].TCBs[bloqueado.TID])
+				Encolar_ColaReady(colaReady, MapaPCB[bloqueado.PID].TCBs[bloqueado.TID])
 				logger.Info(fmt.Sprintf("TCB con TID %d y PID %d, Bloqueado por Mutex movido a la cola de Ready", bloqueado.TID, bloqueado.PID))
 			}
 		}

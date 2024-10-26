@@ -11,8 +11,8 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-var ColaNew []types.ProcesoNew //Cola de procesos nuevos (Manejada por FIFO)
-var ColaReady []types.TCB      // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
+var ColaNew []types.ProcesoNew    //Cola de procesos nuevos (Manejada por FIFO)
+var ColaReady map[int][]types.TCB // Aca tengo dudas de como es, no me queda claro si las colas son distintas para PCB y TCB
 var ColaBlocked []utils.Bloqueado
 var ColaExit []types.TCB //Cola de procesos finalizados
 var ColaIO []utils.SolicitudIO
@@ -20,7 +20,7 @@ var MapColasMultinivel map[int][]types.TCB
 
 func Inicializar_colas() {
 	ColaNew = []types.ProcesoNew{}
-	ColaReady = []types.TCB{}
+	ColaReady = make(map[int][]types.TCB)
 	ColaBlocked = []utils.Bloqueado{}
 	ColaExit = []types.TCB{}
 	ColaIO = []utils.SolicitudIO{}
@@ -55,7 +55,7 @@ func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad in
 		// Si se asigna espacio, se crea el TCB 0 y se pasa a READY
 		tcb := generadores.Generar_TCB(&pcb, prioridad)
 		utils.MapaPCB[pcb.PID] = pcb // Actualizo el PCB en el mapa de PCBs (nose si está bien asi o abria que agregar unicamente el tcb y no sobreescribir)
-		utils.Encolar(&ColaReady, tcb)
+		utils.Encolar_ColaReady(ColaReady, tcb)
 		logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 
 		// Desbloquear el planificador para procesar el hilo en READY
@@ -85,7 +85,7 @@ func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 	success := client.Enviar_QueryPath(pid, utils.Configs.IpMemory, utils.Configs.PortMemory, "finalizar-proceso", "PATCH", logger)
 
 	if success {
-		OK := utils.Enviar_proceso_a_exit(pid, &ColaReady, &ColaBlocked, &ColaExit, logger)
+		OK := utils.Enviar_proceso_a_exit(pid, ColaReady, &ColaBlocked, &ColaExit, logger)
 		if OK {
 			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", pid))
 			Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
@@ -118,7 +118,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 	}
 
 	// Ingresar a la cola de READY
-	utils.Encolar(&ColaReady, tcb) //! Vamos a tener que modificar esto por el nivel de prioridad
+	utils.Encolar_ColaReady(ColaReady, tcb) //! Vamos a tener que modificar esto por el nivel de prioridad
 
 	logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 }
@@ -137,7 +137,7 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	logger.Info("Se comunico a memoria la finalizacion del hilo")
 
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
-	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, &ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
+	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
 
 	// Quitar de la lista de los TCBs del PCB
 	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
@@ -159,7 +159,7 @@ func Procesar_cola_IO(colaIO *[]utils.SolicitudIO, logger *slog.Logger) {
 			desbloqueado := utils.Desencolar(&ColaBlocked)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
-			utils.Encolar(&ColaReady, tcb)
+			utils.Encolar_ColaReady(ColaReady, tcb)
 			logger.Info(fmt.Sprintf("E/S completada para TID %d", solicitud.TID))
 		} else {
 			// No hay solicitudes en la cola, esperar un tiempo antes de volver a chequear
@@ -196,14 +196,14 @@ func FIFO(logger *slog.Logger) {
 			continue
 		}
 		// Si no hay nada en la cola de ready, no hacer nada
-		if len(ColaReady) == 0 {
+		if len(ColaReady[0]) == 0 {
 			utils.Planificador.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
 		// Lo sacamos de la cola de Ready
-		proximo := utils.Desencolar(&ColaReady)
+		proximo, _ := utils.Desencolar_TCB(ColaReady, 0)
 		// Lo ponemos a "ejecutar"
 		utils.Execute = &utils.ExecuteActual{
 			PID: proximo.PID,
@@ -216,11 +216,11 @@ func FIFO(logger *slog.Logger) {
 
 func PRIORIDADES(logger *slog.Logger) {
 	for {
-		// mutex.Lock()
-		if len(ColaReady) > 0 {
-			siguienteHilo := ColaReady[0]
+		utils.Planificador.Lock()
+		if len(ColaReady[0]) > 0 {
+			siguienteHilo := ColaReady[0][0]
 			// Vamos buscando el hilo de menor prioridad (esto a su vez cumple que si hay otro de igual prioridad, desempata por el primero que llegó)
-			for _, tcb := range ColaReady {
+			for _, tcb := range ColaReady[0] {
 				if tcb.Prioridad < siguienteHilo.Prioridad {
 					siguienteHilo = tcb
 				}
@@ -238,17 +238,17 @@ func PRIORIDADES(logger *slog.Logger) {
 					TID: siguienteHilo.TID,
 				}
 				// Remueve el hilo seleccionado de la cola de READY
-				for i, tcb := range ColaReady {
+				for i, tcb := range ColaReady[0] {
 					if tcb.TID == siguienteHilo.TID {
-						ColaReady = append(ColaReady[:i], ColaReady[i+1:]...)
+						ColaReady[0] = append(ColaReady[0][:i], ColaReady[0][i+1:]...)
 						break
 					}
 				}
 				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-				// mutex.Unlock()
+				utils.Planificador.Unlock()
 			}
 		} else { // En caso de que ningun proceso tenga mayor prioridad que el que está ejecutando se libera el mutex
-			// mutex.Unlock()
+			utils.Planificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 		}
 	}
@@ -257,12 +257,12 @@ func PRIORIDADES(logger *slog.Logger) {
 func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 	for {
-
+		utils.Planificador.Lock()
 		proximo, hayAlguien := seleccionarSiguienteHilo()
 
 		// Si no hay nadie en la cola de ready
 		if !hayAlguien {
-			// mutex.Unlock()
+			utils.Planificador.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
@@ -272,8 +272,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		if utils.Execute == nil || proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
 			if utils.Execute != nil {
 				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
-				// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
-
+				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 			}
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
 			utils.Execute = &utils.ExecuteActual{
@@ -288,13 +287,14 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 			timer := time.NewTimer(quantum)
 
 			//! No es la mejor implementacion por la carga de la cpu
+		outer:
 			for {
 				select {
 				case <-timer.C: // Aca lo que pasa cuando se finaliza el quantum
 					logger.Info(fmt.Sprintf("## (%d:%d) Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
 					Meter_A_Planificar_Colas_Multinivel(utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID], logger)
 					utils.Execute = nil
-					break
+					break outer
 				default:
 					// Aquí verificamos el estado del hilo
 					_, existe := utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID]
@@ -307,7 +307,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 					time.Sleep(10 * time.Millisecond) // Pausa breve para evitar un bucle apretado
 				}
 			}
-			// mutex.Unlock()
+			utils.Planificador.Unlock()
 		}
 	}
 }
@@ -315,21 +315,22 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 func seleccionarSiguienteHilo() (types.TCB, bool) {
 
 	// Recorremos las colas desde la de mayor prioridad hasta la menor
-	for prioridad := 0; prioridad <= len(MapColasMultinivel); prioridad++ {
-		if len(MapColasMultinivel[prioridad]) > 0 {
+	for prioridad := 0; prioridad <= len(ColaReady); prioridad++ {
+		if len(ColaReady[prioridad]) > 0 {
 			// Tomar el primer hilo de la cola
-			siguienteHilo := MapColasMultinivel[prioridad][0]
+			siguienteHilo := ColaReady[prioridad][0]
 
 			// Removerlo de la cola y colocarlo al final
-			MapColasMultinivel[prioridad] = append(MapColasMultinivel[prioridad][1:], siguienteHilo)
+			ColaReady[prioridad] = append(ColaReady[prioridad][1:], siguienteHilo) // ESTO HAY QUE MODIFICARLO, ESTA MAL
 			return siguienteHilo, true
 		}
 	}
 	return types.TCB{}, false // No hay hilos disponibles
 }
 
+// No le veo sentido a esta funcion ya que Encolar_ColaReady ya hace lo mismo
 func Meter_A_Planificar_Colas_Multinivel(tcb types.TCB, logger *slog.Logger) {
 
 	// Agrego el tcb a la cola correspondiente, si no existe la cola se crea automáticamente
-	MapColasMultinivel[tcb.Prioridad] = append(MapColasMultinivel[tcb.Prioridad], tcb)
+	ColaReady[tcb.Prioridad] = append(ColaReady[tcb.Prioridad], tcb)
 }
