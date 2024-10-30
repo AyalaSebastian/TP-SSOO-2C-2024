@@ -137,6 +137,7 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+/*
 func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//		decoder := json.NewDecoder(r.Body)
@@ -147,8 +148,8 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 				w.Write([]byte("Error al decodificar mensaje"))
 				return
 			}
-		*/
-        var req
+		
+        var req a
         err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
@@ -161,6 +162,7 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 		w.Write([]byte("OK"))
 	}
 }
+*/
 
 // Comunicacion con CPU
 
@@ -246,18 +248,46 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 
 	}
 }
-func Write_Mem(logger *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-    var req
-        err := json.NewDecoder(r.Body).Decode(&req)
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+//recibo 4 bytes y los escribo a partir del byte enviado como direccion fisica 
+//dentro de la Memoria de Usuario y se responderá como OK.
 
-        w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+// Función Write_Mem para manejar la escritura en la memoria a partir de la API
+func Write_Mem(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+    // Estructura para recibir los datos del JSON
+    var requestData struct {
+        DireccionFisica uint32 `json:"direccion_fisica"`
+        Valor           uint32 `json:"valor"`
+        TID             uint32 `json:"tid"`
+    }
 
-	}
+    // Decodificar el JSON del cuerpo de la solicitud
+    err := json.NewDecoder(r.Body).Decode(&requestData)
+    if err != nil {
+        logger.Error("Error al decodificar JSON en Write_Mem", slog.Any("error", err))
+        http.Error(w, "Error al decodificar JSON", http.StatusBadRequest)
+        return
+    }
+
+    // Validar si la dirección física está dentro de los límites de la memoria
+    if requestData.DireccionFisica > uint32(len(memoria)-4) { // -4 para no salir del límite al escribir 4 bytes
+        logger.Error("Dirección física fuera de rango")
+        http.Error(w, "Dirección física fuera de rango", http.StatusBadRequest)
+        return
+    }
+
+    // Escribir el valor en little-endian en la memoria
+    binary.LittleEndian.PutUint32(memoria[requestData.DireccionFisica:], requestData.Valor)
+
+    // Log de escritura en memoria de usuario
+    logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
+        requestData.TID, requestData.DireccionFisica, 4))
+
+    // Confirmar que la operación fue exitosa
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("OK"))
+
+    // Log de escritura exitosa
+    logger.Info(fmt.Sprintf("Escritura en memoria exitosa: TID %d - Dirección Física: %d - Valor: %d",
+        requestData.TID, requestData.DireccionFisica, requestData.Valor))
 }
