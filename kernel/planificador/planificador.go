@@ -142,6 +142,9 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	// Quitar de la lista de los TCBs del PCB
 	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
 
+	// Mandar a la cola de exit
+	utils.Encolar(&ColaExit, utils.MapaPCB[PID].TCBs[TID])
+
 	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
 	Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
 }

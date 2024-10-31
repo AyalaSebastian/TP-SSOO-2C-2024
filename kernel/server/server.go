@@ -264,6 +264,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			utils.Execute = nil
 			return
 		}
 
@@ -293,6 +294,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			utils.Execute = nil
 			return
 		}
 
@@ -320,6 +322,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			utils.Execute = nil
 			return
 		}
 
