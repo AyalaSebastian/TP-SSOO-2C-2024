@@ -77,20 +77,11 @@ type ContextoEjecucion struct {
 	Registros RegCPU `json:"registros"`
 }
 
+/*
 type Particion struct {
 	Registros RegCPU `json:"registros"`
 }
-
-type CPU struct {
-	Contexto          ContextoEjecucion `json:"contexto"`
-	MMU               MMU               `json:"mmu"`
-	Memoria           Memoria           `json:"memoria"`
-	InstruccionActual string            `json:"instruccion_actual"`
-}
-type MMU struct {
-}
-type Memoria struct {
-}
+*/
 
 // --------------------------------- Memoria ---------------------------------
 
@@ -118,4 +109,10 @@ type ContextoEjecucionTID struct {
 	GX                 uint32            `json:"gx"` // Registro Numerico de proposito general
 	HX                 uint32            `json:"hx"` // Registro Numerico de proposito general
 	LISTAINSTRUCCIONES map[string]string `json:"LISTAINSTRUCCIONES"`
+}
+
+// Estructura para representar una partición de memoria
+type Particion struct {
+	Base   uint32
+	Limite uint32
 }

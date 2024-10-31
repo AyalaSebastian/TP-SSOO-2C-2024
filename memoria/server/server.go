@@ -1,12 +1,15 @@
-package utils
+package server
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/sisoputnfrba/tp-golang/memoria/client"
+	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -20,7 +23,6 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", Memory_dump(logger))
-
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
@@ -120,7 +122,6 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		
 		// Aca va toda la logica para finalizar el hilo
 
 		// En caso de haberse finalizado el hilo
@@ -137,81 +138,77 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-/*
 func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//		decoder := json.NewDecoder(r.Body)
-		/*
-			if err != nil {
-				logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("Error al decodificar mensaje"))
-				return
-			}
-		
-        var req a
-        err := json.NewDecoder(r.Body).Decode(&req)
+		var err error
+		var req a
+		err = json.NewDecoder(r.Body).Decode(&req)
+
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Error al decodificar mensaje"))
+			return
+		}
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-
-        w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	}
 }
-*/
 
 // Comunicacion con CPU
 
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-        var req
-        err := json.NewDecoder(r.Body).Decode(&req)
+		var req a
+		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-        Actualizar_Contexto(req.PID, req.TID)
-        
-        w.WriteHeader(http.StatusOK)
-        w.Write([]byte("OK"))
-	
+		Actualizar_Contexto(req.PID, req.TID)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+
 	}
 }
 
-//pasa el contexto de ejecucion a cpu
+// pasa el contexto de ejecucion a cpu
 func Enviar_proxima_instruccion(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var tid types.ContextoEjecucionTID
 		tid := r.PathValue("tid")
 		pc := r.PathValue("pc")
 		var req types.RegCPU
-        err := json.NewDecoder(r.Body).Decode(&req)
+		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-        regCPU, err := Ver_Contexto(req.PID, req.TID)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusNotFound)
-            return
-        }
-        ipCPU := Config.IpCPU //Cambiar por referencia a archivo config
-        puertoCPU := Config.PortCPU 
+		regCPU, err := Ver_Contexto(req.PID, req.TID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		ipCPU := Config.IpCPU //Cambiar por referencia a archivo config
+		puertoCPU := Config.PortCPU
 
+		exito := client.Enviar_Body(regCPU, conf, puertoCPU, endpointCPU, logger)
+		if !exito {
+			http.Error(w, "Error al enviar el contexto al CPU", http.StatusInternalServerError)
+			return
+		}
 
-        exito := client.Enviar_Body(regCPU, conf, puertoCPU, endpointCPU, logger)
-        if !exito {
-            http.Error(w, "Error al enviar el contexto al CPU", http.StatusInternalServerError)
-            return
-        }
-        
-        w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 
 	}
@@ -219,14 +216,14 @@ func Enviar_proxima_instruccion(logger *slog.Logger) http.HandlerFunc {
 
 func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-        var req
-        err := json.NewDecoder(r.Body).Decode(&req)
+		var req a
+		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-        w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 
 	}
@@ -234,60 +231,67 @@ func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-        var req
-        err := json.NewDecoder(r.Body).Decode(&req)
+		var req a
+		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-    
-        w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 
 	}
 }
 
-//recibo 4 bytes y los escribo a partir del byte enviado como direccion fisica 
+//recibo 4 bytes y los escribo a partir del byte enviado como direccion fisica
 //dentro de la Memoria de Usuario y se responderá como OK.
 
+// falta hacer la logica con el TID recibido
 // Función Write_Mem para manejar la escritura en la memoria a partir de la API
 func Write_Mem(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
-    // Estructura para recibir los datos del JSON
-    var requestData struct {
-        DireccionFisica uint32 `json:"direccion_fisica"`
-        Valor           uint32 `json:"valor"`
-        TID             uint32 `json:"tid"`
-    }
+	var requestData struct {
+		DireccionFisica uint32 `json:"direccion_fisica"`
+		Valor           uint32 `json:"valor"`
+		TID             uint32 `json:"tid"`
+	}
 
-    // Decodificar el JSON del cuerpo de la solicitud
-    err := json.NewDecoder(r.Body).Decode(&requestData)
-    if err != nil {
-        logger.Error("Error al decodificar JSON en Write_Mem", slog.Any("error", err))
-        http.Error(w, "Error al decodificar JSON", http.StatusBadRequest)
-        return
-    }
+	// Decodificar el JSON
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		logger.Error("Error al decodificar JSON en Write_Mem", slog.Any("error", err))
+		http.Error(w, "Error al decodificar JSON", http.StatusBadRequest)
+		return
+	}
 
-    // Validar si la dirección física está dentro de los límites de la memoria
-    if requestData.DireccionFisica > uint32(len(memoria)-4) { // -4 para no salir del límite al escribir 4 bytes
-        logger.Error("Dirección física fuera de rango")
-        http.Error(w, "Dirección física fuera de rango", http.StatusBadRequest)
-        return
-    }
+	// Verificar si la dirección física está dentro de alguna partición
+	encontrado := false
+	for _, particion := range memsistema.Particiones {
+		if requestData.DireccionFisica >= particion.Base && requestData.DireccionFisica < particion.Base+particion.Limite-4 {
+			encontrado = true
+			break
+		}
+	}
 
-    // Escribir el valor en little-endian en la memoria
-    binary.LittleEndian.PutUint32(memoria[requestData.DireccionFisica:], requestData.Valor)
+	if !encontrado {
+		logger.Error("Dirección física fuera de rango de particiones")
+		http.Error(w, "Dirección física fuera de rango de particiones", http.StatusBadRequest)
+		return
+	}
 
-    // Log de escritura en memoria de usuario
-    logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
-        requestData.TID, requestData.DireccionFisica, 4))
+	// Escribir el valor en little-endian en la memoria
+	binary.LittleEndian.PutUint32(memsistema.Memoria[requestData.DireccionFisica:], requestData.Valor)
 
-    // Confirmar que la operación fue exitosa
-    w.WriteHeader(http.StatusOK)
-    w.Write([]byte("OK"))
+	// Log obligatorio de Escritura en espacio de usuario
+	logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
+		requestData.TID, requestData.DireccionFisica, 4))
 
-    // Log de escritura exitosa
-    logger.Info(fmt.Sprintf("Escritura en memoria exitosa: TID %d - Dirección Física: %d - Valor: %d",
-        requestData.TID, requestData.DireccionFisica, requestData.Valor))
+	// Confirmar la operación
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+
+	// Log de escritura exitosa
+	logger.Info(fmt.Sprintf("Escritura en memoria exitosa: TID %d - Dirección Física: %d - Valor: %d",
+		requestData.TID, requestData.DireccionFisica, requestData.Valor))
 }

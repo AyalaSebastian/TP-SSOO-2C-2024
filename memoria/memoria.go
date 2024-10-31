@@ -1,53 +1,36 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"log/slog"
 
+	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
+	"github.com/sisoputnfrba/tp-golang/memoria/server"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
+	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
 func main() {
 	// Inicializamos la configuracion y el logger
 	utils.Configs = utils.Iniciar_configuracion("config.json")
 	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
-	var instrucciones = []
+	//var instrucciones []string
 
 	// Inicializamos la memoria (Lo levantamos como servidor)
-	utils.Iniciar_memoria(logger)
+	server.Iniciar_memoria(logger)
 
-	memory := Inicializar_Memoria()
+	memsistema.Inicializar_Memoria()
 
-	leerArchivoPseudoCodigo(tid,utils.Configs.InstructionPath,pc,instrucciones)
+	//leerArchivoPseudoCodigo(tid, utils.Configs.InstructionPath, pc, instrucciones)
 
 }
-
-func Inicializar_Memoria() []byte {
-	return make([]byte, utils.Configs.MemorySize)
-}
-
-// Estructura para representar una partición de memoria
-type Particion struct {
-	Base   uint32
-	Limite uint32
-}
-
-// Definición de las particiones fijas
-var particiones = []Particion{
-	{Base: 0, Limite: 512},    // Primera partición: del byte 0 al byte 511
-	{Base: 512, Limite: 16},   // Segunda partición: del byte 512 al 527
-	{Base: 528, Limite: 32},   // Tercera partición: del byte 528 al 559
-	{Base: 560, Limite: 16},   // Cuarta partición: del byte 560 al 575
-	{Base: 576, Limite: 256},  // Quinta partición: del byte 576 al 831
-	{Base: 832, Limite: 64},   // Sexta partición: del byte 832 al 895
-	{Base: 896, Limite: 128},  // Séptima partición: del byte 896 al 1023
-}
-
 
 func Nuevo_Hilo(tid int, base uint32, limite uint32) {
-	registros[tid] = &RegCPU{
+
+	var registros = make(map[int]*types.RegCPU)
+
+	registros[tid] = &types.RegCPU{
 		PC:     0,
 		AX:     0,
 		BX:     0,
@@ -62,10 +45,13 @@ func Nuevo_Hilo(tid int, base uint32, limite uint32) {
 	}
 }
 
-func Ver_Contexto(pid int, tid int) (*RegCPU, error) {
+func Ver_Contexto(pid int, tid int, logger *slog.Logger) (*types.RegCPU, error) {
+
+	var cpuRegisters = make(map[int]*types.RegCPU)
+
 	regCPU, existe := cpuRegisters[tid]
 	if !existe {
-		return nil, logger.Error(fmt.Sprintf("El hilo con TID %d no existe para el proceso PID %d", tid, pid))
+		return nil, fmt.Errorf("El hilo con TID %d no existe para el proceso PID %d", tid, pid)
 	}
 	logger.Info(fmt.Sprintf("## Contexto solicitado (%d : %d)", pid, tid))
 	// Devolver el contexto completo
@@ -73,10 +59,15 @@ func Ver_Contexto(pid int, tid int) (*RegCPU, error) {
 
 }
 
-func Update_Contexto(pid uint32, tid uint32) {
+/*
+func Update_Contexto(pid uint32, tid uint32, logger *slog.Logger) {
+
+	var cpuRegisters = make(map[int]*types.RegCPU)
+
 	regCPU, existe := cpuRegisters[tid]
 	if !existe {
-		return nil, logger.Error(fmt.Sprintf("El hilo con TID %d no existe para el proceso PID %d", tid, pid))
+		logger.Error(fmt.Sprintf("El hilo con TID %d no existe para el proceso PID %d", tid, pid))
+		return
 	}
 	regCPU.AX = RegCPU.AX
 	regCPU.BX = req.RegCPU.BX
@@ -93,7 +84,9 @@ func Update_Contexto(pid uint32, tid uint32) {
 	logger.Info(fmt.Sprintf("## Contexto actualizado (%d : %d)", pid, tid))
 	return
 }
+*/
 
+/*
 func leerArchivoPseudoCodigo(tid uint32,pc int,archivo string,lista_instrucciones [string]) [string]{
 	file, err := os.Open(archivo)
 	if err != nil {
@@ -115,8 +108,10 @@ func leerArchivoPseudoCodigo(tid uint32,pc int,archivo string,lista_instruccione
 	defer file.Close()
 	Client.Obtener_Instrucción(tid,lista_instrucciones,pc)
 }
+*/
 
-//PREGUNTAS PARA SOPORTE:
-//COMO REALIZAR EL ARCHIVO DE PSEUDOCODIGO
-//ARREGLAR FUNCION INICIAR MEMORIA
-// que seria : partitions": [512, 16, 32, 16, 256, 64, 128],
+/*PREGUNTAS PARA SOPORTE:
+de donde vienen el pid y tid que recibe memoria para:
+Se deberá almacenar, por cada PID del sistema, la parte del contexto de ejecución común para el proceso, en este caso, es la requerida para poder traducir las direcciones lógicas a físicas: base y límite.
+Luego, por cada TID del sistema, se tendrán los registros de la CPU propios de cada hilo: AX, BX, CX, DX, EX, FX, GX, HX y PC. Siendo todos ellos inicializados en 0.
+*/
