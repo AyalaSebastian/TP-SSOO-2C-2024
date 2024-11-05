@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
@@ -76,7 +77,7 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 
 func DevolverTIDAlKernel(tid uint32, logger *slog.Logger, endpoint string, motivo string) bool {
 	cliente := &http.Client{}
-	url := fmt.Sprintf("http://%s:%d/%s/%v", "127.0.0.1", 8001, endpoint, tid)
+	url := fmt.Sprintf("http://%s:%d/%s/%v", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint, tid)
 	req, err := http.NewRequest("PATCH", url, nil)
 	if err != nil {
 		return false
@@ -108,7 +109,7 @@ func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logg
 		return false
 	}
 	//ipMemory y portMemory
-	url := fmt.Sprintf("http://%s:%d/%s", "127.0.0.1", 8002, endpoint)
+	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpMemory, utils.Configs.PortMemory, endpoint)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8002))
@@ -133,7 +134,7 @@ func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) b
 		return false
 	}
 
-	url := fmt.Sprintf("http://%s:%d/%s", "127.0.0.1", 8001, endpoint)
+	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8001))

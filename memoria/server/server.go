@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sisoputnfrba/tp-golang/memoria/client"
+	"github.com/sisoputnfrba/tp-golang/cpu/client"
+	"github.com/sisoputnfrba/tp-golang/kernel/utils"
+	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
-	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -27,7 +28,8 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
-	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
+	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
+	mux.HandleFunc("/contexto", Obtener_Contexto_De_Ejecucion(logger))
 
 	//envia proxima instr a cpu fase fetch
 	mux.HandleFunc("GET /instruccion /{tid}/{pc}", Obtener_Instrucción(logger))
@@ -38,7 +40,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	//recibo msj de cpu para que haga la instruccion write mem
 	mux.HandleFunc("POST /write_mem", Write_Mem(logger))
 
-	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
+	conexiones.LevantarServidor(strconv.Itoa(utils.Config.Port), mux, logger)
 
 }
 
@@ -143,7 +145,7 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//		decoder := json.NewDecoder(r.Body)
 		var err error
-		var req a
+
 		err = json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
@@ -165,9 +167,66 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 
 // Comunicacion con CPU
 
+//chat gpt me dice que funcionan bien "Obtener_Contexto_De_Ejecucion" de mem y "SolicitarContextoEjecucion" de cpu
+
+// Función HTTP para obtener el contexto de ejecución completo para un PID-TID
+
+// modificar w http.ResponseWriter, r *http.Request, y listo
+func Obtener_Contexto_De_Ejecucion(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+	// Decodificar la solicitud para obtener el PID y TID
+	var pidTid struct {
+		PID uint32 `json:"pid"`
+		TID uint32 `json:"tid"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&pidTid)
+	if err != nil {
+		http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
+		return
+	}
+
+	// Buscar los contextos para el PID y TID en los mapas
+	contextoPID, existePID := memSistema.ContextosPID[int(pidTid.PID)]
+	contextoTID, existeTID := memSistema.ContextosTID[int(pidTid.TID)]
+
+	// Verificar que ambos contextos existen en los mapas
+	if !existePID || !existeTID {
+		http.Error(w, "PID o TID no encontrado", http.StatusNotFound)
+		return
+	}
+
+	// Log de solicitud de contexto OBLIGATORIO
+	fmt.Printf("Solicitud / actualización de Contexto: “## Contexto Solicitado - (PID:TID) - (%d:%d)”\n", pidTid.PID, pidTid.TID)
+
+	// Crear el contexto completo usando la estructura que CPU espera (RegCPU)
+	contextoCompleto := types.RegCPU{
+		PC:     contextoTID.PC,
+		AX:     contextoTID.AX,
+		BX:     contextoTID.BX,
+		CX:     contextoTID.CX,
+		DX:     contextoTID.DX,
+		EX:     contextoTID.EX,
+		FX:     contextoTID.FX,
+		GX:     contextoTID.GX,
+		HX:     contextoTID.HX,
+		Base:   contextoPID.Base,
+		Limite: contextoPID.Limite,
+	}
+
+	// Codificar el contexto completo como JSON y enviarlo como respuesta
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(contextoCompleto)
+	if err != nil {
+		http.Error(w, "Error al codificar la respuesta", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("Contexto completo enviado para PID %d y TID %d\n", pidTid.PID, pidTid.TID)
+}
+
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req a
+
 		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
@@ -182,42 +241,14 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// pasa el contexto de ejecucion a cpu
-func Enviar_proxima_instruccion(logger *slog.Logger) http.HandlerFunc {
+func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var tid types.ContextoEjecucionTID
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
 		tid := r.PathValue("tid")
 		pc := r.PathValue("pc")
-		var req types.RegCPU
-		err := json.NewDecoder(r.Body).Decode(&req)
+		instruccion := memsistema.buscarSiguienteInstruccion(tid, pc)
+		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Config.PortCPU, "obtener-instruccion", "GET", logger)
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		regCPU, err := Ver_Contexto(req.PID, req.TID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		ipCPU := Config.IpCPU //Cambiar por referencia a archivo config
-		puertoCPU := Config.PortCPU
-
-		exito := client.Enviar_Body(regCPU, conf, puertoCPU, endpointCPU, logger)
-		if !exito {
-			http.Error(w, "Error al enviar el contexto al CPU", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-
-	}
-}
-
-func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req a
 		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
@@ -232,9 +263,9 @@ func Obtener_ID(logger *slog.Logger) http.HandlerFunc {
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req a
 		err := json.NewDecoder(r.Body).Decode(&req)
-
+		valor := memUsuario.BuscarPorDireccion(direccion_fisica)
+		client.Enviar_QueryPath(valor, utils.Configs.IpCPU, utils.Config.PortCPU, "readMem", "GET", logger)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
