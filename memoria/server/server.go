@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/client"
+	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
 	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -57,7 +58,7 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria CREE el proceso (Está en pagina 20 y 21 del enunciado)
-
+		memoriaUsuario.CrearProceso()
 		// Si memoria pudo asignar el espacio necesario para el proceso responde con OK a Kernel
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
