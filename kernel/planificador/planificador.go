@@ -59,7 +59,7 @@ func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad in
 		logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 
 		// Desbloquear el planificador para procesar el hilo en READY
-		utils.Planificador.Unlock()
+		utils.Planificador.Signal()
 		return true
 	}
 
@@ -192,16 +192,17 @@ func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
 
 func FIFO(logger *slog.Logger) {
 	for {
-		utils.Planificador.Lock()
+		utils.MutexPlanificador.Lock()
+		utils.Planificador.Wait()
 		if utils.Execute != nil { // Si hay un proceso en ejecución, no hacer nada
-			utils.Planificador.Unlock()
+			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
 		// Si no hay nada en la cola de ready, no hacer nada
 		if len(ColaReady[0]) == 0 {
-			utils.Planificador.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
+			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
@@ -213,13 +214,13 @@ func FIFO(logger *slog.Logger) {
 			TID: proximo.TID,
 		}
 		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-		utils.Planificador.Unlock()
+		utils.MutexPlanificador.Unlock()
 	}
 }
 
 func PRIORIDADES(logger *slog.Logger) {
 	for {
-		utils.Planificador.Lock()
+		utils.MutexPlanificador.Lock()
 		if len(ColaReady[0]) > 0 {
 			siguienteHilo := ColaReady[0][0]
 			// Vamos buscando el hilo de menor prioridad (esto a su vez cumple que si hay otro de igual prioridad, desempata por el primero que llegó)
@@ -248,10 +249,10 @@ func PRIORIDADES(logger *slog.Logger) {
 					}
 				}
 				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-				utils.Planificador.Unlock()
+				utils.MutexPlanificador.Unlock()
 			}
 		} else { // En caso de que ningun proceso tenga mayor prioridad que el que está ejecutando se libera el mutex
-			utils.Planificador.Unlock()
+			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 		}
 	}
@@ -260,12 +261,12 @@ func PRIORIDADES(logger *slog.Logger) {
 func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 	for {
-		utils.Planificador.Lock()
+		utils.MutexPlanificador.Lock()
 		proximo, hayAlguien := seleccionarSiguienteHilo()
 
 		// Si no hay nadie en la cola de ready
 		if !hayAlguien {
-			utils.Planificador.Unlock()
+			utils.MutexPlanificador.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
@@ -304,13 +305,13 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 					if !existe {
 						logger.Info("Hilo terminado")
 						timer.Stop() // Detenemos el temporizador si el hilo terminó
-						break
+						break outer
 					}
 
 					time.Sleep(10 * time.Millisecond) // Pausa breve para evitar un bucle apretado
 				}
 			}
-			utils.Planificador.Unlock()
+			utils.MutexPlanificador.Unlock()
 		}
 	}
 }

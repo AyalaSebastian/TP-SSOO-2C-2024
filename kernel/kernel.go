@@ -17,11 +17,11 @@ func main() {
 	utils.Configs = utils.Iniciar_Configuracion("config.json")
 	logger := logging.Iniciar_Logger("kernel.log", utils.Configs.LogLevel)
 
-	// Inicializamos el planificador
-	planificador.Iniciar_planificador(utils.Configs, logger)
-
 	// Inicializamos las colas de procesos
 	planificador.Inicializar_colas()
+
+	// Inicializamos el planificador
+	planificador.Iniciar_planificador(utils.Configs, logger)
 
 	// Inicializamos el mapa de PCBs
 	utils.InicializarPCBMapGlobal()

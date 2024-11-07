@@ -4,4 +4,5 @@ import (
 	"sync"
 )
 
-var Planificador sync.Mutex
+var MutexPlanificador sync.Mutex
+var Planificador = sync.NewCond(&MutexPlanificador)
