@@ -116,3 +116,10 @@ type Particion struct {
 	Base   uint32
 	Limite uint32
 }
+
+// --------------------------------- FILESYSTEM ---------------------------------
+type DumpFile struct {
+	Nombre  string `json:"nombre"`
+	Tamanio uint32 `json:"tamanio"`
+	// Contenido (nose que tipo de dato/estructura puede ser)
+}
