@@ -25,9 +25,10 @@ func Inicializar_colas() {
 	ColaExit = []types.TCB{}
 	ColaIO = []utils.SolicitudIO{}
 	MapColasMultinivel = make(map[int][]types.TCB)
+	utils.Execute = &utils.ExecuteActual{}
 }
 
-// Acá para mi hay que mandar el path a memoria para que saque las instrucciones del archivo de pseudocódigo y acá mismo armar el PCB con el TCB y todo
+// Se le pasa el archivo de pseudocódigo, el tamaño del proceso y la prioridad
 func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logger) {
 	pcb := generadores.Generar_PCB()
 	utils.MapaPCB[pcb.PID] = pcb // Guardo el PCB en el mapa de PCBs
@@ -149,7 +150,7 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
 }
 
-// Función que procesa las solicitudes de E/S de la cola (Hay que mandarlo con una go routine)
+// Función que procesa las solicitudes de I/O de la cola
 func Procesar_cola_IO(colaIO *[]utils.SolicitudIO, logger *slog.Logger) {
 	for {
 		solicitud, haySolicitudes := utils.Proxima_solicitud(colaIO)
@@ -162,8 +163,9 @@ func Procesar_cola_IO(colaIO *[]utils.SolicitudIO, logger *slog.Logger) {
 			desbloqueado := utils.Desencolar(&ColaBlocked)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
+			logger.Info(fmt.Sprintf("## (%d:%d) finalizó IO y pasa a READY", solicitud.PID, solicitud.TID))
 			utils.Encolar_ColaReady(ColaReady, tcb)
-			logger.Info(fmt.Sprintf("E/S completada para TID %d", solicitud.TID))
+
 		} else {
 			// No hay solicitudes en la cola, esperar un tiempo antes de volver a chequear
 			time.Sleep(100 * time.Millisecond)
@@ -194,6 +196,7 @@ func FIFO(logger *slog.Logger) {
 	for {
 		utils.MutexPlanificador.Lock()
 		utils.Planificador.Wait()
+
 		if utils.Execute != nil { // Si hay un proceso en ejecución, no hacer nada
 			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
@@ -221,6 +224,8 @@ func FIFO(logger *slog.Logger) {
 func PRIORIDADES(logger *slog.Logger) {
 	for {
 		utils.MutexPlanificador.Lock()
+		utils.Planificador.Wait()
+
 		if len(ColaReady[0]) > 0 {
 			siguienteHilo := ColaReady[0][0]
 			// Vamos buscando el hilo de menor prioridad (esto a su vez cumple que si hay otro de igual prioridad, desempata por el primero que llegó)
@@ -251,7 +256,7 @@ func PRIORIDADES(logger *slog.Logger) {
 				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 				utils.MutexPlanificador.Unlock()
 			}
-		} else { // En caso de que ningun proceso tenga mayor prioridad que el que está ejecutando se libera el mutex
+		} else {
 			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 		}
@@ -262,12 +267,13 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 	for {
 		utils.MutexPlanificador.Lock()
+		utils.Planificador.Wait()
 		proximo, hayAlguien := seleccionarSiguienteHilo()
 
 		// Si no hay nadie en la cola de ready
 		if !hayAlguien {
-			utils.MutexPlanificador.Unlock()
 			logger.Info("No hay procesos en la cola de Ready")
+			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
