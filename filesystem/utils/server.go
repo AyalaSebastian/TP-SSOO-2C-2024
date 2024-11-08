@@ -46,7 +46,7 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// Abro el archivo y vuelco el contenido en un slice de bytes
+// Retorna slice de los bloques libres
 func Bloques_Libres(logger *slog.Logger) []byte {
 
 	// Cargar archivo en un slice de bytes
@@ -68,22 +68,37 @@ func Bloques_Libres(logger *slog.Logger) []byte {
 	return bitesLibres
 }
 
-// 1. que es lo que recebimos en el dump?
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
+// Reservo los bloques en el slice
+func Reservar_Bloques_Del_Bitmap(bloques []byte, cantidad int, logger *slog.Logger) {
+
+	// Cargar archivo en un slice de bytes
+	file, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
+		return
+	}
+
+	// Verificar que hay suficientes bloques libres
+	bloquesLibres := Bloques_Libres(logger)
+	if len(bloquesLibres) < cantidad {
+		logger.Error("No hay suficientes bloques libres para reservar")
+		return
+	}
+
+	// Reservar los bloques
+	for i := 0; i < cantidad; i++ {
+		bloque := bloquesLibres[i]
+		byteIndex := bloque / 8
+		bitIndex := bloque % 8
+		file[byteIndex] |= (1 << bitIndex) // Marcar el bit como ocupado
+	}
+
+	// Guardar los cambios en el archivo
+	err = os.WriteFile(Configs.MountDir+"/bitmap.dat", file, 0644)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al escribir el archivo bitmap.dat: %s\n", err.Error()))
+		return
+	}
+
+	logger.Info(fmt.Sprintf("Reservados %d bloques en el archivo bitmap.dat", cantidad))
+}

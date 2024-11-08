@@ -8,8 +8,6 @@ import (
 
 func Inicializar_Estructura_Filesystem(logger *slog.Logger) {
 
-	// MNT_DIR y MOUNT_DIR y FILES
-
 	// Si no existe MOUNT_DIR lo creo y creo el bloques.dat
 	if !Verificar_Si_Existe(Configs.MountDir) {
 		err := os.Mkdir(Configs.MountDir, 0755) // Creo el dir
