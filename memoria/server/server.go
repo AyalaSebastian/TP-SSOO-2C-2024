@@ -248,10 +248,11 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
-		//	tid := r.PathValue("tid")
-		//	pc := r.PathValue("pc")
-		//	instruccion := memSistema.BuscarSiguienteInstruccion(tid, pc)
-		//		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Config.PortCPU, "obtener-instruccion", "GET", logger)
+		
+		tid := r.PathValue("tid")
+		pc := r.PathValue("pc")
+		instruccion := memSistema.BuscarSiguienteInstruccion(tid, pc)
+		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Config.PortCPU, "obtener-instruccion", "GET", logger)
 		return
 	}
 }
