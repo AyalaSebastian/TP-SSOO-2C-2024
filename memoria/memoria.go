@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"log/slog"
-
+    "os"
+    "bufio"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
 	"github.com/sisoputnfrba/tp-golang/memoria/server"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
@@ -58,6 +59,66 @@ func Ver_Contexto(pid int, tid int, logger *slog.Logger) (*types.RegCPU, error) 
 	return regCPU, nil
 
 }
+//Funcion para cargar el archivo de pseudocodigo
+func CargarPseudocodigo(pid int, tid int, path string){
+    file, err := os.Open(filePath)
+    if err != nil {
+        return fmt.Errorf("Error al abrir el archivo %s: %v", filePath, err)
+    }
+    defer file.Close()
+
+    //Si no existe para el PID TID, lo creo
+    if _, exists := contextosEjecucion[PID]; !exists {
+        contextosEjecucion[PID] = make(map[int]*types.ContextoEjecucionTID)
+    }
+    if _, exists := contextosEjecucion[PID][TID]; !exists {
+        contextosEjecucion[PID][TID] = &types.ContextoEjecucionTID{
+            TID:                TID,
+            PC:                 0,
+            AX:                 0,
+            BX:                 0,
+            CX:                 0,
+            DX:                 0,
+            EX:                 0,
+            FX:                 0,
+            GX:                 0,
+            HX:                 0,
+            LISTAINSTRUCCIONES: make(map[string]string),
+        }
+    }
+
+    contexto := contextosEjecucion[PID][TID]
+    scanner := bufio.NewScanner(file)
+    instruccionNum := 0 // Indice de instrucciones
+
+
+    //Empiezo a leer y guardo linea x linea
+    for scanner.Scan() {
+        linea := scanner.Text()
+        contexto.LISTAINSTRUCCIONES[strconv.Itoa(instruccionNum)] = linea
+        instruccionNum++
+    }
+
+    if err := scanner.Err(); err != nil {
+        return fmt.Errorf("Error al leer el archivo %s: %v", filePath, err)
+    }
+
+    return nil
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 func Update_Contexto(pid uint32, tid uint32, logger *slog.Logger) {
@@ -109,6 +170,7 @@ func leerArchivoPseudoCodigo(tid uint32,pc int,archivo string,lista_instruccione
 	Client.Obtener_Instrucción(tid,lista_instrucciones,pc)
 }
 */
+
 
 /*PREGUNTAS PARA SOPORTE:
 de donde vienen el pid y tid que recibe memoria para:
