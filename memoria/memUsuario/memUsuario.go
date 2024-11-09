@@ -1,34 +1,24 @@
 package memUsuario
 
 import (
-	"fmt"
+	"net/http"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
-	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-// var memoria global
-var MemoriaDeUsuario []byte
-
-// Función para iniciar la memoria y definir las particiones
-func Inicializar_Memoria_De_Usuario() {
-
-	// Inicializar el espacio de memoria con 1024 bytes
-	MemoriaDeUsuario = make([]byte, utils.Configs.MemorySize)
-
-	// Asignar las particiones fijas en la memoria
-	for i, particion := range Particiones {
-		fmt.Printf("Partición %d inicializada: Base = %d, Límite = %d\n", i+1, particion.Base, particion.Limite)
+func CrearProceso(pid uint32) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		particiones := utils.Config.Partitions
+		cant_particiones := len(particiones)
+		for i := 0; i < cant_particiones; i++ {
+			if particiones[i] != (-1) {
+				particiones[i] = -1
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
+				return
+			}
+		}
+		(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE ESPACIO LIBRE EN LA MEMORIA", http.StatusInternalServerError))
+		return
 	}
-}
-
-// Definición de las particiones fijas
-var Particiones = []types.Particion{
-	{Base: 0, Limite: 512},   // Primera partición: del byte 0 al byte 511
-	{Base: 512, Limite: 16},  // Segunda partición: del byte 512 al 527
-	{Base: 528, Limite: 32},  // Tercera partición: del byte 528 al 559
-	{Base: 560, Limite: 16},  // Cuarta partición: del byte 560 al 575
-	{Base: 576, Limite: 256}, // Quinta partición: del byte 576 al 831
-	{Base: 832, Limite: 64},  // Sexta partición: del byte 832 al 895
-	{Base: 896, Limite: 128}, // Séptima partición: del byte 896 al 1023
 }

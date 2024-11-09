@@ -37,3 +37,7 @@ func crearContextoTID(tid int) {
 	}
 	fmt.Printf("Contexto TID %d inicializado con registros en 0\n", tid)
 }
+
+func BuscarSiguienteInstruccion(tid uint32, pc uint32) {
+
+}

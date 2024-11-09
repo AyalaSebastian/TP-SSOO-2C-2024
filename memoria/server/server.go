@@ -1,14 +1,12 @@
 package server
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/sisoputnfrba/tp-golang/cpu/client"
 	"github.com/sisoputnfrba/tp-golang/kernel/utils"
 	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
@@ -35,12 +33,12 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("GET /instruccion /{tid}/{pc}", Obtener_Instrucción(logger))
 
 	//recibo msj de cpu para que haga la instruccion read mem
-	mux.HandleFunc("POST /read_mem", Read_Mem(logger))
+	mux.HandleFunc("/read_mem / {direccionFisica}", Read_Mem(logger))
 
 	//recibo msj de cpu para que haga la instruccion write mem
 	mux.HandleFunc("POST /write_mem", Write_Mem(logger))
 
-	conexiones.LevantarServidor(strconv.Itoa(utils.Config.Port), mux, logger)
+	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
 }
 
@@ -60,7 +58,7 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria CREE el proceso (Está en pagina 20 y 21 del enunciado)
-		memoriaUsuario.CrearProceso()
+		memUsuario.CrearProceso(utils.Execute.TID)
 		// Si memoria pudo asignar el espacio necesario para el proceso responde con OK a Kernel
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -145,7 +143,8 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//		decoder := json.NewDecoder(r.Body)
 		var err error
-
+		var req struct {
+		}
 		err = json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
@@ -172,68 +171,73 @@ func Memory_dump(logger *slog.Logger) http.HandlerFunc {
 // Función HTTP para obtener el contexto de ejecución completo para un PID-TID
 
 // modificar w http.ResponseWriter, r *http.Request, y listo
-func Obtener_Contexto_De_Ejecucion(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
-	// Decodificar la solicitud para obtener el PID y TID
-	var pidTid struct {
-		PID uint32 `json:"pid"`
-		TID uint32 `json:"tid"`
+func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Decodificar la solicitud para obtener el PID y TID
+		var pidTid struct {
+			PID uint32 `json:"pid"`
+			TID uint32 `json:"tid"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&pidTid)
+		if err != nil {
+			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
+			return
+		}
+
+		// Buscar los contextos para el PID y TID en los mapas
+		contextoPID, existePID := memSistema.ContextosPID[int(pidTid.PID)]
+		contextoTID, existeTID := memSistema.ContextosTID[int(pidTid.TID)]
+
+		// Verificar que ambos contextos existen en los mapas
+		if !existePID || !existeTID {
+			http.Error(w, "PID o TID no encontrado", http.StatusNotFound)
+			return
+		}
+
+		// Log de solicitud de contexto OBLIGATORIO
+		fmt.Printf("Solicitud / actualización de Contexto: “## Contexto Solicitado - (PID:TID) - (%d:%d)”\n", pidTid.PID, pidTid.TID)
+
+		// Crear el contexto completo usando la estructura que CPU espera (RegCPU)
+		contextoCompleto := types.RegCPU{
+			PC:     contextoTID.PC,
+			AX:     contextoTID.AX,
+			BX:     contextoTID.BX,
+			CX:     contextoTID.CX,
+			DX:     contextoTID.DX,
+			EX:     contextoTID.EX,
+			FX:     contextoTID.FX,
+			GX:     contextoTID.GX,
+			HX:     contextoTID.HX,
+			Base:   contextoPID.Base,
+			Limite: contextoPID.Limite,
+		}
+
+		// Codificar el contexto completo como JSON y enviarlo como respuesta
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(contextoCompleto)
+		if err != nil {
+			http.Error(w, "Error al codificar la respuesta", http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Printf("Contexto completo enviado para PID %d y TID %d\n", pidTid.PID, pidTid.TID)
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&pidTid)
-	if err != nil {
-		http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
-		return
-	}
-
-	// Buscar los contextos para el PID y TID en los mapas
-	contextoPID, existePID := memSistema.ContextosPID[int(pidTid.PID)]
-	contextoTID, existeTID := memSistema.ContextosTID[int(pidTid.TID)]
-
-	// Verificar que ambos contextos existen en los mapas
-	if !existePID || !existeTID {
-		http.Error(w, "PID o TID no encontrado", http.StatusNotFound)
-		return
-	}
-
-	// Log de solicitud de contexto OBLIGATORIO
-	fmt.Printf("Solicitud / actualización de Contexto: “## Contexto Solicitado - (PID:TID) - (%d:%d)”\n", pidTid.PID, pidTid.TID)
-
-	// Crear el contexto completo usando la estructura que CPU espera (RegCPU)
-	contextoCompleto := types.RegCPU{
-		PC:     contextoTID.PC,
-		AX:     contextoTID.AX,
-		BX:     contextoTID.BX,
-		CX:     contextoTID.CX,
-		DX:     contextoTID.DX,
-		EX:     contextoTID.EX,
-		FX:     contextoTID.FX,
-		GX:     contextoTID.GX,
-		HX:     contextoTID.HX,
-		Base:   contextoPID.Base,
-		Limite: contextoPID.Limite,
-	}
-
-	// Codificar el contexto completo como JSON y enviarlo como respuesta
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(contextoCompleto)
-	if err != nil {
-		http.Error(w, "Error al codificar la respuesta", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Printf("Contexto completo enviado para PID %d y TID %d\n", pidTid.PID, pidTid.TID)
 }
 
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		var req struct {
+			TID uint32
+			PID uint32
+		}
 		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		Actualizar_Contexto(req.PID, req.TID)
+		//	Actualizar_Contexto(req.PID, req.TID)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -244,33 +248,19 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
-		tid := r.PathValue("tid")
-		pc := r.PathValue("pc")
-		instruccion := memsistema.buscarSiguienteInstruccion(tid, pc)
-		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Config.PortCPU, "obtener-instruccion", "GET", logger)
-
-		err := json.NewDecoder(r.Body).Decode(&req)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-
+		//	tid := r.PathValue("tid")
+		//	pc := r.PathValue("pc")
+		//	instruccion := memSistema.BuscarSiguienteInstruccion(tid, pc)
+		//		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Config.PortCPU, "obtener-instruccion", "GET", logger)
+		return
 	}
 }
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := json.NewDecoder(r.Body).Decode(&req)
-		valor := memUsuario.BuscarPorDireccion(direccion_fisica)
-		client.Enviar_QueryPath(valor, utils.Configs.IpCPU, utils.Config.PortCPU, "readMem", "GET", logger)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
+		//	direccion_fisica := r.PathValue("direccion_fisica")
+		//	valor := memUsuario.BuscarPorDireccion(direccion_fisica)
+		//	client.Enviar_QueryPath(valor, utils.Configs.IpCPU, utils.Config.PortCPU, "readMem", "GET", logger)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 
@@ -282,48 +272,50 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 
 // falta hacer la logica con el TID recibido
 // Función Write_Mem para manejar la escritura en la memoria a partir de la API
-func Write_Mem(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
-	var requestData struct {
-		DireccionFisica uint32 `json:"direccion_fisica"`
-		Valor           uint32 `json:"valor"`
-		TID             uint32 `json:"tid"`
-	}
-
-	// Decodificar el JSON
-	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
-		logger.Error("Error al decodificar JSON en Write_Mem", slog.Any("error", err))
-		http.Error(w, "Error al decodificar JSON", http.StatusBadRequest)
-		return
-	}
-
-	// Verificar si la dirección física está dentro de alguna partición
-	encontrado := false
-	for _, particion := range memsistema.Particiones {
-		if requestData.DireccionFisica >= particion.Base && requestData.DireccionFisica < particion.Base+particion.Limite-4 {
-			encontrado = true
-			break
+func Write_Mem(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var requestData struct {
+			DireccionFisica uint32 `json:"direccion_fisica"`
+			Valor           uint32 `json:"valor"`
+			TID             uint32 `json:"tid"`
 		}
+
+		// Decodificar el JSON
+		err := json.NewDecoder(r.Body).Decode(&requestData)
+		if err != nil {
+			logger.Error("Error al decodificar JSON en Write_Mem", slog.Any("error", err))
+			http.Error(w, "Error al decodificar JSON", http.StatusBadRequest)
+			return
+		}
+
+		// Verificar si la dirección física está dentro de alguna partición
+		encontrado := false
+		/*	for _, particion := range memSistema.Particiones {
+				if requestData.DireccionFisica >= particion.Base && requestData.DireccionFisica < particion.Base+particion.Limite-4 {
+					encontrado = true
+					break
+				}
+			}
+		*/
+		if !encontrado {
+			logger.Error("Dirección física fuera de rango de particiones")
+			http.Error(w, "Dirección física fuera de rango de particiones", http.StatusBadRequest)
+			return
+		}
+
+		// Escribir el valor en little-endian en la memoria
+		//	binary.LittleEndian.PutUint32(memSistema.Memoria[requestData.DireccionFisica:], requestData.Valor)
+
+		// Log obligatorio de Escritura en espacio de usuario
+		logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
+			requestData.TID, requestData.DireccionFisica, 4))
+
+		// Confirmar la operación
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+
+		// Log de escritura exitosa
+		logger.Info(fmt.Sprintf("Escritura en memoria exitosa: TID %d - Dirección Física: %d - Valor: %d",
+			requestData.TID, requestData.DireccionFisica, requestData.Valor))
 	}
-
-	if !encontrado {
-		logger.Error("Dirección física fuera de rango de particiones")
-		http.Error(w, "Dirección física fuera de rango de particiones", http.StatusBadRequest)
-		return
-	}
-
-	// Escribir el valor en little-endian en la memoria
-	binary.LittleEndian.PutUint32(memsistema.Memoria[requestData.DireccionFisica:], requestData.Valor)
-
-	// Log obligatorio de Escritura en espacio de usuario
-	logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
-		requestData.TID, requestData.DireccionFisica, 4))
-
-	// Confirmar la operación
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-
-	// Log de escritura exitosa
-	logger.Info(fmt.Sprintf("Escritura en memoria exitosa: TID %d - Dirección Física: %d - Valor: %d",
-		requestData.TID, requestData.DireccionFisica, requestData.Valor))
 }
