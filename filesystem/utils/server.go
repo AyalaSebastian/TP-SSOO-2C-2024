@@ -42,7 +42,7 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 		// Verificar si se cuenta con el espacio disponible
-		bloquesDisponibles, espacioSuficiente := Verificar_Espacio_Disponible(magic.Tamanio, logger)
+		bloquesNecesarios, espacioSuficiente := Verificar_Espacio_Disponible(magic.Tamanio, logger)
 		if !espacioSuficiente {
 			logger.Error("No hay espacio suficiente para el archivo")
 			w.WriteHeader(http.StatusInsufficientStorage)
@@ -51,31 +51,41 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Reservar el bloque de índice y los bloques de datos correspondientes en el bitmap
-		Reservar_Bloques_Del_Bitmap(bloquesDisponibles, magic.Tamanio, logger)
+		Reservar_Bloques_Del_Bitmap(bloquesNecesarios, magic.Tamanio, logger)
+
+		// Crear archivo de metadata
+		Crear_Archivo_Metadata(magic.Nombre, int(bloquesNecesarios[0]), magic.Tamanio, logger) //Tengo dudas con el segundo parametro
+
+		// Acceder al archivo de punteros y grabar todos los punteros reservados
+		// codigo
+
+		// Acceder bloque a bloque e ir escribiendo el contenido de la memoria.
+		// codigo
+
 	}
 }
 
 // Retorna slice de los bloques libres
-func Bloques_Libres(logger *slog.Logger) []byte {
+// func Bloques_Libres(logger *slog.Logger) []byte {
 
-	// Cargar archivo en un slice de bytes
-	file, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
-	if err != nil {
-		logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
-		return nil
-	}
+// 	// Cargar archivo en un slice de bytes
+// 	file, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
+// 	if err != nil {
+// 		logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
+// 		return nil
+// 	}
 
-	// Identificar los bloques libres
-	var bitesLibres []byte
-	for i := 0; i < len(file); i++ {
-		for j := 0; j < 8; j++ {
-			if (file[i] & (1 << j)) == 0 {
-				bitesLibres = append(bitesLibres, byte(i*8+j))
-			}
-		}
-	}
-	return bitesLibres
-}
+// 	// Identificar los bloques libres
+// 	var bitesLibres []byte
+// 	for i := 0; i < len(file); i++ {
+// 		for j := 0; j < 8; j++ {
+// 			if (file[i] & (1 << j)) == 0 {
+// 				bitesLibres = append(bitesLibres, byte(i*8+j))
+// 			}
+// 		}
+// 	}
+// 	return bitesLibres
+// }
 
 // Devuelve dos valores: un array con los indices a reservar([]byte) y si hay espacio suficiente para el archivo(true/false)
 func Verificar_Espacio_Disponible(tamanioArchivo int, logger *slog.Logger) ([]byte, bool) {
@@ -109,55 +119,35 @@ func Verificar_Espacio_Disponible(tamanioArchivo int, logger *slog.Logger) ([]by
 // Reservo los bloques en el slice
 func Reservar_Bloques_Del_Bitmap(bloques []byte, cantidad int, logger *slog.Logger) {
 
-	// Cargar archivo en un slice de bytes
-	file, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
-	if err != nil {
-		logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
-		return
-	}
-
-	// Verificar que hay suficientes bloques libres
-	bloquesLibres := Bloques_Libres(logger)
-	if len(bloquesLibres) < cantidad {
-		logger.Error("No hay suficientes bloques libres para reservar")
-		return
-	}
-
 	// Reservar los bloques
 	for i := 0; i < cantidad; i++ {
-		bloque := bloquesLibres[i]
+		bloque := bloques[i]
 		byteIndex := bloque / 8
 		bitIndex := bloque % 8
-		file[byteIndex] |= (1 << bitIndex) // Marcar el bit como ocupado
+		Bitmap[byteIndex] |= (1 << bitIndex) // Marcar el bit como ocupado
 	}
 
 	// Guardar los cambios en el archivo
-	err = os.WriteFile(Configs.MountDir+"/bitmap.dat", file, 0644)
+	err := os.WriteFile(Configs.MountDir+"/bitmap.dat", Bitmap, 0644)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Error al escribir el archivo bitmap.dat: %s\n", err.Error()))
+		logger.Error(fmt.Sprintf("Error al escribir el archivo bitmap.dat: %s", err.Error()))
 		return
 	}
 
 	logger.Info(fmt.Sprintf("Reservados %d bloques en el archivo bitmap.dat", cantidad))
 }
 
-// // Devuelve dos valores: la cantidad de espacios disponibles(int) y si hay espacio suficiente para el archivo(true/false)
-// func Verificar_Espacio_Disponible(tamanioArchivo int) (int, bool) {
-// 	bloquesNecesarios := tamanioArchivo / Configs.BlockSize
-// 	if tamanioArchivo%Configs.BlockSize > 0 {
-// 		bloquesNecesarios++ // Si el tamaño no es multiplo del BlockSize, se necesita un bloque más
-// 	}
+func Crear_Archivo_Metadata(nombreArchivo string, indice int, tamanio int, logger *slog.Logger) {
+	rutaArchivo := Configs.MountDir + "/files/" + nombreArchivo
 
-// 	bloquesDisponibles := 0
-// 	for i := 0; i < len(Bitmap); i++ {
-// 		for j := 0; j < 8; j++ { // Cada byte tiene 8 bits
-// 			if Bitmap[i]&(1<<j) == 0 { // Si el bit está en 0, el bloque está libre
-// 				bloquesDisponibles++
-// 			}
-// 		}
-// 	}
-// 	if bloquesNecesarios > bloquesDisponibles {
-// 		return bloquesDisponibles, false
-// 	}
-// 	return bloquesDisponibles, true
-// }
+	metadata := fmt.Sprintf(`{
+        "index_block": %d,
+        "size": %d
+    }`, indice, tamanio)
+
+	err := os.WriteFile(rutaArchivo, []byte(metadata), 0644)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error al crear archivo de metadata: %v", err))
+		return
+	}
+}
