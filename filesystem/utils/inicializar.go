@@ -1,10 +1,14 @@
 package utils
 
 import (
+	"fmt"
 	"log/slog"
 	"math"
 	"os"
 )
+
+var Bitmap []byte
+var BloquesLibres int
 
 func Inicializar_Estructura_Filesystem(logger *slog.Logger) {
 
@@ -15,7 +19,7 @@ func Inicializar_Estructura_Filesystem(logger *slog.Logger) {
 			panic("Error al crear el directorio MOUNT_DIR")
 		}
 
-		filee, errrrr := os.Create(Configs.MountDir + "/bitmap.dat") // Creo el bloques.dat
+		filee, errrrr := os.Create(Configs.MountDir + "/bitmap.dat") // Creo el bitmap.dat
 		if errrrr != nil {
 			panic("Error al crear el archivo de bloques")
 		}
@@ -44,6 +48,13 @@ func Inicializar_Estructura_Filesystem(logger *slog.Logger) {
 		if errrr != nil {
 			panic("Error al crear el directorio FILES")
 		}
+		// Cargar bitmap.dat en un slice de bytes
+		bitmap, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
+			return
+		}
+		Bitmap = bitmap //Cargamos el bitmap en la variable global
 		return
 	}
 
@@ -84,10 +95,15 @@ func Inicializar_Estructura_Filesystem(logger *slog.Logger) {
 				panic("Error al truncar el archivo de bloques")
 			}
 		}
+		// Cargar bitmap.dat en un slice de bytes
+		bitmap, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
+			return
+		}
+		Bitmap = bitmap //Cargamos el bitmap en la variable global
 		return
 	}
-
-	logger.Info("Filesystem inicializado")
 }
 
 func Verificar_Si_Existe(Path string) bool {

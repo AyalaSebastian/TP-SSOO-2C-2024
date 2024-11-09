@@ -14,8 +14,7 @@ func main() {
 	// Inicio log
 	logger := logging.Iniciar_Logger("filesystem.log", utils.Configs.LogLevel)
 
-	logger.Info("Logger iniciado")
-
+	// Inicializar estructura filesystem
 	utils.Inicializar_Estructura_Filesystem(logger)
 
 	// Iniciar filesystem como server
