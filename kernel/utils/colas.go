@@ -48,6 +48,18 @@ func Desencolar[T any](cola *[]T) T {
 	return elemento
 }
 
+// Desencola un elemento de la cola de BLOQUEADOS por motivo y retorna ese elemento (IMPORTANTE: tener en cuenta que Motivo es un tipo de dato Const)
+func Desencolar_Por_Motivo(cola *[]Bloqueado, motivo Motivo) *Bloqueado {
+	for i, elem := range *cola {
+		if elem.Motivo == motivo {
+			elemento := elem
+			*cola = append((*cola)[:i], (*cola)[i+1:]...)
+			return &elemento
+		}
+	}
+	return nil // No se encontró un elemento con el motivo especificado
+}
+
 func Sacar_TCB_Del_Map(mapaPCBS *map[uint32]types.PCB, pid uint32, tid uint32, logger *slog.Logger) {
 	pcb, existe := (*mapaPCBS)[pid]
 	if !existe {
