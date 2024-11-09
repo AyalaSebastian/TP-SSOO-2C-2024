@@ -14,6 +14,7 @@ import (
 )
 
 // Usar tamanio de puntero uint32
+// Creo que esta funcion MetaDataFile no va, la memoria nos envia el nombre del archivo en la peticion del DUMP, el cual ya viene con todos estos datos
 type MetadataFile struct {
 	PID       uint32
 	TID       uint32
@@ -40,9 +41,17 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 			w.Write([]byte("Error al decodificar mensaje"))
 			return
 		}
-		// sigue el codigo
-
 		// Verificar si se cuenta con el espacio disponible
+		bloquesDisponibles, espacioSuficiente := Verificar_Espacio_Disponible(magic.Tamanio, logger)
+		if !espacioSuficiente {
+			logger.Error("No hay espacio suficiente para el archivo")
+			w.WriteHeader(http.StatusInsufficientStorage)
+			w.Write([]byte("No hay espacio suficiente para el archivo"))
+			return
+		}
+
+		// Reservar el bloque de índice y los bloques de datos correspondientes en el bitmap
+		Reservar_Bloques_Del_Bitmap(bloquesDisponibles, magic.Tamanio, logger)
 	}
 }
 
@@ -66,6 +75,35 @@ func Bloques_Libres(logger *slog.Logger) []byte {
 		}
 	}
 	return bitesLibres
+}
+
+// Devuelve dos valores: un array con los indices a reservar([]byte) y si hay espacio suficiente para el archivo(true/false)
+func Verificar_Espacio_Disponible(tamanioArchivo int, logger *slog.Logger) ([]byte, bool) {
+	bloquesNecesarios := tamanioArchivo / Configs.BlockSize
+	if tamanioArchivo%Configs.BlockSize > 0 {
+		bloquesNecesarios++ // Si el tamaño no es multiplo del BlockSize, se necesita un bloque más
+	}
+
+	// Identificar los bloques libres
+	var bitesLibres []byte
+	totalBitesLibres := 0
+
+	for i := 0; i < len(Bitmap); i++ {
+		for j := 0; j < 8; j++ {
+			if (Bitmap[i] & (1 << j)) == 0 {
+				totalBitesLibres++
+
+				if len(bitesLibres) < bloquesNecesarios+1 { // +1 para el bloque de índice
+					bitesLibres = append(bitesLibres, byte(i*8+j))
+				}
+			}
+		}
+	}
+	if bloquesNecesarios > totalBitesLibres {
+		return bitesLibres, false
+	}
+
+	return bitesLibres, true
 }
 
 // Reservo los bloques en el slice
@@ -102,3 +140,24 @@ func Reservar_Bloques_Del_Bitmap(bloques []byte, cantidad int, logger *slog.Logg
 
 	logger.Info(fmt.Sprintf("Reservados %d bloques en el archivo bitmap.dat", cantidad))
 }
+
+// // Devuelve dos valores: la cantidad de espacios disponibles(int) y si hay espacio suficiente para el archivo(true/false)
+// func Verificar_Espacio_Disponible(tamanioArchivo int) (int, bool) {
+// 	bloquesNecesarios := tamanioArchivo / Configs.BlockSize
+// 	if tamanioArchivo%Configs.BlockSize > 0 {
+// 		bloquesNecesarios++ // Si el tamaño no es multiplo del BlockSize, se necesita un bloque más
+// 	}
+
+// 	bloquesDisponibles := 0
+// 	for i := 0; i < len(Bitmap); i++ {
+// 		for j := 0; j < 8; j++ { // Cada byte tiene 8 bits
+// 			if Bitmap[i]&(1<<j) == 0 { // Si el bit está en 0, el bloque está libre
+// 				bloquesDisponibles++
+// 			}
+// 		}
+// 	}
+// 	if bloquesNecesarios > bloquesDisponibles {
+// 		return bloquesDisponibles, false
+// 	}
+// 	return bloquesDisponibles, true
+// }

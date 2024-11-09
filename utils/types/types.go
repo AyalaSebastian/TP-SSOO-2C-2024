@@ -120,6 +120,6 @@ type Particion struct {
 // --------------------------------- FILESYSTEM ---------------------------------
 type DumpFile struct {
 	Nombre  string `json:"nombre"`
-	Tamanio uint32 `json:"tamanio"`
+	Tamanio int    `json:"tamanio"`
 	Datos   []byte `json:"datos"` //! Ver que onda con los datos
 }
