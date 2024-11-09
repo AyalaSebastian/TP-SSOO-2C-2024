@@ -42,6 +42,18 @@ func Obtener_PCB_por_PID(pid uint32) *types.PCB {
 	return &pcb
 }
 
+// Funcion para modificar la variable Execute
+func Modificar_Execute(pid uint32, tid uint32) {
+	if Execute == nil {
+		Execute = &ExecuteActual{}
+		Execute.PID = pid
+		Execute.TID = tid
+	} else {
+		Execute.PID = pid
+		Execute.TID = tid
+	}
+}
+
 // Elimina los TCBs del PCB de las multiples colas de Ready (no importa cual sea el algoritmo de planificación)
 func Eliminar_TCBs_de_cola_Ready(pcb *types.PCB, colas map[int][]types.TCB, logger *slog.Logger) {
 	// Itera sobre cada cola de prioridad
@@ -153,6 +165,7 @@ const ( // Esto funciona mas o menos como el enum de c
 	THREAD_JOIN Motivo = iota // Vale 0
 	Mutex                     // Vale 1
 	IO                        // Vale 2
+	DUMP                      // Vale 3
 )
 
 // Como no se puede hacer un slice con un struc generico, hago que el QuienFue sea un string

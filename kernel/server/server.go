@@ -26,6 +26,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("DELETE /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
 	mux.HandleFunc("DELETE /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
+	mux.HandleFunc("PATCH /dump_response/{response}", Respuesta_dump(logger))
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
 	mux.HandleFunc("PATCH /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
 	mux.HandleFunc("PATCH /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
@@ -61,8 +62,9 @@ func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: PROCESS_EXIT", utils.Execute.PID, utils.Execute.TID))
-		pid := utils.Execute.PID
-		planificador.Finalizar_proceso(pid, logger)
+		planificador.Finalizar_proceso(utils.Execute.PID, logger)
+		utils.Execute = nil
+		utils.Planificador.Signal()
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -74,22 +76,33 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: DUMP_MEMORY", utils.Execute.PID, utils.Execute.TID))
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
 		utils.Execute = nil
-		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID}
+		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID, Motivo: 3}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
+		utils.Planificador.Signal()
 
-		success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
-		// Esto va?? logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
-		if success {
-			desbloqueado := utils.Desencolar(&planificador.ColaBlocked)
+		client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
+		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func Respuesta_dump(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		response := r.PathValue("response")
+		defer w.WriteHeader(http.StatusOK)
+
+		if response == "OK" {
+			desbloqueado := utils.Desencolar_Por_Motivo(&planificador.ColaBlocked, utils.DUMP)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
 			utils.Encolar_ColaReady(planificador.ColaReady, tcb)
 		} else {
-			desbloqueado := utils.Desencolar(&planificador.ColaBlocked)
+			desbloqueado := utils.Desencolar_Por_Motivo(&planificador.ColaBlocked, utils.DUMP)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
 			planificador.Finalizar_proceso(tcb.PID, logger)
-			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", parametros.PID))
+			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", desbloqueado.PID))
 		}
 	}
 }
@@ -201,9 +214,8 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		utils.Execute = nil
 		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: tid}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
+		utils.Planificador.Signal()
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
-
-		//! nose si no hay que eliminarlo de exec y replanificar
 
 		respuesta, err := json.Marshal("OK")
 		if err != nil {
@@ -268,6 +280,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
 			utils.Execute = nil
+			utils.Planificador.Signal()
 			return
 		}
 
@@ -298,6 +311,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
 			utils.Execute = nil
+			utils.Planificador.Signal()
 			return
 		}
 
@@ -326,6 +340,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
 			utils.Execute = nil
+			utils.Planificador.Signal()
 			return
 		}
 
@@ -337,7 +352,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 				if bloqueado.PID == utils.Execute.PID && bloqueado.Motivo == utils.Mutex && bloqueado.QuienFue == mutexName {
 					count++
 					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = strconv.Itoa(int(bloqueado.TID))
-					utils.Desencolar(&planificador.ColaBlocked)
+					utils.Desencolar(&planificador.ColaBlocked) //! Acá creo que hay que cambiarla por la funcion de desencolar por motivo (Consultar con lucas)
 					respuesta, err := json.Marshal("MUTEX_ASIGNADO")
 					if err != nil {
 						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
@@ -411,18 +426,10 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
 			utils.Planificador.Signal()
 		case "SEGMENTATION FAULT":
-			utils.Execute = nil
 			planificador.Finalizar_proceso(magic.PID, logger)
+			utils.Execute = nil
 			utils.Planificador.Signal()
 		}
-
-		// if magic.Motivo == "FIN QUANTUM" {
-		// 	utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
-		// 	utils.Planificador.Signal()
-		// } else {
-		// 	utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID]) // Esto probablente haya que cambiarlo ya que si se desaloja por prioridad va a ir a una cola especifica
-		// 	utils.Planificador.Signal()
-		// }
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
