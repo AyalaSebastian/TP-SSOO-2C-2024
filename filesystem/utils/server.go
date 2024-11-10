@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -25,7 +26,7 @@ func Iniciar_fileSystem(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
 	// Endpoints
-	mux.HandleFunc("/dump", DUMP(logger))
+	mux.HandleFunc("POST /dump", DUMP(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(Configs.Port), mux, logger)
 }
@@ -51,16 +52,15 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Reservar el bloque de índice y los bloques de datos correspondientes en el bitmap
-		Reservar_Bloques_Del_Bitmap(bloquesNecesarios, magic.Tamanio, logger)
+		Reservar_Bloques_Del_Bitmap(bloquesNecesarios, magic.Tamanio, magic.Nombre, logger)
 
 		// Crear archivo de metadata
 		Crear_Archivo_Metadata(magic.Nombre, int(bloquesNecesarios[0]), magic.Tamanio, logger) //Tengo dudas con el segundo parametro
 
 		// Acceder al archivo de punteros y grabar todos los punteros reservados
-		// codigo
+		Escribir_Index_Block(int(bloquesNecesarios[0]), Convertir_Bytes_A_Uint32(bloquesNecesarios[1:]), magic.Nombre, logger)
 
 		// Acceder bloque a bloque e ir escribiendo el contenido de la memoria.
-		// codigo
 
 	}
 }
@@ -95,36 +95,39 @@ func Verificar_Espacio_Disponible(tamanioArchivo int, logger *slog.Logger) ([]by
 	}
 
 	// Identificar los bloques libres
-	var bitesLibres []byte
-	totalBitesLibres := 0
+	var bitsLibres []byte
+	totalBitsLibres := 0
 
 	for i := 0; i < len(Bitmap); i++ {
 		for j := 0; j < 8; j++ {
 			if (Bitmap[i] & (1 << j)) == 0 {
-				totalBitesLibres++
+				totalBitsLibres++
 
-				if len(bitesLibres) < bloquesNecesarios+1 { // +1 para el bloque de índice
-					bitesLibres = append(bitesLibres, byte(i*8+j))
+				if len(bitsLibres) < bloquesNecesarios+1 { // +1 para el bloque de índice
+					bitsLibres = append(bitsLibres, byte(i*8+j))
 				}
 			}
 		}
 	}
-	if bloquesNecesarios > totalBitesLibres {
-		return bitesLibres, false
+	if bloquesNecesarios > totalBitsLibres {
+		return bitsLibres, false
 	}
 
-	return bitesLibres, true
+	BloquesLibres = totalBitsLibres // Actualizar la cantidad de bloques libres en la variable global
+	return bitsLibres, true
 }
 
 // Reservo los bloques en el slice
-func Reservar_Bloques_Del_Bitmap(bloques []byte, cantidad int, logger *slog.Logger) {
+func Reservar_Bloques_Del_Bitmap(bloques []byte, cantidad int, nombreArchivo string, logger *slog.Logger) {
 
 	// Reservar los bloques
 	for i := 0; i < cantidad; i++ {
 		bloque := bloques[i]
 		byteIndex := bloque / 8
 		bitIndex := bloque % 8
-		Bitmap[byteIndex] |= (1 << bitIndex) // Marcar el bit como ocupado
+		Bitmap[byteIndex] |= (1 << bitIndex)
+		BloquesLibres--
+		logger.Info(fmt.Sprintf("## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d", bloque, nombreArchivo, BloquesLibres)) // Marcar el bit como ocupado
 	}
 
 	// Guardar los cambios en el archivo
@@ -150,4 +153,41 @@ func Crear_Archivo_Metadata(nombreArchivo string, indice int, tamanio int, logge
 		logger.Error(fmt.Sprintf("error al crear archivo de metadata: %v", err))
 		return
 	}
+}
+
+func Escribir_Index_Block(indexBlock int, bloquesDatos []uint32, nombreArchivo string, logger *slog.Logger) bool {
+	// Cargar archivo en un slice de bytes
+	bloquesFile, err := os.OpenFile(Configs.MountDir+"/bloques.dat", os.O_RDWR, 0644)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al abrir el archivo bloques.dat: %s", err.Error()))
+		return false
+	}
+	defer bloquesFile.Close()
+
+	posicion := indexBlock * Configs.BlockSize
+	if _, err := bloquesFile.Seek(int64(posicion), 0); err != nil {
+		logger.Error(fmt.Sprintf("Error al buscar posición en bloques.dat: %s", err.Error()))
+		return false
+	}
+
+	for _, bloque := range bloquesDatos {
+		buffer := make([]byte, 4)
+		binary.BigEndian.PutUint32(buffer, uint32(bloque))
+
+		if _, err := bloquesFile.Write(buffer); err != nil {
+			logger.Error(fmt.Sprintf("Error al escribir en bloques.dat: %s", err.Error()))
+			return false
+		}
+	}
+
+	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: INDICE - Bloque File System %d", nombreArchivo, posicion))
+	return true
+}
+
+func Convertir_Bytes_A_Uint32(bloquesBytes []byte) []uint32 {
+	var bloquesUint32 []uint32
+	for _, b := range bloquesBytes {
+		bloquesUint32 = append(bloquesUint32, uint32(b))
+	}
+	return bloquesUint32
 }
