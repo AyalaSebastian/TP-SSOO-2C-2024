@@ -49,7 +49,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
-		var magic types.PathTamanio
+		var magic types.ProcesoNew
 		err := decoder.Decode(&magic)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
@@ -60,8 +60,9 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria CREE el proceso (Está en pagina 20 y 21 del enunciado)
-		memUsuario.AsignarPID(utils.Execute.PID, magic.Tamanio, magic.Path)
+		memUsuario.AsignarPID(utils.Execute.PID, magic.Tamanio, magic.Pseudo)
 
+		logger.Info("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PCB.PID, magic.Tamanio)
 		//crear estructura de memSistema
 		//	memSistema.CrearContextoTID(utils.Execute.TID)
 
@@ -97,30 +98,22 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var infoHilo types.EnviarHiloAMemoria
-		err := json.NewDecoder(r.Body).Decode(&infoHilo)
-
+		decoder := json.NewDecoder(r.Body)
+		var magic types.EnviarHiloAMemoria
+		err := decoder.Decode(&magic)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Error al decodificar mensaje"))
 			return
 		}
+		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
-		// Aca va toda la logica para crear el hilo pag(22)
+		memSistema.CrearContextoTID(magic.TID, magic.PID, magic.Path)
 
-		pidParceado := strconv.Itoa(int(infoHilo.PID))
-		logger.Info("## Hilo Creado - (PID:TID) - (%d:%d)", pidParceado, infoHilo.TID)
-
-		// En caso de haberse creado el hilo
-
-		respuesta, err := json.Marshal("OK")
-		if err != nil {
-			http.Error(w, "Error al codificar los datos como JSON", http.StatusInternalServerError)
-			return
-		}
+		logger.Info("## Hilo Creado - (PID:TID) - (%d:%d)", magic.PID, magic.PID)
 		w.WriteHeader(http.StatusOK)
-		w.Write(respuesta)
-
-		logger.Info(fmt.Sprintf("## Hilo Creado - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
+		w.Write([]byte("OK"))
 	}
 }
 

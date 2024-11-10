@@ -71,7 +71,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 				}
 			}
 		}
-		(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE ESPACIO LIBRE EN LA MEMORIA", http.StatusInternalServerError))
+		(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
 		return
 	}
 }

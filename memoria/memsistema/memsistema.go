@@ -24,7 +24,7 @@ func CrearContextoPID(pid uint32, base, limite uint32) {
 }
 
 // Función para inicializar un contexto de ejecución de un hilo (TID)
-func CrearContextoTID(tid uint32) {
+func CrearContextoTID(tid uint32, pid uint32, archivoPseudocodigo string) {
 	ContextosTID[tid] = types.ContextoEjecucionTID{
 		TID:                tid,
 		PC:                 0,
@@ -38,6 +38,7 @@ func CrearContextoTID(tid uint32) {
 		HX:                 0,
 		LISTAINSTRUCCIONES: make(map[string]string), // pseudocodigo
 	}
+	fmt.Printf("## Contexto Actualizado - (PID:TID) - (%d:%d)", pid, tid)
 	fmt.Printf("Contexto TID %d inicializado con registros en 0\n", tid)
 }
 
