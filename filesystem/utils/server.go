@@ -42,6 +42,7 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 			w.Write([]byte("Error al decodificar mensaje"))
 			return
 		}
+
 		// Verificar si se cuenta con el espacio disponible
 		bloquesNecesarios, espacioSuficiente := Verificar_Espacio_Disponible(magic.Tamanio, logger)
 		if !espacioSuficiente {
@@ -178,6 +179,9 @@ func Escribir_Index_Block(indexBlock int, bloquesDatos []uint32, nombreArchivo s
 			logger.Error(fmt.Sprintf("Error al escribir en bloques.dat: %s", err.Error()))
 			return false
 		}
+
+		// Latencia de acceso a bloque
+		time.Sleep(time.Duration(Configs.BlockAccessDelay) * time.Millisecond)
 	}
 
 	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: INDICE - Bloque File System %d", nombreArchivo, posicion))
