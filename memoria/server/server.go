@@ -24,7 +24,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", Finalizar_proceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
-	mux.HandleFunc("POST /MEMORY-DUMP", Memory_dump(logger))
+	mux.HandleFunc("POST /MEMORY-DUMP", RealizarMemoryDump(logger))
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
@@ -75,13 +75,16 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 
 func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pid := r.PathValue("pid") //Recibimos el pid a finalizar
+		pid_str := r.PathValue("pid") //Recibimos el pid a finalizar
 
-		logger.Info(fmt.Sprintf("Liberando memoria de Proceso con PID = %+v", pid))
+		logger.Info(fmt.Sprintf("Liberando memoria de Proceso con PID = %+v", pid_str))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria FINALICE el proceso (Está en pagina 21 del enunciado)
-
-		memSistema.EliminarContextoPID(pid)
+		pid, err := strconv.Atoi(pid_str)
+		if err != nil {
+			fmt.Sprintf("Error convirtiendo PID:", pid)
+		}
+		memSistema.EliminarContextoPID(uint32(pid))
 
 		// Si memoria pudo finalizar el proceso responde con OK a Kernel
 		w.WriteHeader(http.StatusOK)
@@ -150,7 +153,7 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 }
 
 // Función que maneja el endpoint de Memory Dump
-func realizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
+func RealizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
@@ -184,8 +187,8 @@ func realizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
 		filename := fmt.Sprintf("%d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp)
 
 		// Llamada a la API de FileSystem para crear el archivo
-		err = CrearArchivoEnFileSystem(filename, memoriaProceso)
-		if err != nil {
+		archivont := CrearArchivoEnFileSystem(filename, memoriaProceso)
+		if archivont == true {
 			http.Error(w, "Error al crear el archivo en FileSystem: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -201,8 +204,10 @@ func obtenerMemoriaProceso(contexto types.ContextoEjecucionPID) []byte {
 	// Supongamos que devuelve una copia del contenido de la memoria reservada para el proceso
 	return memUsuario.MemoriaDeUsuario[contexto.Base : contexto.Base+contexto.Limite]
 }
-func crearArchivoEnFileSystem(filename string, contenido []byte) {
-	return
+func CrearArchivoEnFileSystem(filename string, contenido []byte) bool {
+
+	//true si no se pudo crear el archivo
+	return true
 }
 
 // Comunicacion con CPU
@@ -290,11 +295,21 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
 
-		tid := r.PathValue("tid")
-		pc := r.PathValue("pc")
-		instruccion := memSistema.BuscarSiguienteInstruccion(tid, pc)
-		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Config.PortCPU, "obtener-instruccion", "GET", logger)
-		return
+		tid_string := r.PathValue("tid")
+		pc_string := r.PathValue("pc")
+		tid, err_tid := strconv.Atoi(tid_string)
+		if err_tid != nil {
+			fmt.Println("Error de conversion en TID:", err_tid)
+		} else {
+			pc, err_pc := strconv.Atoi(pc_string)
+			if err_pc != nil {
+				fmt.Println("Error en conversion de PC:", err_pc)
+			} else {
+				instruccion := memSistema.BuscarSiguienteInstruccion(uint32(tid), uint32(pc))
+				client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Configs.PortCPU, "obtener-instruccion", "GET", logger)
+				return
+			}
+		}
 	}
 }
 

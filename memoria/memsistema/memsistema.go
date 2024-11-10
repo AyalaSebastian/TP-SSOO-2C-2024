@@ -75,7 +75,7 @@ func CargarPseudocodigo(pid int, tid int, path string) error {
 	//Si no existe para el PID TID, lo creo
 	if _, exists := contextosEjecucion[pid][tid]; !exists {
 		contextosEjecucion[pid][tid] = &types.ContextoEjecucionTID{
-			TID:                tid,
+			TID:                uint32(tid),
 			PC:                 0,
 			AX:                 0,
 			BX:                 0,
@@ -105,12 +105,13 @@ func CargarPseudocodigo(pid int, tid int, path string) error {
 	return nil
 }
 
-func BuscarSiguienteInstruccion(tid int, pc uint32) (string, error) {
+func BuscarSiguienteInstruccion(tid uint32, pc uint32) string {
 
 	contexto, existeTID := ContextosTID[tid]
 
 	if !existeTID {
-		return "", fmt.Errorf("TID no encontrado")
+		fmt.Errorf("TID no encontrado")
+		return ""
 
 	}
 
@@ -118,11 +119,12 @@ func BuscarSiguienteInstruccion(tid int, pc uint32) (string, error) {
 
 	instruccion, existe := contexto.LISTAINSTRUCCIONES[fmt.Sprintf("instr_%d", indiceInstruccion)]
 	if !existe {
-		return "", fmt.Errorf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
+		fmt.Errorf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
+		return ""
 	}
 	//Log obligatorio
 	fmt.Printf("Obtener instruccion: ## Obtener instrucción - (PID:TID) - (%d:%d) - Instrucción: %s \n", tid, tid, instruccion)
 
-	return instruccion, nil
+	return instruccion
 
 }
