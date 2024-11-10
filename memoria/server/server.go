@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/sisoputnfrba/tp-golang/kernel/utils"
+	"github.com/sisoputnfrba/tp-golang/memoria/client"
 	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
@@ -58,7 +60,13 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria CREE el proceso (Está en pagina 20 y 21 del enunciado)
-		memUsuario.CrearProceso(utils.Execute.TID)
+		memUsuario.AsignarPID(utils.Execute.PID, magic.Tamanio, magic.Path)
+
+		//crear estructura de memSistema
+		//	memSistema.CrearContextoTID(utils.Execute.TID)
+
+		//memSistema.CrearContextoPID(utils.Execute.PID, base, limite)
+
 		// Si memoria pudo asignar el espacio necesario para el proceso responde con OK a Kernel
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -72,6 +80,8 @@ func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Liberando memoria de Proceso con PID = %+v", pid))
 
 		// IMPORTANTE: Acá tiene que ir todo para que la memoria FINALICE el proceso (Está en pagina 21 del enunciado)
+
+		memSistema.EliminarContextoPID(pid)
 
 		// Si memoria pudo finalizar el proceso responde con OK a Kernel
 		w.WriteHeader(http.StatusOK)
@@ -139,29 +149,60 @@ func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func Memory_dump(logger *slog.Logger) http.HandlerFunc {
+// Función que maneja el endpoint de Memory Dump
+func realizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//		decoder := json.NewDecoder(r.Body)
-		var err error
-		var req struct {
-		}
-		err = json.NewDecoder(r.Body).Decode(&req)
-
-		if err != nil {
-			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Error al decodificar mensaje"))
+		if r.Method != http.MethodPost {
+			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 			return
 		}
 
+		// Decodificar la solicitud para obtener el PID y TID
+		var pidTid struct {
+			PID uint32 `json:"pid"`
+			TID uint32 `json:"tid"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&pidTid)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
 			return
 		}
 
+		// Log obligatorio de Memory Dump
+		logger.Info(fmt.Sprintf("Memory Dump: ## Memory Dump solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
+
+		// Obtener el tamaño y contenido de la memoria del proceso
+		contextoPID, existePID := memSistema.ContextosPID[uint32(pidTid.PID)]
+		if !existePID {
+			http.Error(w, "PID no encontrado", http.StatusNotFound)
+			return
+		}
+		memoriaProceso := obtenerMemoriaProceso(contextoPID) // función que devuelve la memoria reservada por el proceso
+
+		// Nombre del archivo basado en el timestamp actual
+		timestamp := time.Now().Unix()
+		filename := fmt.Sprintf("%d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp)
+
+		// Llamada a la API de FileSystem para crear el archivo
+		err = CrearArchivoEnFileSystem(filename, memoriaProceso)
+		if err != nil {
+			http.Error(w, "Error al crear el archivo en FileSystem: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Responder al Kernel como OK
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		fmt.Fprintln(w, "OK")
 	}
+}
+
+// Función auxiliar para obtener la memoria reservada por un proceso (implementación simulada)
+func obtenerMemoriaProceso(contexto types.ContextoEjecucionPID) []byte {
+	// Supongamos que devuelve una copia del contenido de la memoria reservada para el proceso
+	return memUsuario.MemoriaDeUsuario[contexto.Base : contexto.Base+contexto.Limite]
+}
+func crearArchivoEnFileSystem(filename string, contenido []byte) {
+	return
 }
 
 // Comunicacion con CPU
@@ -186,8 +227,8 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Buscar los contextos para el PID y TID en los mapas
-		contextoPID, existePID := memSistema.ContextosPID[int(pidTid.PID)]
-		contextoTID, existeTID := memSistema.ContextosTID[int(pidTid.TID)]
+		contextoPID, existePID := memSistema.ContextosPID[(pidTid.PID)]
+		contextoTID, existeTID := memSistema.ContextosTID[(pidTid.TID)]
 
 		// Verificar que ambos contextos existen en los mapas
 		if !existePID || !existeTID {
@@ -248,7 +289,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
-		
+
 		tid := r.PathValue("tid")
 		pc := r.PathValue("pc")
 		instruccion := memSistema.BuscarSiguienteInstruccion(tid, pc)

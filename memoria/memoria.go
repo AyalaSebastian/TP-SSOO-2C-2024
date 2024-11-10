@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
-    "os"
-    "bufio"
+
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
 	"github.com/sisoputnfrba/tp-golang/memoria/server"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
@@ -60,20 +59,6 @@ func Ver_Contexto(pid int, tid int, logger *slog.Logger) (*types.RegCPU, error) 
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
 func Update_Contexto(pid uint32, tid uint32, logger *slog.Logger) {
 
@@ -124,7 +109,6 @@ func leerArchivoPseudoCodigo(tid uint32,pc int,archivo string,lista_instruccione
 	Client.Obtener_Instrucción(tid,lista_instrucciones,pc)
 }
 */
-
 
 /*PREGUNTAS PARA SOPORTE:
 de donde vienen el pid y tid que recibe memoria para:

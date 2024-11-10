@@ -92,13 +92,13 @@ type UpdateMemoria struct {
 }
 
 type ContextoEjecucionPID struct {
-	PID    int    `json:"pid"`
+	PID    uint32 `json:"pid"`
 	Base   uint32 `json:"base"`
 	Limite uint32 `json:"limite"`
 }
 
 type ContextoEjecucionTID struct {
-	TID                int               `json:"tid"`
+	TID                uint32            `json:"tid"`
 	PC                 uint32            `json:"pc"` // Program Counter (Proxima instruccion a ejecutar)
 	AX                 uint32            `json:"ax"` // Registro Numerico de proposito general
 	BX                 uint32            `json:"bx"` // Registro Numerico de proposito general
