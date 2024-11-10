@@ -2,9 +2,7 @@ package memSistema
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 
@@ -64,21 +62,20 @@ func EliminarContextoTID(tid uint32) {
 }
 
 // Funcion para cargar el archivo de pseudocodigo
-func CargarPseudocodigo(pid int, tid int, path string) {
+
+// Funcion para cargar el archivo de pseudocodigo
+func CargarPseudocodigo(pid int, tid int, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Errorf("Error al abrir el archivo %s: %v", path, err)
-		return
+		return fmt.Errorf("Error al abrir el archivo %s: %v", path, err)
 	}
 	defer file.Close()
 
+	var contextosEjecucion = make(map[int]map[int]*types.ContextoEjecucionTID)
 	//Si no existe para el PID TID, lo creo
-	if _, exists := types.ContextoEjecucionPID.PID != pid; !exists {
-		contextosEjecucion[PID] = make(map[int]*types.ContextoEjecucionTID)
-	}
-	if _, exists := contextosEjecucion[PID][TID]; !exists {
-		contextosEjecucion[PID][TID] = &types.ContextoEjecucionTID{
-			TID:                TID,
+	if _, exists := contextosEjecucion[pid][tid]; !exists {
+		contextosEjecucion[pid][tid] = &types.ContextoEjecucionTID{
+			TID:                tid,
 			PC:                 0,
 			AX:                 0,
 			BX:                 0,
@@ -91,7 +88,7 @@ func CargarPseudocodigo(pid int, tid int, path string) {
 			LISTAINSTRUCCIONES: make(map[string]string),
 		}
 	}
-	contexto := contextosEjecucion[PID][TID]
+	contexto := contextosEjecucion[pid][tid]
 	scanner := bufio.NewScanner(file)
 	instruccionNum := 0 // Indice de instrucciones
 
@@ -103,26 +100,25 @@ func CargarPseudocodigo(pid int, tid int, path string) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Errorf("Error al leer el archivo %s: %v", path, err)
-		return
+		return fmt.Errorf("Error al leer el archivo %s: %v", path, err)
 	}
-	return
+	return nil
 }
 
-func BuscarSiguienteInstruccion(tid uint32, pc uint32) {
+func BuscarSiguienteInstruccion(tid int, pc uint32) (string, error) {
 
 	contexto, existeTID := ContextosTID[tid]
 
 	if !existeTID {
-		http.Error(w, "TID no encontrado", http.StatusNotFound)
-		return
+		return "", fmt.Errorf("TID no encontrado")
+
 	}
 
 	indiceInstruccion := pc + 1
 
 	instruccion, existe := contexto.LISTAINSTRUCCIONES[fmt.Sprintf("instr_%d", indiceInstruccion)]
 	if !existe {
-		return errors.New(fmt.Sprintf("Instrucción no encontrada para PC %d en TID %d", pc, tid))
+		return "", fmt.Errorf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
 	}
 	//Log obligatorio
 	fmt.Printf("Obtener instruccion: ## Obtener instrucción - (PID:TID) - (%d:%d) - Instrucción: %s \n", tid, tid, instruccion)
