@@ -9,9 +9,8 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-// Mapas para almacenar los contextos de ejecución
+// Mapa para almacenar los contextos de ejecución de los procesos y sus hilos asociados
 var ContextosPID = make(map[uint32]types.ContextoEjecucionPID) // Contexto por PID
-var ContextosTID = make(map[uint32]types.ContextoEjecucionTID) // Contexto por TID
 
 // Función para inicializar un contexto de ejecución de un proceso (PID)
 func CrearContextoPID(pid uint32, base, limite uint32) {
@@ -19,27 +18,33 @@ func CrearContextoPID(pid uint32, base, limite uint32) {
 		PID:    pid,
 		Base:   base,
 		Limite: limite,
+		TIDs:   make(map[uint32]types.ContextoEjecucionTID),
 	}
 	fmt.Printf("Contexto PID %d inicializado con Base = %d, Límite = %d\n", pid, base, limite)
 }
 
-// Función para inicializar un contexto de ejecución de un hilo (TID)
-func CrearContextoTID(tid uint32, pid uint32, archivoPseudocodigo string) {
-	ContextosTID[tid] = types.ContextoEjecucionTID{
-		TID:                tid,
-		PC:                 0,
-		AX:                 0,
-		BX:                 0,
-		CX:                 0,
-		DX:                 0,
-		EX:                 0,
-		FX:                 0,
-		GX:                 0,
-		HX:                 0,
-		LISTAINSTRUCCIONES: make(map[string]string), // pseudocodigo
+// Función para inicializar un contexto de ejecución de un hilo (TID) asociado a un proceso (PID)
+func CrearContextoTID(pid, tid uint32, archivoPseudocodigo string) {
+	if proceso, exists := ContextosPID[pid]; exists {
+		proceso.TIDs[tid] = types.ContextoEjecucionTID{
+			TID:                tid,
+			PC:                 0,
+			AX:                 0,
+			BX:                 0,
+			CX:                 0,
+			DX:                 0,
+			EX:                 0,
+			FX:                 0,
+			GX:                 0,
+			HX:                 0,
+			LISTAINSTRUCCIONES: make(map[string]string), // pseudocodigo
+		}
+		ContextosPID[pid] = proceso // Actualizar el contexto en el mapa
+		fmt.Printf("## Contexto Actualizado - (PID:TID) - (%d:%d)\n", pid, tid)
+		fmt.Printf("Contexto TID %d inicializado con registros en 0\n", tid)
+	} else {
+		fmt.Printf("Error: El PID %d no existe\n", pid)
 	}
-	fmt.Printf("## Contexto Actualizado - (PID:TID) - (%d:%d)", pid, tid)
-	fmt.Printf("Contexto TID %d inicializado con registros en 0\n", tid)
 }
 
 // Función para eliminar el contexto de ejecución de un proceso (PID)
@@ -52,13 +57,18 @@ func EliminarContextoPID(pid uint32) {
 	}
 }
 
-// Función para eliminar el contexto de ejecución de un hilo (TID)
-func EliminarContextoTID(tid uint32) {
-	if _, exists := ContextosTID[tid]; exists {
-		delete(ContextosTID, tid)
-		fmt.Printf("Contexto TID %d eliminado\n", tid)
+// Función para eliminar el contexto de ejecución de un hilo (TID) asociado a un proceso (PID)
+func EliminarContextoTID(pid, tid uint32) {
+	if proceso, exists := ContextosPID[pid]; exists {
+		if _, tidExists := proceso.TIDs[tid]; tidExists {
+			delete(proceso.TIDs, tid)
+			ContextosPID[pid] = proceso // Actualizar el contexto en el mapa
+			fmt.Printf("Contexto TID %d del PID %d eliminado\n", tid, pid)
+		} else {
+			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
+		}
 	} else {
-		fmt.Printf("Contexto TID %d no existe\n", tid)
+		fmt.Printf("PID %d no existe\n", pid)
 	}
 }
 

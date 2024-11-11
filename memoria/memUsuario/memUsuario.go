@@ -36,8 +36,6 @@ var Particiones = []types.Particion{
 // Bitmap para las particiones (true = ocupada, false = libre)
 var BitmapParticiones = make([]bool, len(Particiones))
 
-//true es ocupada y false es libre
-
 // Función para marcar una partición como ocupada o libre
 func MarcarParticion(indiceDeParticion int, ocupada bool) error {
 	if indiceDeParticion < 0 || indiceDeParticion >= len(BitmapParticiones) {

@@ -91,10 +91,12 @@ type UpdateMemoria struct {
 	RegCPU RegCPU `json:"regCPU"` // Nuevos valores de los registros a actualizar
 }
 
+// Modificación de la estructura ContextoEjecucionPID para incluir los TIDs
 type ContextoEjecucionPID struct {
-	PID    uint32 `json:"pid"`
-	Base   uint32 `json:"base"`
-	Limite uint32 `json:"limite"`
+	PID    uint32
+	Base   uint32
+	Limite uint32
+	TIDs   map[uint32]ContextoEjecucionTID // Mapa de TIDs asociados al PID
 }
 
 type ContextoEjecucionTID struct {

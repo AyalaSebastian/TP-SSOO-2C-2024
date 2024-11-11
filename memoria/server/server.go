@@ -21,9 +21,9 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 	// Endpoints
 	mux.HandleFunc("POST /CREAR-PROCESO", Crear_proceso(logger))
-	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", Finalizar_proceso(logger))
+	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", FinalizarProceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
-	mux.HandleFunc("POST /FINALIZAR_HILO", Finalizar_hilo(logger))
+	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", RealizarMemoryDump(logger))
 
 	// Comunicacion con CPU
@@ -74,24 +74,45 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func Finalizar_proceso(logger *slog.Logger) http.HandlerFunc {
+func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pid_str := r.PathValue("pid") //Recibimos el pid a finalizar
-
-		logger.Info(fmt.Sprintf("Liberando memoria de Proceso con PID = %+v", pid_str))
-
-		// IMPORTANTE: Acá tiene que ir todo para que la memoria FINALICE el proceso (Está en pagina 21 del enunciado)
-		pid, err := strconv.Atoi(pid_str)
-		if err != nil {
-			fmt.Sprintf("Error convirtiendo PID:", pid)
+		// Verificar que el método sea PATCH
+		if r.Method != http.MethodPatch {
+			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+			return
 		}
-		memSistema.EliminarContextoPID(uint32(pid))
 
-		// Si memoria pudo finalizar el proceso responde con OK a Kernel
+		// Decodificar la solicitud para obtener el PID
+		var pid struct {
+			PID uint32 `json:"pid"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&pid)
+		if err != nil {
+			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
+			return
+		}
+
+		//marcar en bitmap como libre la particion
+		//memUsuario.MarcarParticion(pid.PID, false)
+
+		// Aquí se obtiene el tamaño del proceso. Esto es solo un ejemplo.
+		// Asegúrate de que el tamaño del proceso esté disponible en tu sistema.
+		// Por ahora, se usa un valor ficticio, reemplázalo por el valor real.
+		tamano := 1024 // Esto debe obtenerse desde el contexto del proceso o alguna estructura que contenga el tamaño real.
+
+		// Log de solicitud de finalización del proceso
+		logger.Info(fmt.Sprintf("Creación / destrucción de Proceso: ## Proceso Destruido - PID: %d - Tamaño: %d", pid.PID, tamano))
+
+		// Ejecutar la función para eliminar el contexto del PID en Memoria de sistema
+		memSistema.EliminarContextoPID(pid.PID)
+
+		// Log de destrucción del proceso
+		logger.Info(fmt.Sprintf("Destrucción de Proceso: ## Proceso Destruido - PID: %d - Tamaño: %d", pid.PID, tamano))
+
+		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		fmt.Fprintln(w, "OK")
 	}
-
 }
 
 func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
@@ -117,31 +138,38 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func Finalizar_hilo(logger *slog.Logger) http.HandlerFunc {
-
+// hecho
+func FinalizarHilo(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		var infoHilo types.PIDTID
-		err := json.NewDecoder(r.Body).Decode(&infoHilo)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		// Verificar que el método sea POST
+		if r.Method != http.MethodPost {
+			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 			return
 		}
 
-		// Aca va toda la logica para finalizar el hilo
-
-		// En caso de haberse finalizado el hilo
-		respuesta, err := json.Marshal("OK")
+		// Decodificar la solicitud para obtener el PID y TID
+		var pidTid struct {
+			PID uint32 `json:"pid"`
+			TID uint32 `json:"tid"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&pidTid)
 		if err != nil {
-			http.Error(w, "Error al codificar los datos como JSON", http.StatusInternalServerError)
+			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
 			return
 		}
+
+		// Log de solicitud de finalización del hilo
+		logger.Info(fmt.Sprintf("Finalización de hilo: ## Finalizar hilo solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
+
+		// Ejecutar la función para eliminar el contexto del TID en Memoria
+		memSistema.EliminarContextoTID(pidTid.PID, pidTid.TID)
+
+		// Log de destrucción del hilo
+		logger.Info(fmt.Sprintf("Destrucción de Hilo: ## Hilo Destruido - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
+
+		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
-		//w.Write([]byte("OK"))
-
-		w.Write(respuesta)
-		logger.Info(fmt.Sprintf("## Hilo Destruido - (PID:TID) - (%d:%d)", infoHilo.PID, infoHilo.TID))
+		fmt.Fprintln(w, "OK")
 	}
 }
 
@@ -203,13 +231,14 @@ func CrearArchivoEnFileSystem(filename string, contenido []byte) bool {
 	return true
 }
 
-// Comunicacion con CPU
-
-//chat gpt me dice que funcionan bien "Obtener_Contexto_De_Ejecucion" de mem y "SolicitarContextoEjecucion" de cpu
+///////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////     COMUNICACION CON CPU      //////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
 // Función HTTP para obtener el contexto de ejecución completo para un PID-TID
 
 // modificar w http.ResponseWriter, r *http.Request, y listo
+
 func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Decodificar la solicitud para obtener el PID y TID
@@ -224,13 +253,21 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		// Buscar los contextos para el PID y TID en los mapas
-		contextoPID, existePID := memSistema.ContextosPID[(pidTid.PID)]
-		contextoTID, existeTID := memSistema.ContextosTID[(pidTid.TID)]
+		// Buscar el contexto para el PID en el mapa ContextosPID
+		contextoPID, existePID := memSistema.ContextosPID[pidTid.PID]
 
-		// Verificar que ambos contextos existen en los mapas
-		if !existePID || !existeTID {
-			http.Error(w, "PID o TID no encontrado", http.StatusNotFound)
+		// Verificar si el PID existe
+		if !existePID {
+			http.Error(w, "PID no encontrado", http.StatusNotFound)
+			return
+		}
+
+		// Buscar el TID dentro del contexto del PID
+		contextoTID, existeTID := contextoPID.TIDs[pidTid.TID]
+
+		// Verificar si el TID existe dentro del PID
+		if !existeTID {
+			http.Error(w, "TID no encontrado en el PID", http.StatusNotFound)
 			return
 		}
 
