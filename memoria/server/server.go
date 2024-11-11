@@ -24,6 +24,9 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", FinalizarProceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
+	mux.HandleFunc(" /MEMORY_DUMP_KERNEL", Solicitud_Memory_dump(logger))
+	mux.HandleFunc(" /MEMORY-DUMP_FILESYS", RealizarMemoryDump(logger))
+	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", RealizarMemoryDump(logger))
 
 	// Comunicacion con CPU
@@ -63,12 +66,7 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		memUsuario.AsignarPID(utils.Execute.PID, magic.Tamanio, magic.Pseudo)
 
 		logger.Info("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PCB.PID, magic.Tamanio)
-		//crear estructura de memSistema
-		//	memSistema.CrearContextoTID(utils.Execute.TID)
 
-		//memSistema.CrearContextoPID(utils.Execute.PID, base, limite)
-
-		// Si memoria pudo asignar el espacio necesario para el proceso responde con OK a Kernel
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	}
@@ -173,7 +171,24 @@ func FinalizarHilo(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// Función que maneja el endpoint de Memory Dump
+// recibo la operacion de memory dump proveniente de Kernel
+func Solicitud_Memory_dump(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		var magic types.PIDTID
+		err := decoder.Decode(&magic)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Error al decodificar mensaje"))
+			return
+		}
+		logger.Info(fmt.Sprintf("Memory Dump: ## Memory Dump solicitado - (PID:TID) - (%d:%d)", magic.PID, magic.TID))
+		client.Enviar_QueryPath(magic, utils.Configs.IpFilesystem, utils.Config.PortFilesystem, "dump", "POST", logger)
+	}
+}
+
+// Función que maneja el endpoint de Memory Dump a partir del archivo recibido por file System
 func RealizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -191,9 +206,6 @@ func RealizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
 			return
 		}
-
-		// Log obligatorio de Memory Dump
-		logger.Info(fmt.Sprintf("Memory Dump: ## Memory Dump solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
 
 		// Obtener el tamaño y contenido de la memoria del proceso
 		contextoPID, existePID := memSistema.ContextosPID[uint32(pidTid.PID)]
