@@ -90,22 +90,17 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		//marcar en bitmap como libre la particion
-		//memUsuario.MarcarParticion(pid.PID, false)
-
-		// Aquí se obtiene el tamaño del proceso. Esto es solo un ejemplo.
-		// Asegúrate de que el tamaño del proceso esté disponible en tu sistema.
-		// Por ahora, se usa un valor ficticio, reemplázalo por el valor real.
-		tamano := 1024 // Esto debe obtenerse desde el contexto del proceso o alguna estructura que contenga el tamaño real.
-
-		// Log de solicitud de finalización del proceso
-		logger.Info(fmt.Sprintf("Creación / destrucción de Proceso: ## Proceso Destruido - PID: %d - Tamaño: %d", pid.PID, tamano))
+		//marca la particion como libre en memoria de usuario
+		memUsuario.LiberarParticionPorPID(pid.PID)
 
 		// Ejecutar la función para eliminar el contexto del PID en Memoria de sistema
 		memSistema.EliminarContextoPID(pid.PID)
 
+		///////////////////necesito que me envien el tamaño del proceso para ponerlo en el log/////////////////////
+		//como no lo tengo lo saco del log
+
 		// Log de destrucción del proceso
-		logger.Info(fmt.Sprintf("Destrucción de Proceso: ## Proceso Destruido - PID: %d - Tamaño: %d", pid.PID, tamano))
+		logger.Info(fmt.Sprintf("Destrucción de Proceso: ## Proceso Destruido - PID: %d - ", pid.PID))
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)

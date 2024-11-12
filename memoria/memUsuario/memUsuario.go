@@ -11,47 +11,44 @@ import (
 
 // var memoria global
 var MemoriaDeUsuario []byte
+var Particiones []types.Particion
+var BitmapParticiones []bool
+var PidAParticion map[uint32]int // Mapa para rastrear la asignación de PIDs a particiones
 
 // Funcion para iniciar la memoria y definir las particiones
 func Inicializar_Memoria_De_Usuario() {
 	// Inicializar el espacio de memoria con 1024 bytes
 	MemoriaDeUsuario = make([]byte, utils.Configs.MemorySize)
-	// Asignar las particiones fijas en la memoria
-	for i, particion := range Particiones {
+
+	// Asignar las particiones fijas en la memoria usando los datos de config
+	var base uint32 = 0
+	for i, limite := range utils.Configs.Partitions {
+		particion := types.Particion{
+			Base:   base,
+			Limite: uint32(limite),
+		}
+		Particiones = append(Particiones, particion)
 		fmt.Printf("Partición %d inicializada: Base = %d, Límite = %d\n", i+1, particion.Base, particion.Limite)
+		base += uint32(limite)
 	}
+	// Inicializar el bitmap y el mapa de PIDs
+	//todas las particiones estan libres = false
+	BitmapParticiones = make([]bool, len(Particiones))
+	PidAParticion = make(map[uint32]int)
 }
 
-// Definicion de las particiones fijas
-var Particiones = []types.Particion{
-	{Base: 0, Limite: 512},   // Primera particion: del byte 0 al byte 511
-	{Base: 512, Limite: 16},  // Segunda particion: del byte 512 al 527
-	{Base: 528, Limite: 32},  // Tercera particion: del byte 528 al 559
-	{Base: 560, Limite: 16},  // Cuarta particion: del byte 560 al 575
-	{Base: 576, Limite: 256}, // Quinta particion: del byte 576 al 831
-	{Base: 832, Limite: 64},  // Sexta particion: del byte 832 al 895
-	{Base: 896, Limite: 128}, // Septima particion: del byte 896 al 1023
-}
-
-// Bitmap para las particiones (true = ocupada, false = libre)
-var BitmapParticiones = make([]bool, len(Particiones))
-
-// Función para marcar una partición como ocupada o libre
-func MarcarParticion(indiceDeParticion int, ocupada bool) error {
-	if indiceDeParticion < 0 || indiceDeParticion >= len(BitmapParticiones) {
-		return fmt.Errorf("índice de partición fuera de rango")
+// Función para liberar una partición por PID
+func LiberarParticionPorPID(pid uint32) error {
+	particion, existe := PidAParticion[pid]
+	if !existe {
+		return fmt.Errorf("No se encontró el proceso %d asignado a ninguna partición", pid)
 	}
-	BitmapParticiones[indiceDeParticion] = ocupada
+
+	// Liberar la partición y actualizar el bitmap
+	BitmapParticiones[particion] = false
+	delete(PidAParticion, pid) // Eliminar la entrada del mapa
+	fmt.Printf("Proceso %d liberado de la partición %d\n", pid, particion+1)
 	return nil
-}
-
-// indiceDeParticion= 0 para particion 1 y 7 para la particion 8
-// Función para verificar si una partición está ocupada
-func EstaParticionOcupada(indiceDeParticion int) (bool, error) {
-	if indiceDeParticion < 0 || indiceDeParticion >= len(BitmapParticiones) {
-		return false, fmt.Errorf("índice de partición fuera de rango")
-	}
-	return BitmapParticiones[indiceDeParticion], nil
 }
 
 func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
@@ -73,3 +70,19 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 		return
 	}
 }
+
+/*
+modificaciones:
+// Función para asignar un proceso a la primera partición libre
+func AsignarProcesoAParticion(pid uint32) error {
+	for i, ocupada := range BitmapParticiones {
+		if !ocupada { // Si la partición está libre
+			BitmapParticiones[i] = true   // Marcar como ocupada
+			PidAParticion[pid] = i        // Asignar el PID a esta partición
+			fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
+			return nil
+		}
+	}
+	return fmt.Errorf("No hay particiones libres para asignar el proceso %d", pid)
+}
+*/
