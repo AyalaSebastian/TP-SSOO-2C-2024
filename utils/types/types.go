@@ -21,6 +21,7 @@ type TCB struct {
 type PathTamanio struct {
 	Path    string `json:"path"`
 	Tamanio int    `json:"tamanio"`
+	PID     uint32 `json:"pid"` // Agregado el PID para la creacion de proceso en memoria
 }
 
 type EnviarHiloAMemoria struct {
@@ -117,6 +118,21 @@ type ContextoEjecucionTID struct {
 type Particion struct {
 	Base   uint32
 	Limite uint32
+}
+
+type NuevoProcesoEnMemoria struct {
+	PCB     PCB    `json:"pcb"` //solo para conseguir el pid
+	Pseudo  string `json:"pseudo"`
+	Tamanio int    `json:"tamanio"`
+}
+
+// Estructura para almacenar la memoria del proceso, el timestamp, PID y TID
+// esto le pasa memoria a filesystem
+type MemoryDump struct {
+	MemoriaProceso []byte `json:"memoria_proceso"`
+	Timestamp      int64  `json:"timestamp"`
+	PID            uint32 `json:"pid"`
+	TID            uint32 `json:"tid"`
 }
 
 // --------------------------------- FILESYSTEM ---------------------------------

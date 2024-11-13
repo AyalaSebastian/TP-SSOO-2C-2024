@@ -72,7 +72,7 @@ func main() {
 		pcAnterior := client.ReceivedContextoEjecucion.Registros.PC
 
 		// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
-		err := Fetch(utils.Configs.IpMemory, utils.Configs.PortMemory, server.ReceivedPIDTID.TID, Logger)
+		err := Fetch(utils.Configs.IpMemory, utils.Configs.PortMemory, server.ReceivedPIDTID.TID, server.ReceivedPIDTID.PID, Logger)
 		if err != nil {
 			Logger.Error("Error en Fetch: ", slog.Any("error", err))
 			break // Salimos del ciclo si hay error en Fetch
@@ -111,7 +111,7 @@ func main() {
 var Instruccion string
 
 // Función Fetch para obtener la próxima instrucción
-func Fetch(ipMemory string, portMemory int, tid uint32, logger *slog.Logger) error {
+func Fetch(ipMemory string, portMemory int, tid uint32, pid uint32, logger *slog.Logger) error {
 	if client.ReceivedContextoEjecucion == nil {
 		logger.Error("No se ha recibido el contexto de ejecución. Imposible realizar Fetch.")
 		return fmt.Errorf("contexto de ejecución no disponible")
@@ -124,7 +124,8 @@ func Fetch(ipMemory string, portMemory int, tid uint32, logger *slog.Logger) err
 	requestData := struct {
 		PC  uint32 `json:"pc"`
 		TID uint32 `json:"tid"`
-	}{PC: pc, TID: tid}
+		PID uint32 `json:"pid"`
+	}{PC: pc, TID: tid, PID: pid}
 
 	// Serializar los datos en JSON
 	jsonData, err := json.Marshal(requestData)

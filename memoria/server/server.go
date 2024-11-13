@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -8,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sisoputnfrba/tp-golang/kernel/utils"
 	"github.com/sisoputnfrba/tp-golang/memoria/client"
 	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
+	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -24,10 +25,8 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", FinalizarProceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
-	mux.HandleFunc(" /MEMORY_DUMP_KERNEL", Solicitud_Memory_dump(logger))
-	mux.HandleFunc(" /MEMORY-DUMP_FILESYS", RealizarMemoryDump(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
-	mux.HandleFunc("POST /MEMORY-DUMP", RealizarMemoryDump(logger))
+	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
@@ -52,7 +51,8 @@ func Iniciar_memoria(logger *slog.Logger) {
 func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
-		var magic types.ProcesoNew
+		//nuevo estructura de NuevoProcesoEnMemoria
+		var magic types.NuevoProcesoEnMemoria
 		err := decoder.Decode(&magic)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
@@ -62,9 +62,10 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		}
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
-		// IMPORTANTE: Acá tiene que ir todo para que la memoria CREE el proceso (Está en pagina 20 y 21 del enunciado)
-		memUsuario.AsignarPID(utils.Execute.PID, magic.Tamanio, magic.Pseudo)
+		// Llamar a Inicializar_proceso con los parámetros correspondientes
+		memUsuario.AsignarPID(magic.PCB.PID, magic.Tamanio, magic.Pseudo)
 
+		// Si la inicialización fue exitosa
 		logger.Info("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PCB.PID, magic.Tamanio)
 
 		w.WriteHeader(http.StatusOK)
@@ -166,25 +167,8 @@ func FinalizarHilo(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// recibo la operacion de memory dump proveniente de Kernel
-func Solicitud_Memory_dump(logger *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-		var magic types.PIDTID
-		err := decoder.Decode(&magic)
-		if err != nil {
-			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Error al decodificar mensaje"))
-			return
-		}
-		logger.Info(fmt.Sprintf("Memory Dump: ## Memory Dump solicitado - (PID:TID) - (%d:%d)", magic.PID, magic.TID))
-		client.Enviar_QueryPath(magic, utils.Configs.IpFilesystem, utils.Config.PortFilesystem, "dump", "POST", logger)
-	}
-}
-
 // Función que maneja el endpoint de Memory Dump a partir del archivo recibido por file System
-func RealizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
+func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
@@ -196,46 +180,52 @@ func RealizarMemoryDump(logger *slog.Logger) http.HandlerFunc {
 			PID uint32 `json:"pid"`
 			TID uint32 `json:"tid"`
 		}
+
 		err := json.NewDecoder(r.Body).Decode(&pidTid)
 		if err != nil {
+			logger.Error("Error al decodificar la solicitud", slog.Any("error", err))
 			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
 			return
 		}
 
-		// Obtener el tamaño y contenido de la memoria del proceso
-		contextoPID, existePID := memSistema.ContextosPID[uint32(pidTid.PID)]
-		if !existePID {
+		// Obtener la partición correspondiente al PID
+		particion, existe := memUsuario.PidAParticion[pidTid.PID]
+		if !existe {
+			logger.Error("PID no encontrado", slog.Any("pid", pidTid.PID))
 			http.Error(w, "PID no encontrado", http.StatusNotFound)
 			return
 		}
-		memoriaProceso := obtenerMemoriaProceso(contextoPID) // función que devuelve la memoria reservada por el proceso
 
-		// Nombre del archivo basado en el timestamp actual
+		// Obtener la memoria del proceso a partir de la partición
+		memoriaProceso := memUsuario.MemoriaDeUsuario[memUsuario.Particiones[particion].Base : memUsuario.Particiones[particion].Base+memUsuario.Particiones[particion].Limite]
+
+		// Generar el timestamp actual
 		timestamp := time.Now().Unix()
-		filename := fmt.Sprintf("%d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp)
 
-		// Llamada a la API de FileSystem para crear el archivo
-		archivont := CrearArchivoEnFileSystem(filename, memoriaProceso)
-		if archivont == true {
-			http.Error(w, "Error al crear el archivo en FileSystem: "+err.Error(), http.StatusInternalServerError)
+		// Crear la estructura con la memoria, timestamp, PID y TID
+		memoryDumpRequest := types.MemoryDump{
+			MemoriaProceso: memoriaProceso,
+			Timestamp:      timestamp,
+			PID:            pidTid.PID,
+			TID:            pidTid.TID,
+		}
+
+		// Enviar la estructura al FileSystem para crear el archivo con el dump
+		// Usamos el endpoint "dump" para enviar la estructura
+		exito := client.Enviar_QueryPath(memoryDumpRequest, utils.Configs.IpFilesystem, utils.Configs.PortFilesystem, "dump", "POST", logger)
+		if !exito {
+			logger.Error("Error al enviar el dump al FileSystem")
+			http.Error(w, "Error al enviar el dump al FileSystem", http.StatusInternalServerError)
 			return
 		}
 
-		// Responder al Kernel como OK
+		// Responder con un mensaje OK si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK")
+		w.Write([]byte("OK"))
+
+		// Log de éxito
+		logger.Info(fmt.Sprintf("Memory Dump realizado con éxito: %d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp))
 	}
-}
-
-// Función auxiliar para obtener la memoria reservada por un proceso (implementación simulada)
-func obtenerMemoriaProceso(contexto types.ContextoEjecucionPID) []byte {
-	// Supongamos que devuelve una copia del contenido de la memoria reservada para el proceso
-	return memUsuario.MemoriaDeUsuario[contexto.Base : contexto.Base+contexto.Limite]
-}
-func CrearArchivoEnFileSystem(filename string, contenido []byte) bool {
-
-	//true si no se pudo crear el archivo
-	return true
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -328,6 +318,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+// mal
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
@@ -366,6 +357,8 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 
 // falta hacer la logica con el TID recibido
 // Función Write_Mem para manejar la escritura en la memoria a partir de la API
+
+// hecha
 func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var requestData struct {
@@ -384,21 +377,27 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 
 		// Verificar si la dirección física está dentro de alguna partición
 		encontrado := false
-		/*	for _, particion := range memSistema.Particiones {
-				if requestData.DireccionFisica >= particion.Base && requestData.DireccionFisica < particion.Base+particion.Limite-4 {
-					encontrado = true
-					break
-				}
+		for _, particion := range memUsuario.Particiones {
+			if requestData.DireccionFisica >= particion.Base && requestData.DireccionFisica < particion.Base+particion.Limite {
+				encontrado = true
+				break
 			}
-		*/
+		}
 		if !encontrado {
 			logger.Error("Dirección física fuera de rango de particiones")
 			http.Error(w, "Dirección física fuera de rango de particiones", http.StatusBadRequest)
 			return
 		}
 
+		// Verificar que la dirección esté dentro de los límites de memoria
+		if int(requestData.DireccionFisica+4) > len(memUsuario.MemoriaDeUsuario) {
+			logger.Error("Dirección física fuera de los límites de la memoria", slog.Any("direccion_fisica", requestData.DireccionFisica))
+			http.Error(w, "Dirección fuera de los límites de memoria", http.StatusBadRequest)
+			return
+		}
+
 		// Escribir el valor en little-endian en la memoria
-		//	binary.LittleEndian.PutUint32(memSistema.Memoria[requestData.DireccionFisica:], requestData.Valor)
+		binary.LittleEndian.PutUint32(memUsuario.MemoriaDeUsuario[requestData.DireccionFisica:], requestData.Valor)
 
 		// Log obligatorio de Escritura en espacio de usuario
 		logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",

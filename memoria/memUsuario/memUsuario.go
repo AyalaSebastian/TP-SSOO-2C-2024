@@ -51,14 +51,16 @@ func LiberarParticionPorPID(pid uint32) error {
 	return nil
 }
 
+// fisrt fit
 func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		particiones := utils.Configs.Partitions
 		cant_particiones := len(particiones)
 		for i := 0; i < cant_particiones; i++ {
-			if particiones[i] != (-1) {
+			if !BitmapParticiones[i] {
 				if tamanio_proceso < len(MemoriaDeUsuario) {
 					particiones[i] = -1
+					PidAParticion[pid] = i
 					memSistema.CrearContextoPID(pid, uint32(tamanio_proceso), uint32(len(MemoriaDeUsuario)))
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte("OK"))

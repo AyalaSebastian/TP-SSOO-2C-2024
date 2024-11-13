@@ -49,7 +49,7 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 
 func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad int, logger *slog.Logger) bool {
 	// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
-	parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio}
+	parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio, PID: pcb.PID} //añadi el pid para crear proceso en memoria
 	success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
 
 	if success {
