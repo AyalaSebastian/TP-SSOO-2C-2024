@@ -343,12 +343,56 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//	direccion_fisica := r.PathValue("direccion_fisica")
-		//	valor := memUsuario.BuscarPorDireccion(direccion_fisica)
-		//	client.Enviar_QueryPath(valor, utils.Configs.IpCPU, utils.Config.PortCPU, "readMem", "GET", logger)
+		// Crear una estructura para la solicitud que contiene la dirección física
+		var requestData struct {
+			DireccionFisica uint32 `json:"direccion_fisica"`
+			TID             uint32 `json:"tid"`
+			PID             uint32 `json:"pid"`
+		}
+
+		// Decodificar el cuerpo de la solicitud JSON
+		err := json.NewDecoder(r.Body).Decode(&requestData)
+		if err != nil {
+			// Si hay error al decodificar la solicitud, enviar una respuesta con error
+			http.Error(w, fmt.Sprintf("Error al leer la solicitud: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Verificar que la dirección esté dentro de los límites de memoria
+		if requestData.DireccionFisica+4 > uint32(len(memUsuario.MemoriaDeUsuario)) {
+			// Si hay error al buscar en la memoria, enviar una respuesta con error
+			http.Error(w, fmt.Sprintf("Dirección fuera de los límites de memoria. Dirección solicitada: %d", requestData.DireccionFisica), http.StatusBadRequest)
+			return
+		}
+
+		// Obtener los 4 bytes desde la dirección solicitada
+		bytes := memUsuario.MemoriaDeUsuario[requestData.DireccionFisica : requestData.DireccionFisica+4]
+
+		// Convertir los 4 bytes a uint32 (Little Endian)
+		valor := binary.LittleEndian.Uint32(bytes)
+
+		// Log obligatorio de la solicitud de lectura
+		logger.Info(fmt.Sprintf("## TID: %d - Acción: LEER - Dirección Física: %d", requestData.TID, requestData.DireccionFisica))
+
+		// Agregar log de lectura en espacio de usuario
+		logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: “## LEER - (%d:%d) - (%d:%d) - Dir. Física: %d - Tamaño: %d”",
+			requestData.PID, requestData.TID, requestData.PID, requestData.TID, requestData.DireccionFisica, 4)) // Tamaño de lectura: 4 bytes
+
+		// Crear la respuesta JSON con el valor leído
+		responseData := struct {
+			Valor uint32 `json:"valor"`
+		}{
+			Valor: valor,
+		}
+
+		// Serializar la respuesta en JSON
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
-
+		if err := json.NewEncoder(w).Encode(responseData); err != nil {
+			// Si hay error al serializar la respuesta, responder con error
+			http.Error(w, fmt.Sprintf("Error al enviar la respuesta: %v", err), http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -408,7 +452,7 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 		w.Write([]byte("OK"))
 
 		// Log de escritura exitosa
-		logger.Info(fmt.Sprintf("Escritura en memoria exitosa: TID %d - Dirección Física: %d - Valor: %d",
-			requestData.TID, requestData.DireccionFisica, requestData.Valor))
+		logger.Info(fmt.Sprintf("Escritura en memoria de usuario exitosa: TID %d - Dirección Física: %d - Valor: %d- Tamaño: %d",
+			requestData.TID, requestData.DireccionFisica, requestData.Valor, 4))
 	}
 }

@@ -175,9 +175,11 @@ func LeerMemoria(registroDatos, registroDireccion string, logger *slog.Logger) {
 	requestData := struct {
 		DireccionFisica uint32 `json:"direccion_fisica"`
 		TID             uint32 `json:"tid"`
+		PID             uint32 `json:"pid"`
 	}{
 		DireccionFisica: direccionFisica,
 		TID:             server.ReceivedPIDTID.TID,
+		PID:             server.ReceivedPIDTID.PID,
 	}
 
 	// Serializar los datos en JSON
