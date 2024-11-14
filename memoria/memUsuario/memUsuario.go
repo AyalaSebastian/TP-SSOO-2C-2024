@@ -55,12 +55,13 @@ func LiberarParticionPorPID(pid uint32) error {
 func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		particiones := utils.Configs.Partitions
-		cant_particiones := len(particiones)
-		for i := 0; i < cant_particiones; i++ {
+		for i := 0; i < len(BitmapParticiones); i++ {
 			if !BitmapParticiones[i] {
 				if tamanio_proceso < len(MemoriaDeUsuario) {
 					particiones[i] = -1
 					PidAParticion[pid] = i
+					BitmapParticiones[i] = true
+					fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
 					memSistema.CrearContextoPID(pid, uint32(tamanio_proceso), uint32(len(MemoriaDeUsuario)))
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte("OK"))

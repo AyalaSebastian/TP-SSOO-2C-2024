@@ -72,6 +72,20 @@ func EliminarContextoTID(pid, tid uint32) {
 	}
 }
 
+func Actualizar_TID(pid uint32, tid uint32, contexto types.ContextoEjecucionTID) {
+	if proceso, exists := ContextosPID[pid]; exists {
+		if _, tidExists := proceso.TIDs[tid]; tidExists {
+			proceso.TIDs[tid] = contexto // Actualizar el contexto en el mapa
+			ContextosPID[pid] = proceso  // Actualizar el contexto en el mapa
+			fmt.Printf("Contexto TID %d del PID %d actualizado\n", tid, pid)
+		} else {
+			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
+		}
+	} else {
+		fmt.Printf("PID %d no existe\n", pid)
+	}
+}
+
 // Funcion para cargar el archivo de pseudocodigo
 
 // Funcion para cargar el archivo de pseudocodigo

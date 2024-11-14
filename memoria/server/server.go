@@ -34,7 +34,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("/contexto", Obtener_Contexto_De_Ejecucion(logger))
 
 	//envia proxima instr a cpu fase fetch
-	mux.HandleFunc("GET /instruccion /{tid}/{pc}", Obtener_Instrucción(logger))
+	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
 
 	//recibo msj de cpu para que haga la instruccion read mem
 	mux.HandleFunc("/read_mem / {direccionFisica}", Read_Mem(logger))
@@ -302,9 +302,11 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		var req struct {
-			TID uint32
-			PID uint32
+			ContextoDeEjecucion types.ContextoEjecucionTID
+			TID                 uint32
+			PID                 uint32
 		}
 		err := json.NewDecoder(r.Body).Decode(&req)
 
@@ -312,8 +314,8 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		//	Actualizar_Contexto(req.PID, req.TID)
-
+		memSistema.Actualizar_TID(req.PID, req.TID, req.ContextoDeEjecucion)
+		logger.Info(fmt.Sprintf("## Contexto Actualizado - (PID:TID) - (%d:%d) ", req.PID, req.TID))
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 
@@ -324,23 +326,23 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
 
-		tid_string := r.PathValue("tid")
-		pc_string := r.PathValue("pc")
-		tid, err_tid := strconv.Atoi(tid_string)
-		if err_tid != nil {
-			fmt.Println("Error de conversion en TID:", err_tid)
-		} else {
-			pc, err_pc := strconv.Atoi(pc_string)
-			if err_pc != nil {
-				fmt.Println("Error en conversion de PC:", err_pc)
-			} else {
-				instruccion := memSistema.BuscarSiguienteInstruccion(uint32(tid), uint32(pc))
-				client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Configs.PortCPU, "obtener-instruccion", "GET", logger)
-				return
-			}
+		var requestData struct {
+			PC  uint32 `json:"pc"`
+			TID uint32 `json:"tid"`
+			PID uint32 `json:"pid"`
 		}
+		err := json.NewDecoder(r.Body).Decode(&requestData)
+		if err != nil {
+			// Si hay error al decodificar la solicitud, enviar una respuesta con error
+			http.Error(w, fmt.Sprintf("Error al leer la solicitud: %v", err), http.StatusBadRequest)
+			return
+		}
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", requestData.PID, requestData.TID))
+
+		instruccion := memSistema.BuscarSiguienteInstruccion(requestData.TID, requestData.PC)
+		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Configs.PortCPU, "obtener-instruccion", "GET", logger)
+		return
 	}
 }
 
