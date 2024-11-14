@@ -237,6 +237,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 // modificar w http.ResponseWriter, r *http.Request, y listo
 
 func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
+	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Decodificar la solicitud para obtener el PID y TID
 		var pidTid struct {
@@ -299,6 +300,7 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 }
 
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
+	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			TID uint32
@@ -320,6 +322,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 
 // mal
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
+	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", utils.Execute.PID, utils.Execute.TID))
 
@@ -342,6 +345,7 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 }
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
+	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Crear una estructura para la solicitud que contiene la dirección física
 		var requestData struct {
@@ -404,6 +408,7 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 
 // hecha
 func Write_Mem(logger *slog.Logger) http.HandlerFunc {
+	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
 		var requestData struct {
 			DireccionFisica uint32 `json:"direccion_fisica"`
@@ -455,4 +460,11 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Escritura en memoria de usuario exitosa: TID %d - Dirección Física: %d - Valor: %d- Tamaño: %d",
 			requestData.TID, requestData.DireccionFisica, requestData.Valor, 4))
 	}
+
+}
+
+// a partir del tiempo que nos pasa el archivo configs esperamos esa cantidad en milisegundos antes de seguir con la ejecucion del proceso
+func retardoDePeticion() {
+	time.Sleep(time.Duration((utils.Configs.ResponseDelay * int(time.Millisecond))))
+	return
 }
