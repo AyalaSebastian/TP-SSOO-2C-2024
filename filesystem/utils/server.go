@@ -54,7 +54,7 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 		Escribir_Index_Block(int(bloquesNecesarios[0]), Convertir_Bytes_A_Uint32(bloquesNecesarios[1:]), magic.Nombre, logger)
 
 		// Acceder bloque a bloque e ir escribiendo el contenido de la memoria.
-		EscribirDatosEnBloques(bloquesNecesarios[1:], magic.Datos, magic.Nombre, logger)
+		Escribir_Datos_En_Bloques(bloquesNecesarios[1:], magic.Datos, magic.Nombre, logger)
 
 		logger.Info(fmt.Sprintf("## Fin de solicitud - Archivo: %s", magic.Nombre))
 	}
@@ -103,8 +103,14 @@ func Reservar_Bloques_Del_Bitmap(bloques []byte, cantidad int, nombreArchivo str
 		logger.Info(fmt.Sprintf("## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d", bloque, nombreArchivo, BloquesLibres)) // Marcar el bit como ocupado
 	}
 
+	file, err := os.OpenFile(Configs.MountDir+"/bitmap.dat", os.O_RDWR, 0644)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error al abrir el archivo bitmap.dat: %s", err.Error()))
+	}
+	defer file.Close()
+
 	// Guardar los cambios en el archivo
-	err := os.WriteFile(Configs.MountDir+"/bitmap.dat", Bitmap, 0644)
+	err = os.WriteFile(Configs.MountDir+"/bitmap.dat", Bitmap, 0644)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al escribir el archivo bitmap.dat: %s", err.Error()))
 		return
@@ -156,7 +162,7 @@ func Escribir_Index_Block(indexBlock int, bloquesDatos []uint32, nombreArchivo s
 		time.Sleep(time.Duration(Configs.BlockAccessDelay) * time.Millisecond)
 	}
 
-	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: INDICE - Bloque File System %d", nombreArchivo, posicion))
+	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: INDICE - Bloque File System %d", nombreArchivo, posicion/Configs.BlockSize))
 	return true
 }
 
@@ -168,14 +174,14 @@ func Convertir_Bytes_A_Uint32(bloquesBytes []byte) []uint32 {
 	return bloquesUint32
 }
 
-func EscribirDatosEnBloques(bloquesReservados []byte, contenido []byte, nombreArchivo string, logger *slog.Logger) error {
+func Escribir_Datos_En_Bloques(bloquesReservados []byte, contenido []byte, nombreArchivo string, logger *slog.Logger) error {
 	bloqueIndex := 0
 	for i := 0; i < len(contenido); i += Configs.BlockSize {
 		bloque := bloquesReservados[bloqueIndex]
-		data := contenido[i : i+Configs.BlockSize]
+		data := contenido[i:min(i+Configs.BlockSize, len(contenido))]
 
 		// Escribir los datos en el bloque correspondiente
-		err := EscribirEnBloque(int(bloque), data, nombreArchivo, logger)
+		err := Escribir_En_Bloque(int(bloque), data, nombreArchivo, logger)
 		if err != nil {
 			return fmt.Errorf("error al escribir datos en bloque %d: %v", bloque, err)
 		}
@@ -186,7 +192,7 @@ func EscribirDatosEnBloques(bloquesReservados []byte, contenido []byte, nombreAr
 	return nil
 }
 
-func EscribirEnBloque(bloque int, data []byte, nombreArchivo string, logger *slog.Logger) error {
+func Escribir_En_Bloque(bloque int, data []byte, nombreArchivo string, logger *slog.Logger) error {
 
 	rutaBloques := Configs.MountDir + "/bloques.dat"
 	file, err := os.OpenFile(rutaBloques, os.O_RDWR, 0644)
@@ -205,7 +211,7 @@ func EscribirEnBloque(bloque int, data []byte, nombreArchivo string, logger *slo
 	if err != nil {
 		return fmt.Errorf("error al escribir en bloques.dat: %v", err)
 	}
-	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: INDICE - Bloque File System %d", nombreArchivo, bloque))
+	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: DATOS - Bloque File System %d", nombreArchivo, bloque))
 	time.Sleep(time.Duration(Configs.BlockAccessDelay) * time.Millisecond)
 
 	return nil
