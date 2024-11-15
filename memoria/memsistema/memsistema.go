@@ -130,26 +130,24 @@ func CargarPseudocodigo(pid int, tid int, path string) error {
 	return nil
 }
 
-func BuscarSiguienteInstruccion(tid uint32, pc uint32) string {
+func BuscarSiguienteInstruccion(pid, tid uint32, pc uint32) string {
 
-	contexto, existeTID := ContextosTID[tid]
+	if proceso, exists := ContextosPID[pid]; exists {
+		if hilo, tidExists := proceso.TIDs[tid]; tidExists {
+			indiceInstruccion := pc + 1
+			instruccion, existe := hilo.LISTAINSTRUCCIONES[fmt.Sprintf("instr_%d", indiceInstruccion)]
+			if !existe {
+				fmt.Printf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
+				return ""
+			}
 
-	if !existeTID {
-		fmt.Errorf("TID no encontrado")
+			return instruccion
+		} else {
+			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
+			return ""
+		}
+	} else {
+		fmt.Printf("PID %d no existe\n", pid)
 		return ""
-
 	}
-
-	indiceInstruccion := pc + 1
-
-	instruccion, existe := contexto.LISTAINSTRUCCIONES[fmt.Sprintf("instr_%d", indiceInstruccion)]
-	if !existe {
-		fmt.Errorf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
-		return ""
-	}
-	//Log obligatorio
-	fmt.Printf("Obtener instruccion: ## Obtener instrucción - (PID:TID) - (%d:%d) - Instrucción: %s \n", tid, tid, instruccion)
-
-	return instruccion
-
 }

@@ -269,7 +269,7 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Log de solicitud de contexto OBLIGATORIO
-		fmt.Printf("Solicitud / actualización de Contexto: “## Contexto Solicitado - (PID:TID) - (%d:%d)”\n", pidTid.PID, pidTid.TID)
+		logger.Info(fmt.Sprintf("## Contexto Solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
 
 		// Crear el contexto completo usando la estructura que CPU espera (RegCPU)
 		contextoCompleto := types.RegCPU{
@@ -298,6 +298,7 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+// hecha, pegar una revisada
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -321,7 +322,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// mal
+// hecha, pegar una revisada
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -339,9 +340,9 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 		}
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", requestData.PID, requestData.TID))
 
-		instruccion := memSistema.BuscarSiguienteInstruccion(requestData.TID, requestData.PC)
+		instruccion := memSistema.BuscarSiguienteInstruccion(requestData.PID, requestData.TID, requestData.PC)
+		logger.Info(fmt.Sprintf("## OBTENER INSTRUCCION -(PID:TID) -(%d:%d) - Instruccion: %s", requestData.PID, requestData.TID, instruccion))
 		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Configs.PortCPU, "obtener-instruccion", "GET", logger)
-		return
 	}
 }
 
@@ -376,11 +377,8 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 		// Convertir los 4 bytes a uint32 (Little Endian)
 		valor := binary.LittleEndian.Uint32(bytes)
 
-		// Log obligatorio de la solicitud de lectura
-		logger.Info(fmt.Sprintf("## TID: %d - Acción: LEER - Dirección Física: %d", requestData.TID, requestData.DireccionFisica))
-
 		// Agregar log de lectura en espacio de usuario
-		logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: “## LEER - (%d:%d) - (%d:%d) - Dir. Física: %d - Tamaño: %d”",
+		logger.Info(fmt.Sprintf("## LEER - (%d:%d) - (%d:%d) - Dir. Física: %d - Tamaño: %d",
 			requestData.PID, requestData.TID, requestData.PID, requestData.TID, requestData.DireccionFisica, 4)) // Tamaño de lectura: 4 bytes
 
 		// Crear la respuesta JSON con el valor leído
@@ -450,7 +448,7 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 		binary.LittleEndian.PutUint32(memUsuario.MemoriaDeUsuario[requestData.DireccionFisica:], requestData.Valor)
 
 		// Log obligatorio de Escritura en espacio de usuario
-		logger.Info(fmt.Sprintf("Escritura / lectura en espacio de usuario: ## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
+		logger.Info(fmt.Sprintf("## Escritura - (PID:TID) - (N/A:%d) - Dir. Física: %d - Tamaño: %d",
 			requestData.TID, requestData.DireccionFisica, 4))
 
 		// Confirmar la operación
@@ -467,5 +465,4 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 // a partir del tiempo que nos pasa el archivo configs esperamos esa cantidad en milisegundos antes de seguir con la ejecucion del proceso
 func retardoDePeticion() {
 	time.Sleep(time.Duration((utils.Configs.ResponseDelay * int(time.Millisecond))))
-	return
 }
