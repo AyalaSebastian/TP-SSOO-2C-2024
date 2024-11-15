@@ -76,7 +76,7 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: DUMP_MEMORY", utils.Execute.PID, utils.Execute.TID))
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
 		utils.Execute = nil
-		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID, Motivo: 3}
+		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID, Motivo: utils.DUMP}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
 		utils.Planificador.Signal()
 

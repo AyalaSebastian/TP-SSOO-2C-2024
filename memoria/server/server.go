@@ -177,8 +177,8 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 
 		// Decodificar la solicitud para obtener el PID y TID
 		var pidTid struct {
-			PID uint32 `json:"pid"`
 			TID uint32 `json:"tid"`
+			PID uint32 `json:"pid"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&pidTid)
@@ -203,11 +203,10 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 		timestamp := time.Now().Unix()
 
 		// Crear la estructura con la memoria, timestamp, PID y TID
-		memoryDumpRequest := types.MemoryDump{
-			MemoriaProceso: memoriaProceso,
-			Timestamp:      timestamp,
-			PID:            pidTid.PID,
-			TID:            pidTid.TID,
+		memoryDumpRequest := types.DumpFile{
+			Nombre:  fmt.Sprintf("%d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp),
+			Tamanio: len(memoriaProceso),
+			Datos:   memoriaProceso,
 		}
 
 		// Enviar la estructura al FileSystem para crear el archivo con el dump

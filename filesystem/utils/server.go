@@ -14,14 +14,6 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-// Usar tamanio de puntero uint32
-// Creo que esta funcion MetaDataFile no va, la memoria nos envia el nombre del archivo en la peticion del DUMP, el cual ya viene con todos estos datos
-type MetadataFile struct {
-	PID       uint32
-	TID       uint32
-	Timestamp time.Time
-}
-
 func Iniciar_fileSystem(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
@@ -53,7 +45,7 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Reservar el bloque de índice y los bloques de datos correspondientes en el bitmap
-		Reservar_Bloques_Del_Bitmap(bloquesNecesarios, magic.Tamanio, magic.Nombre, logger)
+		Reservar_Bloques_Del_Bitmap(bloquesNecesarios, len(bloquesNecesarios), magic.Nombre, logger)
 
 		// Crear archivo de metadata
 		Crear_Archivo_Metadata(magic.Nombre, int(bloquesNecesarios[0]), magic.Tamanio, logger) //Tengo dudas con el segundo parametro
@@ -62,31 +54,11 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 		Escribir_Index_Block(int(bloquesNecesarios[0]), Convertir_Bytes_A_Uint32(bloquesNecesarios[1:]), magic.Nombre, logger)
 
 		// Acceder bloque a bloque e ir escribiendo el contenido de la memoria.
+		EscribirDatosEnBloques(bloquesNecesarios[1:], magic.Datos, magic.Nombre, logger)
 
+		logger.Info(fmt.Sprintf("## Fin de solicitud - Archivo: %s", magic.Nombre))
 	}
 }
-
-// Retorna slice de los bloques libres
-// func Bloques_Libres(logger *slog.Logger) []byte {
-
-// 	// Cargar archivo en un slice de bytes
-// 	file, err := os.ReadFile(Configs.MountDir + "/bitmap.dat")
-// 	if err != nil {
-// 		logger.Error(fmt.Sprintf("Error al leer el archivo bitmap.dat: %s\n", err.Error()))
-// 		return nil
-// 	}
-
-// 	// Identificar los bloques libres
-// 	var bitesLibres []byte
-// 	for i := 0; i < len(file); i++ {
-// 		for j := 0; j < 8; j++ {
-// 			if (file[i] & (1 << j)) == 0 {
-// 				bitesLibres = append(bitesLibres, byte(i*8+j))
-// 			}
-// 		}
-// 	}
-// 	return bitesLibres
-// }
 
 // Devuelve dos valores: un array con los indices a reservar([]byte) y si hay espacio suficiente para el archivo(true/false)
 func Verificar_Espacio_Disponible(tamanioArchivo int, logger *slog.Logger) ([]byte, bool) {
@@ -194,4 +166,47 @@ func Convertir_Bytes_A_Uint32(bloquesBytes []byte) []uint32 {
 		bloquesUint32 = append(bloquesUint32, uint32(b))
 	}
 	return bloquesUint32
+}
+
+func EscribirDatosEnBloques(bloquesReservados []byte, contenido []byte, nombreArchivo string, logger *slog.Logger) error {
+	bloqueIndex := 0
+	for i := 0; i < len(contenido); i += Configs.BlockSize {
+		bloque := bloquesReservados[bloqueIndex]
+		data := contenido[i : i+Configs.BlockSize]
+
+		// Escribir los datos en el bloque correspondiente
+		err := EscribirEnBloque(int(bloque), data, nombreArchivo, logger)
+		if err != nil {
+			return fmt.Errorf("error al escribir datos en bloque %d: %v", bloque, err)
+		}
+
+		bloqueIndex++
+	}
+
+	return nil
+}
+
+func EscribirEnBloque(bloque int, data []byte, nombreArchivo string, logger *slog.Logger) error {
+
+	rutaBloques := Configs.MountDir + "/bloques.dat"
+	file, err := os.OpenFile(rutaBloques, os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("error al abrir bloques.dat: %v", err)
+	}
+	defer file.Close()
+
+	// Mover el puntero al bloque correcto y escribir los datos
+	_, err = file.Seek(int64(bloque*Configs.BlockSize), 0)
+	if err != nil {
+		return fmt.Errorf("error al hacer seek en bloques.dat: %v", err)
+	}
+
+	_, err = file.Write(data)
+	if err != nil {
+		return fmt.Errorf("error al escribir en bloques.dat: %v", err)
+	}
+	logger.Info(fmt.Sprintf("## Acceso Bloque - Archivo: %s - Tipo Bloque: INDICE - Bloque File System %d", nombreArchivo, bloque))
+	time.Sleep(time.Duration(Configs.BlockAccessDelay) * time.Millisecond)
+
+	return nil
 }

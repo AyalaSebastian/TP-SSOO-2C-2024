@@ -139,5 +139,5 @@ type MemoryDump struct {
 type DumpFile struct {
 	Nombre  string `json:"nombre"`
 	Tamanio int    `json:"tamanio"`
-	Datos   []byte `json:"datos"` //! Ver que onda con los datos
+	Datos   []byte `json:"datos"` 
 }
