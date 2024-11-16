@@ -56,7 +56,10 @@ func DUMP(logger *slog.Logger) http.HandlerFunc {
 		// Acceder bloque a bloque e ir escribiendo el contenido de la memoria.
 		Escribir_Datos_En_Bloques(bloquesNecesarios[1:], magic.Datos, magic.Nombre, logger)
 
+		logger.Info(fmt.Sprintf("## Archivo Creado: %s - Tamaño: %d", magic.Nombre, magic.Tamanio))
 		logger.Info(fmt.Sprintf("## Fin de solicitud - Archivo: %s", magic.Nombre))
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
 	}
 }
 
