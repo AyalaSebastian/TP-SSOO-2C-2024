@@ -1,4 +1,4 @@
-package memSistema
+package memsistema
 
 import (
 	"bufio"
@@ -92,7 +92,7 @@ func Actualizar_TID(pid uint32, tid uint32, contexto types.ContextoEjecucionTID)
 func CargarPseudocodigo(pid int, tid int, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("Error al abrir el archivo %s: %v", path, err)
+		return fmt.Errorf("error al abrir el archivo %s: %v", path, err)
 	}
 	defer file.Close()
 
@@ -125,7 +125,7 @@ func CargarPseudocodigo(pid int, tid int, path string) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("Error al leer el archivo %s: %v", path, err)
+		return fmt.Errorf("error al leer el archivo %s: %v", path, err)
 	}
 	return nil
 }

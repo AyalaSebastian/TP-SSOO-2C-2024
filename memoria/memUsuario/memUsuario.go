@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
+	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -41,7 +41,7 @@ func Inicializar_Memoria_De_Usuario() {
 func LiberarParticionPorPID(pid uint32) error {
 	particion, existe := PidAParticion[pid]
 	if !existe {
-		return fmt.Errorf("No se encontró el proceso %d asignado a ninguna partición", pid)
+		return fmt.Errorf("no se encontró el proceso %d asignado a ninguna partición", pid)
 	}
 
 	// Liberar la partición y actualizar el bitmap
@@ -51,7 +51,7 @@ func LiberarParticionPorPID(pid uint32) error {
 	return nil
 }
 
-// fisrt fit
+// first fit
 func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		particiones := utils.Configs.Partitions
@@ -62,7 +62,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 					PidAParticion[pid] = i
 					BitmapParticiones[i] = true
 					fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
-					memSistema.CrearContextoPID(pid, uint32(tamanio_proceso), uint32(len(MemoriaDeUsuario)))
+					memsistema.CrearContextoPID(pid, uint32(tamanio_proceso), uint32(len(MemoriaDeUsuario)))
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte("OK"))
 					return
@@ -70,7 +70,6 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 			}
 		}
 		(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
-		return
 	}
 }
 
