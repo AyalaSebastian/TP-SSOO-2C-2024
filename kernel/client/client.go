@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 )
@@ -61,6 +62,36 @@ func Enviar_QueryPath[T any](dato T, ip string, puerto int, endpoint string, ver
 	return true // Indica que la respuesta fue exitosa
 }
 
-func Informar_memoria_creacion_hilo() {
+func Enviar_Proceso[T any](dato T, ip string, puerto int, endpoint string, logger *slog.Logger) (bool, string) {
 
+	body, err := json.Marshal(dato)
+	if err != nil {
+		logger.Error("Se produjo un error codificando el mensaje")
+		return false, ""
+	}
+
+	url := fmt.Sprintf("http://%s:%d/%s", ip, puerto, endpoint)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", ip, puerto))
+		return false, ""
+	}
+	// Aseguramos que el body sea cerrado
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logger.Error("Se produjo un error leyendo el cuerpo de la respuesta")
+			return false, ""
+		}
+		if string(respBody) == "COMPACTACION" {
+			return false, "COMPACTACION" // Indica que la respuesta no fue exitosa y que ademas memoria solicita compactacion
+		}
+
+		logger.Error("La respuesta del servidor no fue OK")
+		return false, "" // Indica que la respuesta no fue exitosa
+	}
+
+	return true, "" // Indica que la respuesta fue exitosa
 }

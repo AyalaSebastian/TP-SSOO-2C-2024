@@ -35,7 +35,13 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 	logger.Info(fmt.Sprintf("## (%d:0) Se crea el proceso - Estado: NEW", pcb.PID))
 	if len(ColaNew) == 0 {
 		// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
-		if !Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger) {
+		success, alt := Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger)
+		if !success {
+			// Si no se pudo incializar el proceso y necesita compactacion
+			if alt == "COMPACTACION" {
+				utils.MutexPlanificador.Lock()
+				// tengo que seguir la logica de la compactacion, me duele mucho la cabeza asi que despues lo sigo jaj
+			}
 			// Si no se pudo inicializar el proceso, se encola en ColaNew
 			new := types.ProcesoNew{PCB: pcb, Pseudo: pseudo, Tamanio: tamanio, Prioridad: prioridad}
 			utils.Encolar(&ColaNew, new)
@@ -47,10 +53,11 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 	}
 }
 
-func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad int, logger *slog.Logger) bool {
+// Devuelve un booleano y un string, este indica en caso de que no se pueda inicializar el proceso, si necesita compactacion
+func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad int, logger *slog.Logger) (bool, string) {
 	// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
 	parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio, PID: pcb.PID} //añadi el pid para crear proceso en memoria
-	success := client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
+	success, alt := client.Enviar_Proceso(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
 
 	if success {
 		// Si se asigna espacio, se crea el TCB 0 y se pasa a READY
@@ -61,19 +68,22 @@ func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad in
 
 		// Desbloquear el planificador para procesar el hilo en READY
 		utils.Planificador.Signal()
-		return true
+		return true, ""
 	}
-
+	if alt == "COMPACTACION" {
+		return false, "COMPACTACION"
+	}
 	// Si no hay espacio en memoria, devolver false
 	logger.Error("No se pudo asignar espacio en memoria para el proceso")
-	return false
+	return false, ""
 }
 
 func Reintentar_procesos(logger *slog.Logger) {
 	if len(ColaNew) > 0 {
 		// Intentar inicializar el primer proceso en ColaNew
 		new := ColaNew[0]
-		if Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger) {
+		success, _ := Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger)
+		if success {
 			// Si se inicializa correctamente, quitarlo de ColaNew
 			utils.Desencolar(&ColaNew)
 		}
@@ -209,7 +219,6 @@ func FIFO(logger *slog.Logger) {
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
-		// Lo sacamos de la cola de Ready
 		proximo, _ := utils.Desencolar_TCB(ColaReady, 0)
 		// Lo ponemos a "ejecutar"
 		utils.Execute = &utils.ExecuteActual{
