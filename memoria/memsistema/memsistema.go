@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
@@ -25,6 +26,7 @@ func CrearContextoPID(pid uint32, base, limite uint32) {
 
 // Función para inicializar un contexto de ejecución de un hilo (TID) asociado a un proceso (PID)
 func CrearContextoTID(pid, tid uint32, archivoPseudocodigo string) {
+	listaInstrucciones := CargarPseudocodigo(int(pid), int(tid), archivoPseudocodigo)
 	if proceso, exists := ContextosPID[pid]; exists {
 		proceso.TIDs[tid] = types.ContextoEjecucionTID{
 			TID:                tid,
@@ -37,7 +39,7 @@ func CrearContextoTID(pid, tid uint32, archivoPseudocodigo string) {
 			FX:                 0,
 			GX:                 0,
 			HX:                 0,
-			LISTAINSTRUCCIONES: make(map[string]string), // pseudocodigo
+			LISTAINSTRUCCIONES: listaInstrucciones, // pseudocodigo
 		}
 		ContextosPID[pid] = proceso // Actualizar el contexto en el mapa
 		fmt.Printf("## Contexto Actualizado - (PID:TID) - (%d:%d)\n", pid, tid)
@@ -89,30 +91,13 @@ func Actualizar_TID(pid uint32, tid uint32, contexto types.ContextoEjecucionTID)
 // Funcion para cargar el archivo de pseudocodigo
 
 // Funcion para cargar el archivo de pseudocodigo
-func CargarPseudocodigo(pid int, tid int, path string) error {
-	file, err := os.Open(path)
+func CargarPseudocodigo(pid int, tid int, path string) map[string]string {
+	file, err := os.Open(utils.Configs.InstructionPath + path)
 	if err != nil {
-		return fmt.Errorf("error al abrir el archivo %s: %v", path, err)
+		fmt.Printf("error al abrir el archivo %s: %v", path, err)
 	}
-	defer file.Close()
 
 	var contextosEjecucion = make(map[int]map[int]*types.ContextoEjecucionTID)
-	//Si no existe para el PID TID, lo creo
-	if _, exists := contextosEjecucion[pid][tid]; !exists {
-		contextosEjecucion[pid][tid] = &types.ContextoEjecucionTID{
-			TID:                uint32(tid),
-			PC:                 0,
-			AX:                 0,
-			BX:                 0,
-			CX:                 0,
-			DX:                 0,
-			EX:                 0,
-			FX:                 0,
-			GX:                 0,
-			HX:                 0,
-			LISTAINSTRUCCIONES: make(map[string]string),
-		}
-	}
 	contexto := contextosEjecucion[pid][tid]
 	scanner := bufio.NewScanner(file)
 	instruccionNum := 0 // Indice de instrucciones
@@ -125,9 +110,10 @@ func CargarPseudocodigo(pid int, tid int, path string) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error al leer el archivo %s: %v", path, err)
+		fmt.Printf("error al leer el archivo %s: %v", path, err)
 	}
-	return nil
+	defer file.Close()
+	return contexto.LISTAINSTRUCCIONES
 }
 
 func BuscarSiguienteInstruccion(pid, tid uint32, pc uint32) string {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
+	memsistema "github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -71,19 +71,3 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 		(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
 	}
 }
-
-/*
-modificaciones:
-// Función para asignar un proceso a la primera partición libre
-func AsignarProcesoAParticion(pid uint32) error {
-	for i, ocupada := range BitmapParticiones {
-		if !ocupada { // Si la partición está libre
-			BitmapParticiones[i] = true   // Marcar como ocupada
-			PidAParticion[pid] = i        // Asignar el PID a esta partición
-			fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
-			return nil
-		}
-	}
-	return fmt.Errorf("No hay particiones libres para asignar el proceso %d", pid)
-}
-*/
