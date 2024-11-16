@@ -466,3 +466,7 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 func retardoDePeticion() {
 	time.Sleep(time.Duration((utils.Configs.ResponseDelay * int(time.Millisecond))))
 }
+
+// que se le enviaria a file system en memory dump (todos los datos que tengamos del proceso)
+//sirve usar el memoria.go(no hace falta tener cosas,de hecho podriamos sacar todo)
+//cargar pseudocodigo(esta mal implementado, deberiamos asociar el archivo de pseudocodigo de config a el TID que estamos creando)

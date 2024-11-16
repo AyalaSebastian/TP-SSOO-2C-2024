@@ -57,12 +57,11 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 		particiones := utils.Configs.Partitions
 		for i := 0; i < len(BitmapParticiones); i++ {
 			if !BitmapParticiones[i] {
-				if tamanio_proceso < len(MemoriaDeUsuario) {
-					particiones[i] = -1
+				if tamanio_proceso < particiones[i] {
 					PidAParticion[pid] = i
 					BitmapParticiones[i] = true
 					fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
-					memsistema.CrearContextoPID(pid, uint32(tamanio_proceso), uint32(len(MemoriaDeUsuario)))
+					memsistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte("OK"))
 					return
