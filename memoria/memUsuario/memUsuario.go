@@ -51,8 +51,21 @@ func LiberarParticionPorPID(pid uint32) error {
 	return nil
 }
 
+func AsignarPID(pid uint32, tamanio_proceso int, path string) {
+
+	algoritmo := utils.Configs.SearchAlgorithm
+	switch algoritmo {
+	case "FIRST":
+		FirstFit(pid, tamanio_proceso, path)
+	case "BEST":
+		BestFit(pid, tamanio_proceso, path)
+	case "WORST":
+		WorstFit(pid, tamanio_proceso, path)
+	}
+}
+
 // first fit
-func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
+func FirstFit(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		particiones := utils.Configs.Partitions
 		for i := 0; i < len(BitmapParticiones); i++ {
@@ -69,5 +82,66 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 			}
 		}
 		(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
+	}
+}
+
+// BestFit
+func BestFit(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		particiones := utils.Configs.Partitions
+		var menor = 0
+		var pos_menor = -1
+		for i := 0; i < len(BitmapParticiones); i++ {
+			if !BitmapParticiones[i] {
+				if tamanio_proceso < particiones[i] {
+					if particiones[i] < menor {
+						menor = particiones[i]
+						pos_menor = i
+					}
+				}
+			}
+		}
+		if pos_menor == -1 {
+			(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
+			return
+		} else {
+			PidAParticion[pid] = pos_menor
+			BitmapParticiones[pos_menor] = true
+			fmt.Printf("Proceso %d asignado a la partición %d\n", pid, pos_menor+1)
+			memsistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+			return
+		}
+	}
+}
+
+func WorstFit(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		particiones := utils.Configs.Partitions
+		var mayor = 0
+		var pos_mayor = -1
+		for i := 0; i < len(BitmapParticiones); i++ {
+			if !BitmapParticiones[i] {
+				if tamanio_proceso < particiones[i] {
+					if particiones[i] > mayor {
+						mayor = particiones[i]
+						pos_mayor = i
+					}
+				}
+			}
+		}
+		if pos_mayor == -1 {
+			(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
+			return
+		} else {
+			PidAParticion[pid] = pos_mayor
+			BitmapParticiones[pos_mayor] = true
+			fmt.Printf("Proceso %d asignado a la partición %d\n", pid, pos_mayor+1)
+			memsistema.CrearContextoPID(pid, uint32(Particiones[pos_mayor].Base), uint32(Particiones[pos_mayor].Limite))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+			return
+		}
 	}
 }
