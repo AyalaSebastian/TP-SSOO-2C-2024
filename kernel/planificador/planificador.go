@@ -40,7 +40,16 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 			// Si no se pudo incializar el proceso y necesita compactacion
 			if alt == "COMPACTACION" {
 				utils.MutexPlanificador.Lock()
-				// tengo que seguir la logica de la compactacion, me duele mucho la cabeza asi que despues lo sigo jaj
+				for utils.Execute != nil {
+					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
+				}
+				if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
+					logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
+					Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger)
+					utils.MutexPlanificador.Unlock()
+					utils.Planificador.Signal()
+				}
+
 			}
 			// Si no se pudo inicializar el proceso, se encola en ColaNew
 			new := types.ProcesoNew{PCB: pcb, Pseudo: pseudo, Tamanio: tamanio, Prioridad: prioridad}
