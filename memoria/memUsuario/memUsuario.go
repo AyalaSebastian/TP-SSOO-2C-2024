@@ -2,9 +2,10 @@ package memUsuario
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
-	memsistema "github.com/sisoputnfrba/tp-golang/memoria/memSistema"
+	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -16,7 +17,7 @@ var BitmapParticiones []bool
 var PidAParticion map[uint32]int // Mapa para rastrear la asignación de PIDs a particiones
 
 // Funcion para iniciar la memoria y definir las particiones
-func Inicializar_Memoria_De_Usuario() {
+func Inicializar_Memoria_De_Usuario(logger *slog.Logger) {
 	// Inicializar el espacio de memoria con 1024 bytes
 	MemoriaDeUsuario = make([]byte, utils.Configs.MemorySize)
 
@@ -143,5 +144,12 @@ func WorstFit(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 			w.Write([]byte("OK"))
 			return
 		}
+	}
+}
+
+// Función de compactación
+func Compactar() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Acá va la lógica de compactación
 	}
 }
