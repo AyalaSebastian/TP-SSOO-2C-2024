@@ -14,7 +14,6 @@ import (
 var MemoriaDeUsuario []byte
 var Particiones []types.Particion
 var BitmapParticiones []bool
-var BitMapParticionesDinamicas []bool
 var PidAParticion map[uint32]int // Mapa para rastrear la asignación de PIDs a particiones
 
 // Funcion para iniciar la memoria y definir las particiones
@@ -30,38 +29,34 @@ func Inicializar_Memoria_De_Usuario(logger *slog.Logger) {
 			Limite: uint32(limite),
 		}
 		Particiones = append(Particiones, particion)
-		fmt.Printf("Partición %d inicializada: Base = %d, Límite = %d\n", i+1, particion.Base, particion.Limite)
+		logger.Info("Partición inicializada", "Número", i+1, "Base", particion.Base, "Límite", particion.Limite)
 		base += uint32(limite)
 	}
 	// Inicializar el bitmap y el mapa de PIDs
 	//todas las particiones estan libres = false
 	BitmapParticiones = make([]bool, len(Particiones))
-	BitMapParticionesDinamicas = make([]bool, 1)
 	PidAParticion = make(map[uint32]int)
 }
 
 // memoria para particiones dinamicas
 func Inicializar_Memoria_Dinamica(logger *slog.Logger) {
-
-}
-
-func dividirParticion() {
-	var bitMapActualizado [][]bool
-	for i := 0; i < len(BitMapParticionesDinamicas); i++ {
-		end := i
-		if !BitMapParticionesDinamicas[i] {
-			end = i + 1
-			bitMapActualizado = append(bitMapActualizado, BitMapParticionesDinamicas[i:end])
-			i += 1
-		} else {
-			bitMapActualizado = append(bitMapActualizado, BitMapParticionesDinamicas[i:end])
-		}
+	MemoriaDeUsuario = make([]byte, utils.Configs.MemorySize)
+	particion := types.Particion{
+		Base:   0,
+		Limite: uint32(utils.Configs.MemorySize),
 	}
+	Particiones = []types.Particion{particion}
+	BitmapParticiones = []bool{false} // Un solo valor para la memoria dinámica
 
+	logger.Info(fmt.Sprintf("Memoria dinámica inicializada: ## Base = %d, Límite = %d", particion.Base, particion.Limite))
+
+	// Inicializar el mapa de PIDs
+	PidAParticion = make(map[uint32]int)
 }
+
 
 // Función para liberar una partición por PID
-func LiberarParticionPorPID(pid uint32) error {
+func LiberarParticionPorPID(pid uint32, logger *slog.Logger) error {
 	particion, existe := PidAParticion[pid]
 	if !existe {
 		return fmt.Errorf("no se encontró el proceso %d asignado a ninguna partición", pid)
@@ -71,7 +66,50 @@ func LiberarParticionPorPID(pid uint32) error {
 	BitmapParticiones[particion] = false
 	delete(PidAParticion, pid) // Eliminar la entrada del mapa
 	fmt.Printf("Proceso %d liberado de la partición %d\n", pid, particion+1)
+
+	// Comprobar si el esquema es dinámico
+    if utils.Configs.Scheme == "DINAMICA" {
+        // Verificar si hay particiones libres adyacentes
+        adyacenteIzquierdaLibre := particionIndex > 0 && !BitmapParticiones[particionIndex-1]
+        adyacenteDerechaLibre := particionIndex < len(Particiones)-1 && !BitmapParticiones[particionIndex+1]
+        
+        // Llamar a combinarParticionesLibres si alguna adyacente está libre
+        if adyacenteIzquierdaLibre || adyacenteDerechaLibre {
+            combinarParticionesLibres(particionIndex, logger)
+        }
+    }
 	return nil
+}
+
+// combinar particiones dinamicas libres en una sola
+func combinarParticionesLibres(index int, logger *slog.Logger) {
+    // Inicializar variables para los límites de la nueva partición combinada
+    base := Particiones[index].Base
+    limite := Particiones[index].Limite
+
+    // Verificar partición anterior, si existe y está libre
+    if index > 0 && !BitmapParticiones[index-1] {
+        base = Particiones[index-1].Base
+        limite += Particiones[index-1].Limite
+        // Eliminar partición anterior ya que se combina
+        Particiones = append(Particiones[:index-1], Particiones[index:]...)
+        BitmapParticiones = append(BitmapParticiones[:index-1], BitmapParticiones[index:]...)
+        index-- // Ajustar el índice ya que hemos eliminado la partición anterior
+    }
+
+    // Verificar partición siguiente, si existe y está libre
+    if index < len(Particiones)-1 && !BitmapParticiones[index+1] {
+        limite += Particiones[index+1].Limite
+        // Eliminar partición siguiente ya que se combina
+        Particiones = append(Particiones[:index+1], Particiones[index+2:]...)
+        BitmapParticiones = append(BitmapParticiones[:index+1], BitmapParticiones[index+2:]...)
+    }
+
+    // Actualizar la partición combinada en el índice actual
+    Particiones[index] = types.Particion{Base: base, Limite: limite}
+    BitmapParticiones[index] = false // Marcar como libre
+
+    logger.Info("Particiones combinadas", "Nueva Base", base, "Nuevo Límite", limite)
 }
 
 func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
@@ -97,7 +135,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 				w.Write([]byte("OK"))
 				return
 			}
-		} else {
+		} else if esquema == "DINAMICAS" {
 			switch algoritmo {
 			case "FIRST":
 				asigno = FirstFitDinamico(pid, tamanio_proceso, path)
@@ -111,7 +149,13 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 				w.Write([]byte("OK"))
 				return
 			} else {
-				//avisar a kernel para que de la orden de compactar
+				compactar := SePuedeCompactar(tamanio_proceso)
+				if(compactar){
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte("COMPACTAR"))
+				}else{
+					(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
+				}
 			}
 		}
 	}
@@ -139,7 +183,7 @@ func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 
 	particiones := utils.Configs.Partitions
-	var menor = 0
+	var menor = 1024
 	var pos_menor = -1
 	for i := 0; i < len(BitmapParticiones); i++ {
 		if !BitmapParticiones[i] {
@@ -190,49 +234,93 @@ func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 
 // empiezo con un solo espacio de memoria de 1024 bytes, si no esta reservado lo hago con el pid entrante, sino no hay espacio
 func FirstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
-	if !BitMapParticionesDinamicas[0] {
-		BitMapParticionesDinamicas[0] = true
-		fmt.Printf("Proceso %d asignado a la partición %d\n", pid, 1)
-		memsistema.CrearContextoPID(pid, uint32(Particiones[0].Base), uint32(Particiones[0].Limite))
-		return true
-	} else {
-		return false
-	}
-}
-func BestFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
+	particiones := utils.Configs.Partitions
 	for i := 0; i < len(BitMapParticionesDinamicas); i++ {
 		if !BitMapParticionesDinamicas[i] {
-			if tamanio_proceso < Particion[i] {
-				if tamanio_proceso < particionDividida {
-					dividirParticion()
-					BestFitDinamico(pid, tamanio_proceso, path)
-				} else {
-					PidAParticion[pid] = i
-					BitmapParticiones[i] = true
-					fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
-					memsistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
-					return true
-				}
+			if tamanio_proceso < particiones[i] {
+				AsignarParticion(pid,i,tamanio_proceso,particiones)
+				return true
 			}
 		}
 	}
 	return false
 }
-
-// empiezo con un solo espacio de memoria de 1024 bytes, si no esta reservado lo hago con el pid entrante, sino no hay espacio
-func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
-	if !BitMapParticionesDinamicas[0] {
-		PidAParticion[pid] = 0
-		BitMapParticionesDinamicas[0] = true
-		return true
+func BestFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
+	var pos_menor = -1
+	particiones := utils.Configs.Partitions
+	var menor = 1024
+	for i := 0; i < len(BitMapParticionesDinamicas); i++ {
+		if !BitMapParticionesDinamicas[i] {
+			if tamanio_proceso < particiones[i] {
+				if particiones[i] <= menor {
+					menor = particiones[i]
+					pos_menor = i
+				}
+			}
+		}
+	}
+	if pos_menor == -1 {
+		return false // no hay huecos hay que compactar o tirar interrupcion
 	} else {
-		return false
+		AsignarParticion(pid,pos_menor,tamanio_proceso,particiones)
+		return true
 	}
 }
 
-// Función de compactación
-func Compactar() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Acá va la lógica de compactación
+// empiezo con un solo espacio de memoria de 1024 bytes, si no esta reservado lo hago con el pid entrante, sino no hay espacio
+func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
+	var pos_mayor = -1
+	particiones := utils.Configs.Partitions
+	var mayor = 0
+	for i := 0; i < len(BitMapParticionesDinamicas); i++ {
+		if !BitMapParticionesDinamicas[i] {
+			if tamanio_proceso < particiones[i] {
+				if particiones[i] >= mayor {
+					mayor = particiones[i]
+					pos_mayor = i
+				}
+			}
+		}
 	}
+	if pos_mayor == -1{
+		return false
+	}else{
+		AsignarParticion(pid,pos_mayor,tamanio_proceso,particiones)
+		return true
+	}
+}
+//me mataste, nose que hacer aca
+func baseDinamica(posicion int, Particiones utils.types.Partitions) uint32{
+	if(posicion <= 0){
+		return uint32(0)
+	}else{
+		return uint32(particiones[posicion - 1].Base + particiones[posicion - 1].Limite)
+	}
+}	
+
+	
+func AsignarParticion(pid uint32 ,posicion,tamanio_proceso int ,particiones utils.types.Partitions){
+		nuevaParticion = particiones[posicion] - tamanio_proceso
+		particiones[posicion] = tamanio_proceso
+		BitmapParticiones[posicion] = true
+		PidAParticion[pid] = posicion
+		BitmapParticiones = append(BitmapParticiones, false)
+		PidAParticion = append(PidAParticion, -1)
+		fmt.Printf("Proceso %d asignado a la partición %d\n", pid, posicion+1)
+		base := baseDinamica(posicion,particiones)
+		memsistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
+}
+
+func SePuedeCompactar(tamanio_proceso int){
+	var espacioLibre = 0
+	particiones := utils.Configs.Partitions
+	for i := 0; i < len(BitMapParticionesDinamicas); i++ {
+		if !BitMapParticionesDinamicas[i] {
+			espacioLibre += particiones[i]
+		}
+	}
+	if espacioLibre >= tamanio_proceso{
+		return true
+	}
+	return false
 }

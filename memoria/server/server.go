@@ -26,7 +26,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
-	mux.HandleFunc("PATCH /compactar", memUsuario.Compactar())
+	mux.HandleFunc("PATCH /compactar", Compactar())
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
@@ -92,10 +92,9 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		//marca la particion como libre en memoria de usuario
-		memUsuario.LiberarParticionPorPID(pid.PID)
-
+		memUsuario.LiberarParticionPorPID(pid.PID, logger)
 		// Ejecutar la función para eliminar el contexto del PID en Memoria de sistema
-		memsistema.EliminarContextoPID(pid.PID)
+		memsistema.EliminarContextoPID(pid.PID, logger)
 
 		///////////////////necesito que me envien el tamaño del proceso para ponerlo en el log/////////////////////
 		//como no lo tengo lo saco del log
@@ -105,7 +104,7 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK")
+		w.Write([]byte("OK"))
 	}
 }
 
@@ -224,6 +223,13 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 
 		// Log de éxito
 		logger.Info(fmt.Sprintf("Memory Dump realizado con éxito: %d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp))
+	}
+}
+
+func Compactar() http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Acá va la lógica de compactación
 	}
 }
 
