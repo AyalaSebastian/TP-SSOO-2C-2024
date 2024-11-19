@@ -40,6 +40,11 @@ func Inicializar_Memoria_De_Usuario(logger *slog.Logger) {
 	PidAParticion = make(map[uint32]int)
 }
 
+// memoria para particiones dinamicas
+func Inicializar_Memoria_Dinamica(logger *slog.Logger) {
+
+}
+
 func dividirParticion() {
 	var bitMapActualizado [][]bool
 	for i := 0; i < len(BitMapParticionesDinamicas); i++ {
