@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/client"
-	memsistema "github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
+	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -25,8 +25,8 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", FinalizarProceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
-	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
+	mux.HandleFunc("PATCH /compactar", memUsuario.Compactar())
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
@@ -37,7 +37,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
 
 	//recibo msj de cpu para que haga la instruccion read mem
-	mux.HandleFunc("/read_mem / {direccionFisica}", Read_Mem(logger))
+	mux.HandleFunc("/read_mem/{direccionFisica}", Read_Mem(logger))
 
 	//recibo msj de cpu para que haga la instruccion write mem
 	mux.HandleFunc("POST /write_mem", Write_Mem(logger))

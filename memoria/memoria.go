@@ -11,13 +11,10 @@ func main() {
 	// Inicializamos la configuracion y el logger
 	utils.Configs = utils.Iniciar_configuracion("config.json")
 	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
-	//var instrucciones []string
+
+	// Inicializacion de estrucutras de datos
+	memUsuario.Inicializar_Memoria_De_Usuario(logger)
 
 	// Inicializamos la memoria (Lo levantamos como servidor)
 	server.Iniciar_memoria(logger)
-
-	memUsuario.Inicializar_Memoria_De_Usuario()
-
-	//leerArchivoPseudoCodigo(tid, utils.Configs.InstructionPath, pc, instrucciones)
-
 }
