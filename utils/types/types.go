@@ -119,7 +119,11 @@ type Particion struct {
 	Base   uint32
 	Limite uint32
 }
-
+type ParticionDinamica struct {
+	Base                uint32
+	Limite              uint32
+	CantidadParticiones int
+}
 type NuevoProcesoEnMemoria struct {
 	PCB     PCB    `json:"pcb"` //solo para conseguir el pid
 	Pseudo  string `json:"pseudo"`
@@ -139,5 +143,5 @@ type MemoryDump struct {
 type DumpFile struct {
 	Nombre  string `json:"nombre"`
 	Tamanio int    `json:"tamanio"`
-	Datos   []byte `json:"datos"` 
+	Datos   []byte `json:"datos"`
 }
