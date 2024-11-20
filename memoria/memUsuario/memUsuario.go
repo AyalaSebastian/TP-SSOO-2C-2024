@@ -30,7 +30,7 @@ func Inicializar_Memoria_De_Usuario(logger *slog.Logger) {
 			Limite: uint32(limite),
 		}
 		Particiones = append(Particiones, particion)
-		logger.Info("Partición inicializada", "Número", i+1, "Base", particion.Base, "Límite", particion.Limite)
+		logger.Info("Partición fija", "Número", i+1, "iniciada con Base", particion.Base, "y Límite", particion.Limite)
 		base += uint32(limite)
 	}
 	// Inicializar el bitmap y el mapa de PIDs

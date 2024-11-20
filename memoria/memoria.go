@@ -14,9 +14,10 @@ func main() {
 	logger.Info("Logger iniciado")
 
 	// Inicializacion de memoria de usuario
-	if utils.Configs.Scheme == "FIJAS" {
+	esquema := utils.Configs.Scheme
+	if esquema == "FIJAS" {
 		memUsuario.Inicializar_Memoria_De_Usuario(logger)
-	} else if utils.Configs.Scheme == "DINAMICAS" {
+	} else if esquema == "DINAMICAS" {
 		memUsuario.Inicializar_Memoria_Dinamica(logger)
 	} else {
 		logger.Info("mal definido el esquema de particiones")
