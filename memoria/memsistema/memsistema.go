@@ -54,9 +54,9 @@ func CrearContextoTID(pid, tid uint32, archivoPseudocodigo string) {
 func EliminarContextoPID(pid uint32, logger *slog.Logger) {
 	if _, exists := ContextosPID[pid]; exists {
 		delete(ContextosPID, pid)
-		logger.info("Contexto PID:", pid "eliminado\n")
+		logger.Info(fmt.Sprintf("Contexto PID:, %d eliminado\n", pid))
 	} else {
-		logger.info("Contexto PID" pid "no existe\n")
+		logger.Info(fmt.Sprintf("Contexto PID %d no existe\n", pid))
 	}
 }
 
