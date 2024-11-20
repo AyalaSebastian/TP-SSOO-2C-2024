@@ -94,7 +94,7 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		//marca la particion como libre en memoria de usuario
 		memUsuario.LiberarParticionPorPID(pid.PID, logger)
 		// Ejecutar la función para eliminar el contexto del PID en Memoria de sistema
-		memsistema.EliminarContextoPID(pid.PID, logger)
+		memsistema.EliminarContextoPID(pid.PID)
 
 		///////////////////necesito que me envien el tamaño del proceso para ponerlo en el log/////////////////////
 		//como no lo tengo lo saco del log

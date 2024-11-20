@@ -3,7 +3,6 @@ package memsistema
 import (
 	"bufio"
 	"fmt"
-	"log/slog"
 	"os"
 	"strconv"
 
@@ -51,12 +50,12 @@ func CrearContextoTID(pid, tid uint32, archivoPseudocodigo string) {
 }
 
 // Función para eliminar el contexto de ejecución de un proceso (PID)
-func EliminarContextoPID(pid uint32, logger *slog.Logger) {
+func EliminarContextoPID(pid uint32) {
 	if _, exists := ContextosPID[pid]; exists {
 		delete(ContextosPID, pid)
-		logger.Info(fmt.Sprintf("Contexto PID:, %d eliminado\n", pid))
+		fmt.Printf("Contexto PID:, %d eliminado\n", pid)
 	} else {
-		logger.Info(fmt.Sprintf("Contexto PID %d no existe\n", pid))
+		fmt.Printf("Contexto PID %d no existe\n", pid)
 	}
 }
 
