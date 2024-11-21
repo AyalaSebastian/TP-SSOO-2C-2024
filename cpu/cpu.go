@@ -54,12 +54,10 @@ func main() {
 
 	// Una vez recibido el TID y PID, continuamos la ejecución
 	pidtid := server.ReceivedPIDTID
-	Logger.Info(fmt.Sprintf("Recibido TID: %d, PID: %d", pidtid.TID, pidtid.PID))
-
 	// Pido el contexto de ejecucion a memoria
 	// Llamar a la función SolicitarContextoEjecucion con el log obligatorio
 	Logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: “## TID: %d - Solicito Contexto Ejecución”", server.ReceivedPIDTID.TID))
-	err := client.SolicitarContextoEjecucion(utils.Configs.IpMemory, utils.Configs.PortMemory, server.ReceivedPIDTID.PID, server.ReceivedPIDTID.TID, Logger)
+	err := client.SolicitarContextoEjecucion(*pidtid, Logger)
 	if err != nil {
 		Logger.Error(fmt.Sprintf("No se pudo obtener el contexto de ejecución: %v", err))
 		os.Exit(1) // Salir si hay un error

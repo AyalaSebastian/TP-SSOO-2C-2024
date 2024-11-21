@@ -33,6 +33,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 	mux.HandleFunc("/contexto", Obtener_Contexto_De_Ejecucion(logger))
 
+	mux.HandleFunc("GET/actualizar_contexto", Actualizar_Contexto(logger))
 	//envia proxima instr a cpu fase fetch
 	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
 

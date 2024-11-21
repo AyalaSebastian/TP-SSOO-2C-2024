@@ -14,20 +14,16 @@ import (
 // Variable global para almacenar el contexto de ejecución
 var ReceivedContextoEjecucion *types.ContextoEjecucion = nil
 
+var Proceso types.Proceso
+
 // Función para obtener el contexto de ejecución
 //func GetContextoEjecucion() *types.ContextoEjecucion {
 //	return contextosEjecucion
 //}
 
 // Función que solicita el contexto de ejecución al módulo de memoria
-func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid uint32, logger *slog.Logger) error {
-	url := fmt.Sprintf("http://%s:%d/contexto", ipMemory, portMemory) // URL del módulo de memoria
-
-	// Crear la estructura PIDTID con los valores recibidos
-	pidTid := struct {
-		TID uint32 `json:"tid"`
-		PID uint32 `json:"pid"`
-	}{TID: tid, PID: pid}
+func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
+	url := fmt.Sprintf("http://%s:%d/contexto", utils.Configs.IpMemory, utils.Configs.PortMemory) // URL del módulo de memoria
 
 	// Codificarla en JSON
 	jsonData, err := json.Marshal(pidTid)
@@ -70,6 +66,7 @@ func SolicitarContextoEjecucion(ipMemory string, portMemory int, pid uint32, tid
 
 	// Asignar el contexto recibido a la variable global
 	ReceivedContextoEjecucion = &contexto
+	Proceso.ContextoEjecucion = contexto
 	logger.Info("Contexto de ejecución recibido con éxito")
 
 	return nil

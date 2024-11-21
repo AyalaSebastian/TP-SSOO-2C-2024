@@ -84,6 +84,12 @@ type Particion struct {
 }
 */
 
+type Proceso struct {
+	Pid               uint32
+	Tid               uint32
+	ContextoEjecucion ContextoEjecucion
+}
+
 // --------------------------------- Memoria ---------------------------------
 
 type UpdateMemoria struct {

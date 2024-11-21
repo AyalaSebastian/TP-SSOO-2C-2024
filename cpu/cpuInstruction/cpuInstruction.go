@@ -153,16 +153,11 @@ func obtenerValorRegistro(registro string, logger *slog.Logger) uint32 {
 
 // Función para leer un valor de una dirección física de memoria y almacenarlo en un registro
 func LeerMemoria(registroDatos, registroDireccion string, logger *slog.Logger) {
-	// Obtener una referencia a los registros
-	registros := &client.ReceivedContextoEjecucion.Registros
 
 	// Obtener el valor de la dirección lógica del registro de dirección
 	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
 
-	// Traducir la dirección lógica a una dirección física usando la MMU
-	base := registros.Base
-	limite := registros.Limite
-	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, logger)
+	direccionFisica, err := mmu.TraducirDireccion(&client.Proceso, direccionLogica, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en READ_MEM: %v", err))
 		return
@@ -236,17 +231,13 @@ func LeerMemoria(registroDatos, registroDireccion string, logger *slog.Logger) {
 
 // Función para escribir un valor de un registro en una dirección física de memoria
 func EscribirMemoria(registroDireccion, registroDatos string, logger *slog.Logger) {
-	// Obtener una referencia a los registros
-	registros := &client.ReceivedContextoEjecucion.Registros
 
 	// Obtener el valor de la dirección lógica y el valor de datos de los registros
 	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
 	valorDatos := obtenerValorRegistro(registroDatos, logger)
 
 	// Traducir la dirección lógica a una dirección física usando la MMU
-	base := registros.Base
-	limite := registros.Limite
-	direccionFisica, err := mmu.TraducirDireccion(server.ReceivedPIDTID.TID, direccionLogica, base, limite, logger)
+	direccionFisica, err := mmu.TraducirDireccion(&client.Proceso, direccionLogica, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en WRITE_MEM: %v", err))
 		return

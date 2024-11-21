@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/sisoputnfrba/tp-golang/cpu/client"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/server"
@@ -22,7 +23,6 @@ func Iniciar_cpu(logger *slog.Logger) {
 	mux.HandleFunc("POST /EJECUTAR_KERNEL", WAIT_FOR_TID_PID(logger))
 	mux.HandleFunc("POST /INTERRUPCION_FIN_QUANTUM", ReciboInterrupcionTID(logger))
 	mux.HandleFunc("POST /INTERRUPT", ReciboInterrupcionTID(logger))
-
 	//mux.HandleFunc("POST /comunicacion-memoria", ComunicacionMemoria(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
@@ -57,7 +57,8 @@ func WAIT_FOR_TID_PID(logger *slog.Logger) http.HandlerFunc {
 
 		// Log de la información recibida si la decodificación fue exitosa
 		logger.Info(fmt.Sprintf("Recibido TID: %d, PID: %d", pidtid.TID, pidtid.PID))
-
+		client.Proceso.Pid = pidtid.PID
+		client.Proceso.Tid = pidtid.TID
 		// Asignar a la variable global
 		ReceivedPIDTID = &pidtid
 
