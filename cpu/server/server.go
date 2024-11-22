@@ -7,20 +7,21 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sisoputnfrba/tp-golang/cpu/client"
+	"github.com/sisoputnfrba/tp-golang/cpu/cicloDeInstruccion"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/server"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
-func Iniciar_cpu(logger *slog.Logger) {
+func Inicializar_cpu(logger *slog.Logger) {
 	mux := http.NewServeMux()
 
+	//seguro borraremos esto
 	mux.HandleFunc("/mensaje", server.Recibir_handshake(logger))
 
 	// Endpoints de kernel
-	mux.HandleFunc("POST /EJECUTAR_KERNEL", WAIT_FOR_TID_PID(logger))
+	mux.HandleFunc("POST /EJECUTAR_KERNEL", Recibir_PIDTID(logger))
 	mux.HandleFunc("POST /INTERRUPCION_FIN_QUANTUM", ReciboInterrupcionTID(logger))
 	mux.HandleFunc("POST /INTERRUPT", ReciboInterrupcionTID(logger))
 	//mux.HandleFunc("POST /comunicacion-memoria", ComunicacionMemoria(logger))
@@ -29,44 +30,36 @@ func Iniciar_cpu(logger *slog.Logger) {
 
 }
 
-// Variable global para almacenar el PID y TID
-var ReceivedPIDTID *types.PIDTID = nil
-
-var ReceivedInterrupt uint32
-
-// Getter para acceder a la variable global ReceivedPIDTID
-//func GetReceivedPIDTID() *types.PIDTID {
-//	return receivedPIDTID
-//}
-
-// Handler para esperar el PID y TID del Kernel
-func WAIT_FOR_TID_PID(logger *slog.Logger) http.HandlerFunc {
+// SetGlobalPIDTID recibe un PIDTID y actualiza las variables globales PID y TID.
+func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
 		var pidtid types.PIDTID
 
-		// Intentamos decodificar el cuerpo de la solicitud
-		err := decoder.Decode(&pidtid)
-		if err != nil {
-			// Log de error en caso de fallo al decodificar
-			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Error al decodificar mensaje"))
+		// Decodificar el cuerpo de la solicitud JSON
+		if err := json.NewDecoder(r.Body).Decode(&pidtid); err != nil {
+			http.Error(w, "Error al decodificar el JSON de la solicitud", http.StatusBadRequest)
+			logger.Error("Error al decodificar JSON", slog.String("error", err.Error()))
 			return
 		}
 
-		// Log de la información recibida si la decodificación fue exitosa
-		logger.Info(fmt.Sprintf("Recibido TID: %d, PID: %d", pidtid.TID, pidtid.PID))
-		client.Proceso.Pid = pidtid.PID
-		client.Proceso.Tid = pidtid.TID
-		// Asignar a la variable global
-		ReceivedPIDTID = &pidtid
+		// Almacenar el PID y TID en la variable global
+		cicloDeInstruccion.GlobalPIDTID = pidtid
 
-		// Responder con éxito
+		// Log de confirmación de la actualización
+		logger.Info("PID y TID actualizados", slog.Any(
+			"PID", cicloDeInstruccion.GlobalPIDTID.PID), slog.Any("TID", cicloDeInstruccion.GlobalPIDTID.TID))
+
+		// Llamar a Comenzar_cpu para iniciar el proceso de CPU
+		cpu.cpu()
+		cicloDeInstruccion.Comenzar_cpu(logger)
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("TID y PID recibidos"))
+		w.Write([]byte("PID y TID almacenados y CPU iniciada"))
+
 	}
 }
+
+var ReceivedInterrupt uint32
 
 func ReciboInterrupcionTID(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -94,23 +87,3 @@ func ReciboInterrupcionTID(logger *slog.Logger) http.HandlerFunc {
 		w.Write([]byte("TID  recibido"))
 	}
 }
-
-/*
-func ComunicacionMemoria(logger *slog.Logger) http.HandlerFunc {
-	var request BodyRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	respuesta, err := json.Marshal(fmt.Sprintf("Hola %s! Como andas?", request.Name))
-	if err != nil {
-		http.Error(w, "Error al codificar los datos como JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(respuesta)
-}
-*/

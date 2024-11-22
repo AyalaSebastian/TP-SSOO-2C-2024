@@ -10,7 +10,6 @@ import (
 
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
 	"github.com/sisoputnfrba/tp-golang/cpu/mmu"
-	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 )
 
@@ -49,7 +48,7 @@ func AsignarValorRegistro(registro string, valor uint32, logger *slog.Logger) {
 	}
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: SET - Registro: %s, Valor: %d”", server.ReceivedPIDTID.TID, registro, valor))
+	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: SET - Registro: %s, Valor: %d”", TID, registro, valor))
 }
 
 // Función para sumar el valor de dos registros
