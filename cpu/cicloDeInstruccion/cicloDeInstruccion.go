@@ -18,6 +18,21 @@ import (
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
+//?                       VARIABLES GLOBALES                    //
+
+// * Variable global para almacenar PID y TID
+var GlobalPIDTID types.PIDTID
+
+var AnteriorPIDTID types.PIDTID
+
+// * Variable global para almacenar la instrucción obtenida
+var Instruccion string
+
+// * Función global que representa el estado de los registros de la CPU
+var ContextoEjecucion types.ContextoEjecucion
+
+/////////////////////////////////////////////////////////////////////
+
 func Comenzar_cpu(logger *slog.Logger) {
 
 	logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: “## TID: %d - Solicito Contexto Ejecución”", GlobalPIDTID.TID))
@@ -62,19 +77,6 @@ func Comenzar_cpu(logger *slog.Logger) {
 	}
 	logger.Info("Fin de la ejecución del CPU.")
 }
-
-//?                       VARIABLES GLOBALES                    //
-
-// * Variable global para almacenar PID y TID
-var GlobalPIDTID types.PIDTID
-
-var AnteriorPIDTID types.PIDTID
-
-// * Variable global para almacenar la instrucción obtenida
-var Instruccion string
-
-// * Función global que representa el estado de los registros de la CPU
-var ContextoEjecucion types.ContextoEjecucion
 
 //! /////////////////////////////////////////////////////////////////////////////
 //////////////////!               FETCH                /////////////////////////

@@ -26,7 +26,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
-	mux.HandleFunc("PATCH /compactar", Compactar())
+	mux.HandleFunc("PATCH /compactar", Compactar(logger))
 
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
@@ -227,10 +227,17 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func Compactar() http.HandlerFunc {
+func Compactar(logger *slog.Logger) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Acá va la lógica de compactación
+		fmt.Printf("## -Se Solicitó Compactar")
+		if memUsuario.Compactar() {
+			fmt.Printf("## -Se Completo Compactar")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		} else {
+			logger.Error(fmt.Sprint("NO SE HAN ENCONTRADO HUECOS LIBRES PARA PODER COMPACTAR"))
+		}
 	}
 }
 

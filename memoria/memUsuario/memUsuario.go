@@ -310,13 +310,35 @@ func AsignarParticion(pid uint32, posicion, tamanio_proceso int) {
 
 func SePuedeCompactar(tamanio_proceso int) bool {
 	var espacioLibre = 0
-	particiones := utils.Configs.Partitions
+	particiones := ParticionesDinamicas
 	for i := 0; i < len(BitmapParticiones); i++ {
 		if !BitmapParticiones[i] {
 			espacioLibre += particiones[i]
 		}
 	}
-	if espacioLibre >= tamanio_proceso {
+	return espacioLibre >= tamanio_proceso
+}
+
+func Compactar() bool {
+	var espacioLibre = 0
+
+	for i := 0; i < len(BitmapParticiones); i++ {
+		if !BitmapParticiones[i] {
+			espacioLibre += ParticionesDinamicas[i]
+			espacioACompactar := ParticionesDinamicas[i]
+
+			//armo las particiones de vuelta sin los huecos libres
+			for x, v := range ParticionesDinamicas {
+				if v == espacioACompactar {
+					ParticionesDinamicas = append(ParticionesDinamicas[:x], ParticionesDinamicas[x+1:]...)
+					break // Sale del bucle después de eliminar el primer valor encontrado
+				}
+			}
+		}
+	}
+	// agrego una particion al final con el espacio de todos los huecos eliminados
+	if espacioLibre > 0 {
+		ParticionesDinamicas = append(ParticionesDinamicas, espacioLibre)
 		return true
 	}
 	return false
