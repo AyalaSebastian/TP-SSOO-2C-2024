@@ -12,6 +12,8 @@ import (
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
 	"github.com/sisoputnfrba/tp-golang/cpu/cpuInstruction"
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
+
+	//	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -26,26 +28,26 @@ func Comenzar_cpu(logger *slog.Logger) {
 		// Obtener el valor actual del PC antes de Fetch
 		pcAnterior := client.ReceivedContextoEjecucion.Registros.PC
 
-		fetch()
-		decode()
-		execute()
-		checkInterrupt()
+		//		Fetch(logger)
+		//		Decode(logger)
+		//		Execute(logger)
+		//		checkInterrupt(logger)
 
 		// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
-		err := Fetch(utils.Configs.IpMemory, utils.Configs.PortMemory, server.ReceivedPIDTID.TID, server.ReceivedPIDTID.PID, Logger)
+		err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
 		if err != nil {
-			Logger.Error("Error en Fetch: ", slog.Any("error", err))
+			logger.Error("Error en Fetch: ", slog.Any("error", err))
 			break // Salimos del ciclo si hay error en Fetch
 		}
 
 		// Si no hay más instrucciones, salir del ciclo
 		if Instruccion == "" {
-			Logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
+			logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
 			break
 		}
 
 		// 2. Decode: interpretar la instrucción obtenida
-		Decode(Instruccion, Logger)
+		Decode(Instruccion, logger)
 
 		// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
 
@@ -79,7 +81,7 @@ var ContextoEjecucion types.ContextoEjecucion
 //! //////////////////////////////////////////////////////////////////////////////
 
 // Función Fetch para obtener la próxima instrucción
-func Fetch(ipMemory string, portMemory int, tid uint32, pid uint32, logger *slog.Logger) error {
+func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 	if client.ReceivedContextoEjecucion == nil {
 		logger.Error("No se ha recibido el contexto de ejecución. Imposible realizar Fetch.")
 		return fmt.Errorf("contexto de ejecución no disponible")
@@ -103,7 +105,7 @@ func Fetch(ipMemory string, portMemory int, tid uint32, pid uint32, logger *slog
 	}
 
 	// Crear la URL del módulo de Memoria
-	url := fmt.Sprintf("http://%s:%d/instruccion", ipMemory, portMemory)
+	url := fmt.Sprintf("http://%s:%d/instruccion", utils.Configs.IpMemory, utils.Configs.PortMemory)
 
 	// Crear la solicitud POST
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
@@ -206,7 +208,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		// Asignar el valor al registro
-		cpuInstruction.AsignarValorRegistro(registro, uint32(valor), logger)
+		cpuInstruction.AsignarValorRegistro(registro, uint32(valor), GlobalPIDTID, logger)
 
 	case "READ_MEM":
 		if len(args) != 2 {
@@ -215,7 +217,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDatos := args[0]
 		registroDireccion := args[1]
-		cpuInstruction.LeerMemoria(registroDatos, registroDireccion, logger)
+		cpuInstruction.LeerMemoria(registroDatos, registroDireccion, GlobalPIDTID, logger)
 
 	case "WRITE_MEM":
 		if len(args) != 2 {
@@ -224,7 +226,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDireccion := args[0]
 		registroDatos := args[1]
-		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, logger)
+		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, GlobalPIDTID, logger)
 
 	case "SUM":
 		if len(args) != 2 {
@@ -233,7 +235,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		cpuInstruction.SumarRegistros(registroDestino, registroOrigen, logger)
+		cpuInstruction.SumarRegistros(registroDestino, registroOrigen, GlobalPIDTID, logger)
 
 	case "SUB":
 		if len(args) != 2 {
@@ -242,7 +244,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		cpuInstruction.RestarRegistros(registroDestino, registroOrigen, logger)
+		cpuInstruction.RestarRegistros(registroDestino, registroOrigen, GlobalPIDTID, logger)
 
 	case "JNZ":
 		if len(args) != 2 {
@@ -251,7 +253,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registro := args[0]
 		instruccion := args[1]
-		cpuInstruction.SaltarSiNoCero(registro, instruccion, logger)
+		cpuInstruction.SaltarSiNoCero(registro, instruccion, GlobalPIDTID, logger)
 
 	case "LOG":
 		if len(args) != 1 {
@@ -259,7 +261,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		registro := args[0]
-		cpuInstruction.LogRegistro(registro, logger)
+		cpuInstruction.LogRegistro(registro, GlobalPIDTID, logger)
 
 	case "DUMP_MEMORY":
 
@@ -329,15 +331,15 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 //! //////////////             CHECK INTERRUPT                //////////////////////
 //! ////////////////////////////////////////////////////////////////////////////////
 
-func checkInterrupt(tid uint32, Logger *slog.Logger) {
+func checkInterrupt(tid uint32, logger *slog.Logger) {
 
-	server.ReciboInterrupcionTID(Logger)
+	server.ReciboInterrupcionTID(logger)
 	if server.ReceivedInterrupt == tid {
 		//actualizo contexto en memoria
-		client.EnviarContextoDeEjecucion(tid, "THREAD_UPLOAD", Logger)
+		client.EnviarContextoDeEjecucion(tid, "THREAD_UPLOAD", logger)
 		//devuelvo tid a kernell con motivo de interrupcion
-		Logger.Info("llega interrupcion al puerto Interrupt")
-		client.DevolverTIDAlKernel(tid, Logger, "THREAD_INTERRUPT", "Interrupcion ")
+		logger.Info("llega interrupcion al puerto Interrupt")
+		client.DevolverTIDAlKernel(tid, logger, "THREAD_INTERRUPT", "Interrupcion ")
 		return
 	}
 	return

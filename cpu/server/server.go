@@ -50,12 +50,12 @@ func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 			"PID", cicloDeInstruccion.GlobalPIDTID.PID), slog.Any("TID", cicloDeInstruccion.GlobalPIDTID.TID))
 
 		// Llamar a Comenzar_cpu para iniciar el proceso de CPU
-		cpu.cpu()
+
 		cicloDeInstruccion.Comenzar_cpu(logger)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("PID y TID almacenados y CPU iniciada"))
-
+		return
 	}
 }
 
