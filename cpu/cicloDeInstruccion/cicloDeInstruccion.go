@@ -207,7 +207,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			return
 		}
 		// Asignar el valor al registro
-		cpuInstruction.AsignarValorRegistro(registro, uint32(valor), GlobalPIDTID, logger)
+		cpuInstruction.AsignarValorRegistro(registro, uint32(valor), GlobalPIDTID.TID, logger)
 
 	case "READ_MEM":
 		if len(args) != 2 {
@@ -225,7 +225,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDireccion := args[0]
 		registroDatos := args[1]
-		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, GlobalPIDTID, logger)
+		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, GlobalPIDTID.TID, logger)
 
 	case "SUM":
 		if len(args) != 2 {
@@ -234,7 +234,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		cpuInstruction.SumarRegistros(registroDestino, registroOrigen, GlobalPIDTID, logger)
+		cpuInstruction.SumarRegistros(registroDestino, registroOrigen, GlobalPIDTID.TID, logger)
 
 	case "SUB":
 		if len(args) != 2 {
@@ -243,7 +243,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDestino := args[0]
 		registroOrigen := args[1]
-		cpuInstruction.RestarRegistros(registroDestino, registroOrigen, GlobalPIDTID, logger)
+		cpuInstruction.RestarRegistros(registroDestino, registroOrigen, GlobalPIDTID.TID, logger)
 
 	case "JNZ":
 		if len(args) != 2 {
@@ -252,7 +252,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registro := args[0]
 		instruccion := args[1]
-		cpuInstruction.SaltarSiNoCero(registro, instruccion, GlobalPIDTID, logger)
+		cpuInstruction.SaltarSiNoCero(registro, instruccion, GlobalPIDTID.TID, logger)
 
 	case "LOG":
 		if len(args) != 1 {

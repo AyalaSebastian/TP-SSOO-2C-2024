@@ -4,6 +4,8 @@ import (
 
 	// "sync"
 
+	checkinterrupt "github.com/sisoputnfrba/tp-golang/cpu/checkInterrupt"
+	"github.com/sisoputnfrba/tp-golang/cpu/cicloDeInstruccion"
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
@@ -28,8 +30,8 @@ func main() {
 	logger.Info("Esperando TID y PID del Kernel...")
 	server.Recibir_PIDTID(logger)
 
-	if server.ReciboInterrupcionTID(logger) && cicloInstruccion.GlobalPIDTID != nil {
-		checkinterrupt.chequearInterrupcion()
-	}
+	// si se recibio una interrupcion mientras estoy ejecutando un proceso
+	server.ReciboInterrupcionTID(logger)
+	checkinterrupt.ChequearInterrupcion(cicloDeInstruccion.GlobalPIDTID.TID, logger)
 
 }

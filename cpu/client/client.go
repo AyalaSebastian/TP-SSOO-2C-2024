@@ -24,7 +24,7 @@ var Proceso types.Proceso
 // Función que solicita el contexto de ejecución al módulo de memoria
 func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
 	url := fmt.Sprintf("http://%s:%d/contexto", utils.Configs.IpMemory, utils.Configs.PortMemory) // URL del módulo de memoria
-
+	logger.Info(fmt.Sprintf("## TID: %d - Solicito Contexto Ejecución", pidTid.TID))
 	// Codificarla en JSON
 	jsonData, err := json.Marshal(pidTid)
 	if err != nil {
@@ -119,7 +119,6 @@ func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logg
 		logger.Error("La respuesta del servidor no fue OK")
 		return false // Indica que la respuesta no fue exitosa
 	}
-
 	return true // Indica que la respuesta fue exitosa
 }
 

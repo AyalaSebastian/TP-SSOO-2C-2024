@@ -2,6 +2,7 @@ package mmu
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"log/slog"
 
@@ -14,6 +15,7 @@ func TraducirDireccion(proceso *types.Proceso, direccionLogica uint32, logger *s
 	direccionFisica := proceso.ContextoEjecucion.Registros.Base + direccionLogica
 	if direccionFisica >= proceso.ContextoEjecucion.Registros.Limite {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", proceso.Tid))
 		// Devolver el Tid al Kernel con motivo de Segmentation Fault
 		if client.DevolverTIDAlKernel(proceso.Tid, logger, "THREAD_INTERRUPT", "Segmentation Fault") {
 			log.Printf("Segmentation Fault en Tid %d", proceso.Tid)

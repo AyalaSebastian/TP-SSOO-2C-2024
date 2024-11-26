@@ -55,7 +55,6 @@ func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("PID y TID almacenados y CPU iniciada"))
-		return
 	}
 }
 
@@ -77,7 +76,7 @@ func ReciboInterrupcionTID(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Log de la información recibida si la decodificación fue exitosa
-		logger.Info(fmt.Sprintf("Recibido interrupcion: %d", interrupt))
+		logger.Info(("## Llega interrupcion al puerto Interrupt"))
 
 		// Asignar a la variable global
 		ReceivedInterrupt = interrupt
