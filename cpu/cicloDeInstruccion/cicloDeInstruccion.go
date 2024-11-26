@@ -11,9 +11,6 @@ import (
 
 	"github.com/sisoputnfrba/tp-golang/cpu/client"
 	"github.com/sisoputnfrba/tp-golang/cpu/cpuInstruction"
-	"github.com/sisoputnfrba/tp-golang/cpu/server"
-
-	//	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -327,22 +324,4 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		logger.Error(fmt.Sprintf("Operación desconocida: %s", operacion))
 
 	}
-}
-
-//! ////////////////////////////////////////////////////////////////////////////////
-//! //////////////             CHECK INTERRUPT                //////////////////////
-//! ////////////////////////////////////////////////////////////////////////////////
-
-func checkInterrupt(tid uint32, logger *slog.Logger) {
-
-	server.ReciboInterrupcionTID(logger)
-	if server.ReceivedInterrupt == tid {
-		//actualizo contexto en memoria
-		client.EnviarContextoDeEjecucion(tid, "THREAD_UPLOAD", logger)
-		//devuelvo tid a kernell con motivo de interrupcion
-		logger.Info("llega interrupcion al puerto Interrupt")
-		client.DevolverTIDAlKernel(tid, logger, "THREAD_INTERRUPT", "Interrupcion ")
-		return
-	}
-	return
 }

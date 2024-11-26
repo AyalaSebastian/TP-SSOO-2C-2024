@@ -4,8 +4,6 @@ import (
 
 	// "sync"
 
-	"log/slog"
-
 	"github.com/sisoputnfrba/tp-golang/cpu/server"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/logging"
@@ -28,9 +26,10 @@ func main() {
 
 	// Esperar hasta recibir el TID y PID
 	logger.Info("Esperando TID y PID del Kernel...")
+	server.Recibir_PIDTID(logger)
 
-}
-
-func cpu(logger *slog.Logger) {
+	if server.ReciboInterrupcionTID(logger) && cicloInstruccion.GlobalPIDTID != nil {
+		checkinterrupt.chequearInterrupcion()
+	}
 
 }

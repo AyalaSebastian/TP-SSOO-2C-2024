@@ -47,7 +47,7 @@ func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 
 		// Log de confirmación de la actualización
 		logger.Info("PID y TID actualizados", slog.Any(
-			"PID", cicloDeInstruccion.GlobalPIDTID.PID), slog.Any("TID", cicloDeInstruccion.GlobalPIDTID.TID))
+			"PID", pidtid.PID), slog.Any("TID", pidtid.TID))
 
 		// Llamar a Comenzar_cpu para iniciar el proceso de CPU
 
@@ -81,9 +81,9 @@ func ReciboInterrupcionTID(logger *slog.Logger) http.HandlerFunc {
 
 		// Asignar a la variable global
 		ReceivedInterrupt = interrupt
-
 		// Responder con éxito
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("TID  recibido"))
+
 	}
 }
