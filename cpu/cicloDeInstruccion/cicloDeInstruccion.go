@@ -28,6 +28,9 @@ var Instruccion string
 // * Función global que representa el estado de los registros de la CPU
 var ContextoEjecucion types.ContextoEjecucion
 
+// * Variable global para almacenar la información de interrupción
+var InterrupcionRecibida *types.InterruptionInfo
+
 /////////////////////////////////////////////////////////////////////
 
 func Comenzar_cpu(logger *slog.Logger) {
@@ -37,34 +40,43 @@ func Comenzar_cpu(logger *slog.Logger) {
 
 	for {
 
+		//tid == tidanterior
+
 		// Obtener el valor actual del PC antes de Fetch
-		pcAnterior := client.ReceivedContextoEjecucion.Registros.PC
+		pcActual := client.ReceivedContextoEjecucion.Registros.PC
 
 		//		Fetch(logger)
 		//		Decode(logger)
 		//		Execute(logger)
 		//		checkInterrupt(logger)
 
-		// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
-		err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
-		if err != nil {
-			logger.Error("Error en Fetch: ", slog.Any("error", err))
-			break // Salimos del ciclo si hay error en Fetch
+		if GlobalPIDTID != AnteriorPIDTID {
+
+			// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
+			err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
+			if err != nil {
+				logger.Error("Error en Fetch: ", slog.Any("error", err))
+				break // Salimos del ciclo si hay error en Fetch
+			}
+
+			// Si no hay más instrucciones, salir del ciclo
+			if Instruccion == "" {
+				logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
+				break
+			}
+
+			// 2. Decode: interpretar la instrucción obtenida
+			Decode(Instruccion, logger)
+
+			// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
+
 		}
 
-		// Si no hay más instrucciones, salir del ciclo
-		if Instruccion == "" {
-			logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
-			break
-		}
-
-		// 2. Decode: interpretar la instrucción obtenida
-		Decode(Instruccion, logger)
-
-		// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
+		// 4. Chequear interrupciones
+		CheckInterrupt(GlobalPIDTID.TID, logger)
 
 		// Si el PC no fue modificado por alguna instrucción, lo incrementamos en 1
-		if client.ReceivedContextoEjecucion.Registros.PC == pcAnterior {
+		if client.ReceivedContextoEjecucion.Registros.PC == pcActual {
 			client.ReceivedContextoEjecucion.Registros.PC++
 			logger.Info(fmt.Sprintf("PC no modificado por instrucción. Actualizado PC a: %d", client.ReceivedContextoEjecucion.Registros.PC))
 		} else {
@@ -194,6 +206,11 @@ type estructuraThreadCreate struct {
 
 // Función Execute para ejecutar la instrucción decodificada
 func Execute(operacion string, args []string, logger *slog.Logger) {
+	var proceso types.Proceso
+	proceso.ContextoEjecucion = *client.ReceivedContextoEjecucion
+	proceso.Pid = GlobalPIDTID.PID
+	proceso.Tid = GlobalPIDTID.TID
+
 	switch operacion {
 	case "SET":
 		if len(args) != 2 {
@@ -266,62 +283,167 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 		//	Informar memoria
 		dumpMemory := estructuraEmpty{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "DUMP_MEMORY", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(dumpMemory, "DUMP_MEMORY", logger)
+
 	case "IO":
 		//	Informar memoria
 		io := estructuraTiempo{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "IO", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(io, "IO", logger)
+
 	case "PROCESS_CREATE":
 
 		//	Informar memoria
 		processCreate := estructuraProcessCreate{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "PROCESS_CREATE", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(processCreate, "PROCESS_CREATE", logger)
+
 	case "THREAD_CREATE":
 
 		//	Informar memoria
 		threadCreate := estructuraThreadCreate{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "THREAD_CREATE", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
+
 	case "THREAD_JOIN":
 		//	Informar memoria
 		threadJoin := estructuraTid{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "THREAD_JOIN", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadJoin, "THREAD_JOIN", logger)
+
 	case "THREAD_CANCEL":
 		//	Informar memoria
 		threadCancel := estructuraTid{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "THREAD_CANCEL", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadCancel, "THREAD_CANCEL", logger)
+
 	case "MUTEX_CREATE":
 		//	Informar memoria
 		mutexCreate := estructuraRecurso{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "MUTEX_CREATE", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(mutexCreate, "MUTEX_CREATE", logger)
+
 	case "MUTEX_LOCK":
 		//	Informar memoria
 		mutexLock := estructuraRecurso{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "MUTEX_LOCK", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(mutexLock, "MUTEX_LOCK", logger)
+
 	case "MUTEX_UNLOCK":
 		//	Informar memoria
 		mutexUnlock := estructuraRecurso{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "MUTEX_UNLOCK", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(mutexUnlock, "MUTEX_UNLOCK", logger)
+
 	case "THREAD_EXIT":
 		//	Informar memoria
 		threadExit := estructuraEmpty{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "THREAD_EXIT", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadExit, "THREAD_EXIT", logger)
+
 	case "PROCESS_EXIT":
 		//	Informar memoria
 		processExit := estructuraEmpty{}
-		client.EnviarContextoDeEjecucion(ContextoEjecucion, "PROCESS_EXIT", logger)
+		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(processExit, "PROCESS_EXIT", logger)
+
 	default:
 		logger.Error(fmt.Sprintf("Operación desconocida: %s", operacion))
 
+	}
+}
+
+// PARA MUCHAS INTERRUPCIONES
+/*
+func ChequearInterrupciones(tidActual uint32, logger *slog.Logger) {
+	// Crear una nueva lista para almacenar interrupciones pendientes
+	var interrupcionesPendientes []types.InterruptionInfo
+
+	var proceso types.Proceso
+	proceso.ContextoEjecucion = *client.ReceivedContextoEjecucion
+	proceso.Pid = GlobalPIDTID.PID
+	proceso.Tid = GlobalPIDTID.TID
+
+	// Revisar cada interrupción en la cola global
+	for _, interrupcion := range InterrupcionRecibida {
+		if interrupcion.TID == tidActual {
+
+			// Enviar el contexto de ejecución al módulo de memoria
+			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+
+			// Log de la interrupción recibida
+			logger.Info("Interrupción Recibida: ## Llega interrupcion al puerto Interrupt", slog.Any("TID", tidActual))
+
+			client.EnviarDesalojo(proceso.Pid, proceso.Tid, interrupcion.NombreInterrupcion, logger)
+
+		} else {
+			// Si el TID no coincide, se mantiene en la lista de interrupciones pendientes
+			interrupcionesPendientes = append(interrupcionesPendientes, interrupcion)
+		}
+	}
+
+	// Actualizar la cola global con las interrupciones pendientes
+	InterrupcionRecibida = interrupcionesPendientes
+
+	// Log si no hay interrupciones pendientes para el TID actual
+	if len(interrupcionesPendientes) == len(InterrupcionRecibida) {
+		logger.Info("No hay interrupciones pendientes para el TID actual", slog.Any("TID", tidActual))
+	}
+}
+*/
+//PARA UNA SOLA
+
+func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
+
+	var proceso types.Proceso
+	proceso.ContextoEjecucion = *client.ReceivedContextoEjecucion
+	proceso.Pid = GlobalPIDTID.PID
+	proceso.Tid = GlobalPIDTID.TID
+
+	// Verificar si hay una interrupción pendiente
+	if InterrupcionRecibida != nil {
+		if InterrupcionRecibida.TID == tidActual {
+			// Log de la interrupción recibida
+			logger.Info("Interrupción Recibida: ## Llega interrupcion al puerto Interrupt", slog.Any("TID", tidActual))
+
+			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
+
+			client.EnviarDesalojo(proceso.Pid, proceso.Tid, InterrupcionRecibida.NombreInterrupcion, logger)
+
+			// Eliminar la interrupción después de procesarla
+			InterrupcionRecibida = nil
+		} else {
+			// Si el TID no coincide, descartar la interrupción
+			logger.Info("Interrupción descartada debido a TID no coincidente", slog.Any("Interrupción TID", InterrupcionRecibida.TID), slog.Any("TID actual", tidActual))
+
+			// Descartar la interrupción al no coincidir el TID
+			InterrupcionRecibida = nil
+		}
+	} else {
+		// Log si no hay ninguna interrupción activa
+		logger.Info("No hay interrupciones pendientes para el TID actual", slog.Any("TID", tidActual))
 	}
 }

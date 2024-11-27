@@ -90,6 +90,12 @@ type Proceso struct {
 	ContextoEjecucion ContextoEjecucion
 }
 
+// Estructura para almacenar el nombre de la interrupción y el TID
+type InterruptionInfo struct {
+	NombreInterrupcion string
+	TID                uint32
+}
+
 // --------------------------------- Memoria ---------------------------------
 
 type UpdateMemoria struct {

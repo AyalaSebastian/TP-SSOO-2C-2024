@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -15,11 +16,6 @@ import (
 var ReceivedContextoEjecucion *types.ContextoEjecucion = nil
 
 var Proceso types.Proceso
-
-// Función para obtener el contexto de ejecución
-//func GetContextoEjecucion() *types.ContextoEjecucion {
-//	return contextosEjecucion
-//}
 
 // Función que solicita el contexto de ejecución al módulo de memoria
 func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
@@ -122,55 +118,64 @@ func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logg
 	return true // Indica que la respuesta fue exitosa
 }
 
-func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) bool {
+func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 
 	body, err := json.Marshal(dato)
 	if err != nil {
 		logger.Error("Se produjo un error codificando el mensaje")
-		return false
+		return
 	}
 
 	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8001))
-		return false
+		return
 	}
 	// Aseguramos que el body sea cerrado
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("La respuesta del servidor no fue OK")
-		return false // Indica que la respuesta no fue exitosa
+		return // Indica que la respuesta no fue exitosa
 	}
-
-	return true // Indica que la respuesta fue exitosa
+	os.Exit(0)
 }
 
-/*
-func Enviar_parametros_contexto(ip string, puerto int, path string, tamanio int, logger *slog.Logger) bool {
-	mensaje := types.PathTamanio{Path: path, Tamanio: tamanio}
-	body, err := json.Marshal(mensaje)
-	if err != nil {
-		logger.Error("Se produjo un error codificando el mensaje")
-		return false
+// EnviarDesalojo envia el PID, TID y el motivo del desalojo a la API Kernel utilizando la configuración global de IP y puerto.
+func EnviarDesalojo(pid uint32, tid uint32, motivo string, logger *slog.Logger) {
+
+	// Crear el objeto que contiene los datos a enviar
+	hiloDesalojado := types.HiloDesalojado{
+		PID:    pid,
+		TID:    tid,
+		Motivo: motivo,
 	}
-	// Siento que esto lo podriamos modularizar en una funcion que reciba el ip, puerto, body y el endpoint
-	url := fmt.Sprintf("http://%s:%d/crear-contexto", ip, puerto)
+
+	// Convertir el objeto a JSON
+	body, err := json.Marshal(hiloDesalojado)
+	if err != nil {
+		logger.Error("Error al codificar mensaje de desalojo", slog.String("error", err.Error()))
+		return
+	}
+
+	// Formar la URL de la API Kernel usando las configuraciones globales
+	url := fmt.Sprintf("http://%s:%d/desalojo", utils.Configs.IpKernel, utils.Configs.PortKernel)
+
+	// Enviar la solicitud POST
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		logger.Info("Se produjo un error enviando mensaje a ip:%s puerto:%d", ip, puerto)
-		return false
+		logger.Error(fmt.Sprintf("Error al enviar desalojo a %s:%d", utils.Configs.IpKernel, utils.Configs.PortKernel), slog.String("error", err.Error()))
+		return
 	}
-	// Aseguramos que el body sea cerrado
 	defer resp.Body.Close()
 
+	// Verificar que la respuesta sea exitosa
 	if resp.StatusCode != http.StatusOK {
-		logger.Info("La respuesta del servidor no fue OK")
-		return false // Indica que la respuesta no fue exitosa
+		logger.Error("Error al procesar la solicitud de desalojo", slog.Int("status", resp.StatusCode))
+		return
 	}
 
-	logger.Info(fmt.Sprintf("Respuesta del servidor: %s", resp.Status))
-	return true // Indica que la respuesta fue exitosa
+	// Log de éxito
+	logger.Info("Desalojo enviado correctamente", slog.Int("PID", int(pid)), slog.Int("TID", int(tid)), slog.String("Motivo", motivo))
 }
-*/
