@@ -1,4 +1,4 @@
-package memSistema
+package memsistema
 
 import (
 	"bufio"
