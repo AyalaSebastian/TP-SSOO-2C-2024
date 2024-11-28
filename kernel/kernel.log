@@ -45,3 +45,9 @@ time=2024-11-08T15:05:31.901-03:00 level=ERROR msg="No se pudo asignar espacio e
 time=2024-11-08T15:05:31.901-03:00 level=INFO msg="Levantando servidor en el puerto: 8001"
 time=2024-11-08T15:05:40.120-03:00 level=INFO msg="## (0:0) - Solicitó syscall: THREAD_CREATE"
 time=2024-11-08T15:07:15.576-03:00 level=INFO msg="## (0:0) - Solicitó syscall: THREAD_CREATE"
+------
+time=2024-11-28T18:20:12.781-03:00 level=INFO msg="Iniciando planificador FIFO"
+time=2024-11-28T18:20:12.796-03:00 level=INFO msg="## (1:0) Se crea el proceso - Estado: NEW"
+time=2024-11-28T18:20:12.799-03:00 level=INFO msg="## (1:0) Se crea el Hilo - Estado: READY"
+time=2024-11-28T18:20:12.799-03:00 level=INFO msg="Levantando servidor en el puerto: 8001"
+time=2024-11-28T18:20:12.813-03:00 level=ERROR msg="Se produjo un error enviando mensaje a ip:127.0.0.1 puerto:8004"
