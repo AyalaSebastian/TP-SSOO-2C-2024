@@ -10,3 +10,4 @@ time=2024-11-15T15:59:29.901-03:00 level=INFO msg="## Acceso Bloque - Archivo: p
 time=2024-11-15T15:59:31.922-03:00 level=INFO msg="## Acceso Bloque - Archivo: prueba.dmp - Tipo Bloque: DATOS - Bloque File System 2"
 time=2024-11-15T15:59:33.939-03:00 level=INFO msg="## Acceso Bloque - Archivo: prueba.dmp - Tipo Bloque: DATOS - Bloque File System 3"
 time=2024-11-15T15:59:35.940-03:00 level=INFO msg="## Fin de solicitud - Archivo: prueba.dmp"
+time=2024-11-27T20:25:16.884-03:00 level=INFO msg="Levantando servidor en el puerto: 8003"

@@ -1,30 +1,4 @@
-time=2024-11-20T11:00:57.799-03:00 level=INFO msg="Logger iniciado"
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=1 Base=0 Límite=512
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=2 Base=512 Límite=16
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=3 Base=528 Límite=32
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=4 Base=560 Límite=16
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=5 Base=576 Límite=256
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=6 Base=832 Límite=64
-time=2024-11-20T11:00:57.816-03:00 level=INFO msg="Partición inicializada" Número=7 Base=896 Límite=128
-time=2024-11-20T11:01:01.819-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
-time=2024-11-20T11:02:40.334-03:00 level=INFO msg="Logger iniciado"
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=1 Base=0 Límite=512
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=2 Base=512 Límite=16
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=3 Base=528 Límite=32
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=4 Base=560 Límite=16
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=5 Base=576 Límite=256
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=6 Base=832 Límite=64
-time=2024-11-20T11:02:40.349-03:00 level=INFO msg="Partición inicializada" Número=7 Base=896 Límite=128
-time=2024-11-20T11:02:44.352-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
-time=2024-11-20T11:06:53.796-03:00 level=INFO msg="Logger iniciado"
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=1 "iniciada con Base"=0 "y Límite"=512
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=2 "iniciada con Base"=512 "y Límite"=16
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=3 "iniciada con Base"=528 "y Límite"=32
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=4 "iniciada con Base"=560 "y Límite"=16
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=5 "iniciada con Base"=576 "y Límite"=256
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=6 "iniciada con Base"=832 "y Límite"=64
-time=2024-11-20T11:06:53.809-03:00 level=INFO msg="Partición fija" Número=7 "iniciada con Base"=896 "y Límite"=128
-time=2024-11-20T11:06:57.812-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
-time=2024-11-20T11:08:25.263-03:00 level=INFO msg="Logger iniciado"
-time=2024-11-20T11:08:25.283-03:00 level=INFO msg="Memoria dinámica inicializada: ## Base = 0, Límite = 1024"
-time=2024-11-20T11:08:29.285-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
+time=2024-11-27T20:47:41.794-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {PCB:{PID:0 TCBs:map[] Mutexs:map[]} Pseudo: Tamanio:32}"
+time=2024-11-27T20:47:41.794-03:00 level=INFO msg="## Proceso Creado - PID: 0  - Tamaño: 32"
+time=2024-11-27T20:53:20.082-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {PCB:{PID:0 TCBs:map[] Mutexs:map[]} Pseudo: Tamanio:32}"
+time=2024-11-27T20:53:20.082-03:00 level=INFO msg="## Proceso Creado - PID: 0  - Tamaño: 32"
