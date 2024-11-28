@@ -25,7 +25,7 @@ func Inicializar_colas() {
 	ColaExit = []types.TCB{}
 	ColaIO = []utils.SolicitudIO{}
 	MapColasMultinivel = make(map[int][]types.TCB)
-	utils.Execute = &utils.ExecuteActual{}
+	utils.Execute = &utils.ExecuteActual{PID: 1000000000, TID: 1000000000} // Inicializo con un valor que no se va a usar
 }
 
 // Se le pasa el archivo de pseudocódigo, el tamaño del proceso y la prioridad
@@ -66,7 +66,7 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad int, logger *slog.Logger) (bool, string) {
 	// Enviar a memoria el archivo de pseudocódigo y el tamaño del proceso
 	parametros := types.PathTamanio{Path: pseudo, Tamanio: tamanio, PID: pcb.PID} //añadi el pid para crear proceso en memoria
-	success, alt := client.Enviar_Proceso(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "crear-proceso", logger)
+	success, alt := client.Enviar_Proceso(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "CREAR-PROCESO", logger)
 
 	if success {
 		// Si se asigna espacio, se crea el TCB 0 y se pasa a READY
@@ -216,7 +216,7 @@ func FIFO(logger *slog.Logger) {
 		utils.MutexPlanificador.Lock()
 		utils.Planificador.Wait()
 
-		if utils.Execute != nil { // Si hay un proceso en ejecución, no hacer nada
+		if utils.Execute.PID != 1000000000 { // Si hay un proceso en ejecución, no hacer nada
 			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
