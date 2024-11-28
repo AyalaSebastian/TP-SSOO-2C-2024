@@ -35,7 +35,7 @@ var InterrupcionRecibida *types.InterruptionInfo
 
 func Comenzar_cpu(logger *slog.Logger) {
 
-	logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: “## TID: %d - Solicito Contexto Ejecución”", GlobalPIDTID.TID))
+	logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: ## TID: %d - Solicito Contexto Ejecución", GlobalPIDTID.TID))
 	client.SolicitarContextoEjecucion(GlobalPIDTID, logger)
 
 	for {
@@ -157,7 +157,7 @@ func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 	Instruccion = fetchedInstruction.Instruccion
 
 	// Log de Fetch exitoso
-	logger.Info(fmt.Sprintf("Fetch Instrucción: “## TID: %d - FETCH - Program Counter: %d”", tid, pc))
+	logger.Info(fmt.Sprintf("Fetch Instrucción: ## TID: %d - FETCH - Program Counter: %d", tid, pc))
 
 	return nil
 }

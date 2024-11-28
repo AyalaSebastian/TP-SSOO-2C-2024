@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/client"
+	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/memUsuario"
-	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -95,7 +95,7 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		//marca la particion como libre en memoria de usuario
 		memUsuario.LiberarParticionPorPID(pid.PID, logger)
 		// Ejecutar la función para eliminar el contexto del PID en Memoria de sistema
-		memsistema.EliminarContextoPID(pid.PID)
+		memSistema.EliminarContextoPID(pid.PID)
 
 		///////////////////necesito que me envien el tamaño del proceso para ponerlo en el log/////////////////////
 		//como no lo tengo lo saco del log
@@ -124,7 +124,7 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 		}
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
-		memsistema.CrearContextoTID(magic.TID, magic.PID, magic.Path)
+		memSistema.CrearContextoTID(magic.TID, magic.PID, magic.Path)
 
 		logger.Info(fmt.Sprintf("## Hilo Creado - (PID:TID) - (%d:%d)", magic.PID, magic.PID))
 		w.WriteHeader(http.StatusOK)
@@ -156,7 +156,7 @@ func FinalizarHilo(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Finalización de hilo: ## Finalizar hilo solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
 
 		// Ejecutar la función para eliminar el contexto del TID en Memoria
-		memsistema.EliminarContextoTID(pidTid.PID, pidTid.TID)
+		memSistema.EliminarContextoTID(pidTid.PID, pidTid.TID)
 
 		// Log de destrucción del hilo
 		logger.Info(fmt.Sprintf("Destrucción de Hilo: ## Hilo Destruido - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
@@ -236,7 +236,7 @@ func Compactar(logger *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		} else {
-			logger.Error(fmt.Sprint("NO SE HAN ENCONTRADO HUECOS LIBRES PARA PODER COMPACTAR"))
+			logger.Error("NO SE HAN ENCONTRADO HUECOS LIBRES PARA PODER COMPACTAR")
 		}
 	}
 }
@@ -265,7 +265,7 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Buscar el contexto para el PID en el mapa ContextosPID
-		contextoPID, existePID := memsistema.ContextosPID[pidTid.PID]
+		contextoPID, existePID := memSistema.ContextosPID[pidTid.PID]
 
 		// Verificar si el PID existe
 		if !existePID {
@@ -328,7 +328,7 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		memsistema.Actualizar_TID(req.PID, req.TID, req.ContextoDeEjecucion)
+		memSistema.Actualizar_TID(req.PID, req.TID, req.ContextoDeEjecucion)
 		logger.Info(fmt.Sprintf("## Contexto Actualizado - (PID:TID) - (%d:%d) ", req.PID, req.TID))
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -354,7 +354,7 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 		}
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", requestData.PID, requestData.TID))
 
-		instruccion := memsistema.BuscarSiguienteInstruccion(requestData.PID, requestData.TID, requestData.PC)
+		instruccion := memSistema.BuscarSiguienteInstruccion(requestData.PID, requestData.TID, requestData.PC)
 		logger.Info(fmt.Sprintf("## OBTENER INSTRUCCION -(PID:TID) -(%d:%d) - Instruccion: %s", requestData.PID, requestData.TID, instruccion))
 		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Configs.PortCPU, "obtener-instruccion", "GET", logger)
 	}
