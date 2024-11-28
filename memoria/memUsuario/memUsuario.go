@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/sisoputnfrba/tp-golang/memoria/memsistema"
+	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
@@ -156,6 +156,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
 				} else {
 					(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
 				}
+
 			}
 		}
 	}
@@ -170,7 +171,7 @@ func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 				PidAParticion[pid] = i
 				BitmapParticiones[i] = true
 				fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
-				memsistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
+				memSistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
 				return true
 			}
 		}
@@ -200,7 +201,7 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 		PidAParticion[pid] = pos_menor
 		BitmapParticiones[pos_menor] = true
 		fmt.Printf("Proceso %d asignado a la partición %d\n", pid, pos_menor+1)
-		memsistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
+		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
 		return true
 	}
 }
@@ -226,7 +227,7 @@ func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 		PidAParticion[pid] = pos_mayor
 		BitmapParticiones[pos_mayor] = true
 		fmt.Printf("Proceso %d asignado a la partición %d\n", pid, pos_mayor+1)
-		memsistema.CrearContextoPID(pid, uint32(Particiones[pos_mayor].Base), uint32(Particiones[pos_mayor].Limite))
+		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_mayor].Base), uint32(Particiones[pos_mayor].Limite))
 		return true
 	}
 }
@@ -305,7 +306,7 @@ func AsignarParticion(pid uint32, posicion, tamanio_proceso int) {
 	ParticionesDinamicas = append(ParticionesDinamicas, nuevaParticion)
 	fmt.Printf("Proceso %d asignado a la partición %d\n", pid, posicion+1)
 	base := baseDinamica(posicion)
-	memsistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
+	memSistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
 }
 
 func SePuedeCompactar(tamanio_proceso int) bool {
