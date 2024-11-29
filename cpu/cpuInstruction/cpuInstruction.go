@@ -22,7 +22,7 @@ func AsignarValorRegistro(registro string, valor uint32, tid uint32, logger *slo
 	// Asignar el valor al registro correspondiente
 	switch registro {
 	case "PC":
-		&registros.PC = valor
+		registros.PC = valor
 	case "AX":
 		registros.AX = valor
 	case "BX":
