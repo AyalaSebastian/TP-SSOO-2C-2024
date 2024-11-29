@@ -178,20 +178,21 @@ func Decode(instruccion string, logger *slog.Logger) {
 
 type estructuraEmpty struct {
 }
-type estructuraTid struct {
-	tid uint32
+type EstructuraTid struct {
+	TID uint32
 }
-type estructuraTiempo struct {
-	tiempo float32
+type EstructuraTiempo struct {
+	MS int
 }
-type estructuraRecurso struct {
-	recurso string
+type EstructuraRecurso struct {
+	Recurso string
 }
-type estructuraProcessCreate struct {
-	archivoInstrucciones string
-	tamanio              int
-	PrioridadTID0        int
-}
+
+// type estructuraProcessCreate struct {
+// 	archivoInstrucciones string
+// 	tamanio              int
+// 	PrioridadTID0        int
+// }
 
 // type estructuraThreadCreate struct {
 // 	archivoInstrucciones string
@@ -283,8 +284,14 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.CederControlAKernell(dumpMemory, "DUMP_MEMORY", logger)
 
 	case "IO":
+
+		// Parseo los MS
+		ms := parcearArgs(args[0], logger)
+
 		//	Informar memoria
-		io := estructuraTiempo{}
+		io := EstructuraTiempo{
+			MS: ms,
+		}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
@@ -292,8 +299,16 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 	case "PROCESS_CREATE":
 
+		// Parsear a entero
+		arg1 := parcearArgs(args[1], logger)
+		arg2 := parcearArgs(args[2], logger)
+
 		//	Informar memoria
-		processCreate := estructuraProcessCreate{}
+		processCreate := types.ProcessCreateParams{
+			Path:      args[0],
+			Tamanio:   arg1,
+			Prioridad: arg2,
+		}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
@@ -301,11 +316,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 	case "THREAD_CREATE":
 		// Parsear la prioridad a entero
-		prio, err := strconv.Atoi(args[1])
-		if err != nil {
-			logger.Error("Error al convertir la prioridad para THREAD_CREATE")
-			return
-		}
+		prio := parcearArgs(args[1], logger)
 
 		//	Informar memoria
 		threadCreate := types.ThreadCreateParams{
@@ -318,16 +329,29 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
 
 	case "THREAD_JOIN":
+
+		//Parseo el TID
+		tid := parcearArgs(args[0], logger)
+
+		threadJoin := EstructuraTid{
+			TID: uint32(tid),
+		}
+
 		//	Informar memoria
-		threadJoin := estructuraTid{}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadJoin, "THREAD_JOIN", logger)
 
 	case "THREAD_CANCEL":
+
+		// Parseo el TID
+		tid := parcearArgs(args[0], logger)
+
 		//	Informar memoria
-		threadCancel := estructuraTid{}
+		threadCancel := EstructuraTid{
+			TID: uint32(tid),
+		}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
@@ -335,7 +359,9 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 	case "MUTEX_CREATE":
 		//	Informar memoria
-		mutexCreate := estructuraRecurso{}
+		mutexCreate := EstructuraRecurso{
+			Recurso: args[0],
+		}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
@@ -343,7 +369,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 	case "MUTEX_LOCK":
 		//	Informar memoria
-		mutexLock := estructuraRecurso{}
+		mutexLock := EstructuraRecurso{} //! Corregir
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
@@ -351,7 +377,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 	case "MUTEX_UNLOCK":
 		//	Informar memoria
-		mutexUnlock := estructuraRecurso{}
+		mutexUnlock := EstructuraRecurso{} //! Corregir
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
@@ -379,44 +405,6 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 	}
 }
 
-// PARA MUCHAS INTERRUPCIONES
-/*
-func ChequearInterrupciones(tidActual uint32, logger *slog.Logger) {
-	// Crear una nueva lista para almacenar interrupciones pendientes
-	var interrupcionesPendientes []types.InterruptionInfo
-
-	var proceso types.Proceso
-	proceso.ContextoEjecucion = *client.ReceivedContextoEjecucion
-	proceso.Pid = GlobalPIDTID.PID
-	proceso.Tid = GlobalPIDTID.TID
-
-	// Revisar cada interrupción en la cola global
-	for _, interrupcion := range InterrupcionRecibida {
-		if interrupcion.TID == tidActual {
-
-			// Enviar el contexto de ejecución al módulo de memoria
-			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
-
-			// Log de la interrupción recibida
-			logger.Info("Interrupción Recibida: ## Llega interrupcion al puerto Interrupt", slog.Any("TID", tidActual))
-
-			client.EnviarDesalojo(proceso.Pid, proceso.Tid, interrupcion.NombreInterrupcion, logger)
-
-		} else {
-			// Si el TID no coincide, se mantiene en la lista de interrupciones pendientes
-			interrupcionesPendientes = append(interrupcionesPendientes, interrupcion)
-		}
-	}
-
-	// Actualizar la cola global con las interrupciones pendientes
-	InterrupcionRecibida = interrupcionesPendientes
-
-	// Log si no hay interrupciones pendientes para el TID actual
-	if len(interrupcionesPendientes) == len(InterrupcionRecibida) {
-		logger.Info("No hay interrupciones pendientes para el TID actual", slog.Any("TID", tidActual))
-	}
-}
-*/
 //PARA UNA SOLA
 
 func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
@@ -449,4 +437,13 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 		// Log si no hay ninguna interrupción activa
 		logger.Info("No hay interrupciones pendientes para el TID actual", slog.Any("TID", tidActual))
 	}
+}
+
+func parcearArgs(arg string, logger *slog.Logger) int {
+	argParseado, err := strconv.Atoi(arg)
+	if err != nil {
+		logger.Error("Error al convertir la prioridad para THREAD_CREATE")
+		return -1 // Return a default value or handle the error appropriately
+	}
+	return argParseado
 }

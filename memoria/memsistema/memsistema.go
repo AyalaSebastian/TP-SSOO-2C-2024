@@ -131,11 +131,12 @@ func BuscarSiguienteInstruccion(pid, tid uint32, pc uint32) string {
 	if proceso, exists := ContextosPID[pid]; exists {
 		if hilo, tidExists := proceso.TIDs[tid]; tidExists {
 			indiceInstruccion := pc
-			instruccion, existe := hilo.LISTAINSTRUCCIONES[fmt.Sprintf("%d", indiceInstruccion)]
+			instruccion, existe := hilo.LISTAINSTRUCCIONES[fmt.Sprintf("instr_%d", indiceInstruccion)]
 			if !existe {
 				fmt.Printf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
 				return ""
 			}
+
 			return instruccion
 		} else {
 			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)

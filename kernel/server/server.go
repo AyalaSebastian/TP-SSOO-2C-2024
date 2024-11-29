@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sisoputnfrba/tp-golang/cpu/cicloDeInstruccion"
 	"github.com/sisoputnfrba/tp-golang/kernel/client"
 	"github.com/sisoputnfrba/tp-golang/kernel/planificador"
 	"github.com/sisoputnfrba/tp-golang/kernel/utils"
@@ -136,12 +137,13 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// QUERY PATH - VERBO DELETE
+// NO NECESITO RECIBI NADA - VERBO DELETE
 func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_EXIT", utils.Execute.PID, utils.Execute.TID))
+
 		// Eliminamos el hilo que esta ejecutando actualmente
-		logger.Info("Se recibio un THREAD_EXIT")
 
 		// Finalizamos el hilo
 		planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
@@ -156,22 +158,22 @@ func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// QUERY PATH - VERBO DELETE
+// BODY - VERBO DELETE
 // EL TID A ELIMINAR SE MANDA POR PARAMETRO DE LA URL EJ: /THREAD_CANCEL/1
 func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_CANCEL", utils.Execute.PID, utils.Execute.TID))
-		// Tomamos el valor del tid de la variable de la URL
-		tid := r.PathValue("tid")
 
-		// Finalizamos el hilo
-		tidNum, err := strconv.Atoi(tid)
+		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_CANCEL", utils.Execute.PID, utils.Execute.TID))
+
+		// Totamos el valor del body
+		var tid cicloDeInstruccion.EstructuraTid
+		err := json.NewDecoder(r.Body).Decode(&tid)
 		if err != nil {
-			http.Error(w, "Error al convertir el TID a numero", http.StatusBadRequest)
-			return
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
 		}
 
-		planificador.Finalizar_hilo(uint32(tidNum), utils.Execute.PID, logger)
+		// Finalizamos el hilo
+		planificador.Finalizar_hilo(uint32(tid.TID), utils.Execute.PID, logger)
 
 		// Respondemos con un OK
 		respuesta, err := json.Marshal("OK")
@@ -228,16 +230,22 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 
 // Syscall referida a MUTEX
 
-// QUERY PATH - VERBO POST
+// BODY - VERBO POST
 // Si ya existe responde con "MUTEX_YA_EXISTE", si no existe lo crea y responde con "OK"
 func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_CREATE", utils.Execute.PID, utils.Execute.TID))
+
 		// Tomamos el valor del tid de la variable de la URL
-		mutexName := r.PathValue("mutex")
+		var mutexName cicloDeInstruccion.EstructuraRecurso
+		err := json.NewDecoder(r.Body).Decode(&mutexName)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+		}
 
 		// Creamos el mutex
-		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName]
+		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso]
 		if existe {
 			respuesta, err := json.Marshal("MUTEX_YA_EXISTE")
 			if err != nil {
@@ -248,7 +256,7 @@ func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Creamos el mutex y lo agregamos al mapa de mutexs del PCB
-		utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = "LIBRE"
+		utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = "LIBRE"
 		respuesta, err := json.Marshal("OK")
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
@@ -387,13 +395,19 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 
 func IO(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: IO", utils.Execute.PID, utils.Execute.TID))
-		valor := r.PathValue("ms")
-		tiempo, _ := strconv.Atoi(valor) //Convierto el tiempo a numero
+
+		var ms cicloDeInstruccion.EstructuraTiempo
+		err := json.NewDecoder(r.Body).Decode(&ms)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+		}
+
 		solicitud := utils.SolicitudIO{
 			PID:       utils.Execute.PID,
 			TID:       utils.Execute.TID,
-			Duracion:  tiempo,
+			Duracion:  ms.MS,
 			Timestamp: time.Now(),
 		}
 		utils.Encolar(&planificador.ColaIO, solicitud)
