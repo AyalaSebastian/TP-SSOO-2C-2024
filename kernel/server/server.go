@@ -23,15 +23,15 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("POST /PROCESS_CREATE", PROCESS_CREATE(logger))
 	mux.HandleFunc("POST /PROCESS_EXIT", PROCESS_EXIT(logger))
 	mux.HandleFunc("POST /THREAD_CREATE", THREAD_CREATE(logger))
-	mux.HandleFunc("POTS /THREAD_JOIN/{tid}", THREAD_JOIN(logger))
-	mux.HandleFunc("POST /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
+	mux.HandleFunc("POST /THREAD_JOIN", THREAD_JOIN(logger))
+	mux.HandleFunc("POST /THREAD_CANCEL", THREAD_CANCEL(logger))
 	mux.HandleFunc("POST /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
-	mux.HandleFunc("PATCH /dump_response/{response}", Respuesta_dump(logger))
-	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
-	mux.HandleFunc("POST /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
-	mux.HandleFunc("POST /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
-	mux.HandleFunc("POST /IO/{ms}", IO(logger))
+	mux.HandleFunc("PATCH /dump_response", Respuesta_dump(logger))
+	mux.HandleFunc("POST /MUTEX_CREATE", MUTEX_CREATE(logger))
+	mux.HandleFunc("POST /MUTEX_LOCK", MUTEX_LOCK(logger))
+	mux.HandleFunc("POST /MUTEX_UNLOCK", MUTEX_UNLOCK(logger))
+	mux.HandleFunc("POST /IO", IO(logger))
 
 	mux.HandleFunc("PUT /recibir-desalojo", Recibir_desalojo(logger))
 
@@ -194,15 +194,13 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
 		// Tomamos el valor del tid de la variable de la URL
-		tid := r.PathValue("tid")
-
-		// Verificamos  que el tid exista actualmente
-		// planificador.Crear_hilo(params.Path, params.Prioridad, logger)
-		tidNum, err := strconv.Atoi(tid)
+		var tid cicloDeInstruccion.EstructuraTid
+		err := json.NewDecoder(r.Body).Decode(&tid)
 		if err != nil {
-			http.Error(w, "Error al convertir el TID a numero", http.StatusBadRequest)
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
 		}
-		_, existe := utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tidNum)]
+
+		_, existe := utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)]
 
 		if !existe {
 			respuesta, err := json.Marshal("CONTINUAR_EJECUCION")
@@ -215,9 +213,14 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Mandamos el hilo a block
+		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: strconv.Itoa(int(tid.TID))}
 		utils.Execute = nil
-		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: tid}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
+		if utils.Configs.SchedulerAlgorithm == "FIFO" {
+			utils.Desencolar_TCB(planificador.ColaReady, 0)
+		} else {
+			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)].Prioridad)
+		}
 		utils.Planificador.Signal()
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
 
