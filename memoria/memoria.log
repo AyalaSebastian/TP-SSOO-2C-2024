@@ -1,0 +1,34 @@
+
+time=2024-11-29T12:46:28.287-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=1 "iniciada con Base"=0 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=2 "iniciada con Base"=32 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=3 "iniciada con Base"=64 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=4 "iniciada con Base"=96 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=5 "iniciada con Base"=128 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=6 "iniciada con Base"=160 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=7 "iniciada con Base"=192 "y Límite"=32
+time=2024-11-29T12:46:28.293-03:00 level=INFO msg="Partición fija" Número=8 "iniciada con Base"=224 "y Límite"=32
+time=2024-11-29T12:46:33.296-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
+time=2024-11-29T12:46:44.073-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {Path:PLANI_PROC Tamanio:32 PID:1}"
+time=2024-11-29T12:48:51.496-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=1 "iniciada con Base"=0 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=2 "iniciada con Base"=32 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=3 "iniciada con Base"=64 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=4 "iniciada con Base"=96 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=5 "iniciada con Base"=128 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=6 "iniciada con Base"=160 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=7 "iniciada con Base"=192 "y Límite"=32
+time=2024-11-29T12:48:51.501-03:00 level=INFO msg="Partición fija" Número=8 "iniciada con Base"=224 "y Límite"=32
+time=2024-11-29T12:48:56.504-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
+time=2024-11-29T12:49:11.664-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {Path:PLANI_PROC Tamanio:32 PID:1}"
+time=2024-11-29T12:51:07.790-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=1 "iniciada con Base"=0 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=2 "iniciada con Base"=32 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=3 "iniciada con Base"=64 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=4 "iniciada con Base"=96 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=5 "iniciada con Base"=128 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=6 "iniciada con Base"=160 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=7 "iniciada con Base"=192 "y Límite"=32
+time=2024-11-29T12:51:07.794-03:00 level=INFO msg="Partición fija" Número=8 "iniciada con Base"=224 "y Límite"=32
+time=2024-11-29T12:51:12.797-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
+time=2024-11-29T12:51:28.497-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {Path:PLANI_PROC Tamanio:32 PID:1}"

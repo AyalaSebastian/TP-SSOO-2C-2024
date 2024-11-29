@@ -1,7 +1,7 @@
 {
     "port": 8002,
     "memory_size": 1024,
-    "instruction_path": "../god-pruebas",
+    "instruction_path": "./god-pruebas/",
     "response_delay": 1000,
     "ip_kernel": "127.0.0.1",
     "port_kernel": 8001,

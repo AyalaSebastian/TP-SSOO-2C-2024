@@ -1,0 +1,14 @@
+time=2024-11-29T12:04:46.810-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:04:46.825-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"
+time=2024-11-29T12:21:57.481-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:21:57.486-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"
+time=2024-11-29T12:32:48.663-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-29T12:32:48.663-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-29T12:32:48.665-03:00 level=ERROR msg="La respuesta del servidor no fue OK. Código: 404"
+time=2024-11-29T12:36:49.631-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:36:49.638-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"
+time=2024-11-29T12:37:02.002-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-29T12:37:02.003-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-29T12:37:02.004-03:00 level=ERROR msg="La respuesta del servidor no fue OK. Código: 404"
+time=2024-11-29T12:46:31.517-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-29T12:46:31.523-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"

@@ -60,59 +60,6 @@ func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error 
 
 var Proceso types.Proceso
 
-/*
-// Función que solicita el contexto de ejecución al módulo de memoria
-func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
-	url := fmt.Sprintf("http://%s:%d/contexto", utils.Configs.IpMemory, utils.Configs.PortMemory) // URL del módulo de memoria
-	logger.Info(fmt.Sprintf("## TID: %d - Solicito Contexto Ejecución", pidTid.TID))
-	// Codificarla en JSON
-	jsonData, err := json.Marshal(pidTid)
-	if err != nil {
-		logger.Error("Error al codificar TID y PID a JSON: ", slog.Any("error", err))
-		return err
-	}
-
-	// Crear la solicitud POST
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		logger.Error("Error al crear la solicitud: ", slog.Any("error", err))
-		return err
-	}
-
-	// Establecer los encabezados
-	req.Header.Set("Content-Type", "application/json")
-
-	// Enviar la solicitud
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error("Error al enviar la solicitud al módulo de memoria: ", slog.Any("error", err))
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		logger.Error(fmt.Sprintf("Error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode))
-		return fmt.Errorf("error en la respuesta del módulo de memoria: Código de estado %d", resp.StatusCode)
-	}
-
-	// Decodificar la respuesta
-	var contexto types.ContextoEjecucion
-	err = json.NewDecoder(resp.Body).Decode(&contexto)
-	if err != nil {
-		logger.Error("Error al decodificar el contexto de ejecución: ", slog.Any("error", err))
-		return err
-	}
-
-	// Asignar el contexto recibido a la variable global
-	ReceivedContextoEjecucion = &contexto
-	Proceso.ContextoEjecucion = contexto
-	logger.Info("Contexto de ejecución recibido con éxito")
-
-	return nil
-}
-*/
-
 func DevolverTIDAlKernel(tid uint32, logger *slog.Logger, endpoint string, motivo string) bool {
 	cliente := &http.Client{}
 	url := fmt.Sprintf("http://%s:%d/%s/%v", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint, tid)

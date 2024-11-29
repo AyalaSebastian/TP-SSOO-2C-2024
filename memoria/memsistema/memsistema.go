@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -14,7 +15,7 @@ import (
 var ContextosPID = make(map[uint32]types.ContextoEjecucionPID) // Contexto por PID
 
 // Función para inicializar un contexto de ejecución de un proceso (PID)
-func CrearContextoPID(pid uint32, base, limite uint32) {
+func CrearContextoPID(pid uint32, base uint32, limite uint32) {
 	ContextosPID[pid] = types.ContextoEjecucionPID{
 		PID:    pid,
 		Base:   base,
@@ -25,7 +26,7 @@ func CrearContextoPID(pid uint32, base, limite uint32) {
 }
 
 // Función para inicializar un contexto de ejecución de un hilo (TID) asociado a un proceso (PID)
-func CrearContextoTID(pid, tid uint32, archivoPseudocodigo string) {
+func CrearContextoTID(pid uint32, tid uint32, archivoPseudocodigo string) {
 	listaInstrucciones := CargarPseudocodigo(int(pid), int(tid), archivoPseudocodigo)
 	if proceso, exists := ContextosPID[pid]; exists {
 		proceso.TIDs[tid] = types.ContextoEjecucionTID{
@@ -96,8 +97,10 @@ func CargarPseudocodigo(pid int, tid int, path string) map[string]string {
 	if err != nil {
 		fmt.Printf("error al abrir el archivo %s: %v", path, err)
 	}
-
+	defer file.Close()
 	var contextosEjecucion = make(map[int]map[int]*types.ContextoEjecucionTID)
+	time.Sleep(1 * time.Second)
+
 	contexto := contextosEjecucion[pid][tid]
 	scanner := bufio.NewScanner(file)
 	instruccionNum := 0 // Indice de instrucciones
@@ -112,7 +115,6 @@ func CargarPseudocodigo(pid int, tid int, path string) map[string]string {
 	if err := scanner.Err(); err != nil {
 		fmt.Printf("error al leer el archivo %s: %v", path, err)
 	}
-	defer file.Close()
 	return contexto.LISTAINSTRUCCIONES
 }
 

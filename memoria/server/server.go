@@ -64,13 +64,24 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// Llamar a Inicializar_proceso con los parámetros correspondientes
-		memUsuario.AsignarPID(magic.PID, magic.Tamanio, magic.Path)
+		sePudo, msj := memUsuario.AsignarPID(magic.PID, magic.Tamanio, magic.Path)
 
 		// Si la inicialización fue exitosa
-		logger.Info(fmt.Sprintf("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PID, magic.Tamanio))
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if sePudo {
+			logger.Info(fmt.Sprintf("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PID, magic.Tamanio))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+
+			return
+		}
+		if msj == "COMPACTACION" {
+			w.WriteHeader(http.StatusConflict)
+			w.Write([]byte("COMPACTACION"))
+			return
+		}
+		w.WriteHeader(http.StatusConflict)
+
 	}
 }
 

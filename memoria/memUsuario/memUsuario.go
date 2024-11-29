@@ -3,7 +3,6 @@ package memUsuario
 import (
 	"fmt"
 	"log/slog"
-	"net/http"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/memSistema"
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
@@ -112,54 +111,47 @@ func combinarParticionesLibres(index int, logger *slog.Logger) {
 	logger.Info("Particiones combinadas", "Nueva Base", base, "Nuevo Límite", limite)
 }
 
-func AsignarPID(pid uint32, tamanio_proceso int, path string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var asigno = false
-		algoritmo := utils.Configs.SearchAlgorithm
-		esquema := utils.Configs.Scheme
-		if esquema == "FIJAS" {
-			switch algoritmo {
-			case "FIRST":
-				asigno = FirstFitFijo(pid, tamanio_proceso, path)
+func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
+	var asigno = false
+	algoritmo := utils.Configs.SearchAlgorithm
+	esquema := utils.Configs.Scheme
+	if esquema == "FIJAS" {
+		switch algoritmo {
+		case "FIRST":
+			asigno = FirstFitFijo(pid, tamanio_proceso, path)
 
-			case "BEST":
-				asigno = BestFitFijo(pid, tamanio_proceso, path)
-			case "WORST":
-				asigno = WorstFitFijo(pid, tamanio_proceso, path)
-			}
-			if !asigno {
-				(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
-				return
+		case "BEST":
+			asigno = BestFitFijo(pid, tamanio_proceso, path)
+		case "WORST":
+			asigno = WorstFitFijo(pid, tamanio_proceso, path)
+		}
+		if !asigno {
+			return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
+		} else {
+			return true, "OK"
+		}
+	} else if esquema == "DINAMICAS" {
+		switch algoritmo {
+		case "FIRST":
+			asigno = FirstFitDinamico(pid, tamanio_proceso, path)
+		case "BEST":
+			asigno = BestFitDinamico(pid, tamanio_proceso, path)
+		case "WORST":
+			asigno = WorstFitDinamico(pid, tamanio_proceso, path)
+		}
+		if asigno {
+			return true, "OK"
+		} else {
+			compactar := SePuedeCompactar(tamanio_proceso)
+			if compactar {
+				return false, "COMPACTAR"
 			} else {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
-				return
+				return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
 			}
-		} else if esquema == "DINAMICAS" {
-			switch algoritmo {
-			case "FIRST":
-				asigno = FirstFitDinamico(pid, tamanio_proceso, path)
-			case "BEST":
-				asigno = BestFitDinamico(pid, tamanio_proceso, path)
-			case "WORST":
-				asigno = WorstFitDinamico(pid, tamanio_proceso, path)
-			}
-			if asigno {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
-				return
-			} else {
-				compactar := SePuedeCompactar(tamanio_proceso)
-				if compactar {
-					w.WriteHeader(http.StatusOK)
-					w.Write([]byte("COMPACTAR"))
-				} else {
-					(http.Error(w, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES", http.StatusInternalServerError))
-				}
 
-			}
 		}
 	}
+	return false, "ESQUEMA MEMORIA ERRORRRRRRR"
 }
 
 // first fit para particiones fijas
@@ -167,11 +159,12 @@ func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	particion := utils.Configs.Partitions
 	for i := 0; i < len(BitmapParticiones); i++ {
 		if !BitmapParticiones[i] {
-			if tamanio_proceso < particion[i] {
+			if tamanio_proceso <= particion[i] {
 				PidAParticion[pid] = i
 				BitmapParticiones[i] = true
 				fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
 				memSistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
+				memSistema.CrearContextoTID(pid, 0, path)
 				return true
 			}
 		}
