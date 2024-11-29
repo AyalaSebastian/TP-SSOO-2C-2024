@@ -21,17 +21,17 @@ func Iniciar_kernel(logger *slog.Logger) {
 
 	// Endpoints
 	mux.HandleFunc("POST /PROCESS_CREATE", PROCESS_CREATE(logger))
-	mux.HandleFunc("PUT /PROCESS_EXIT", PROCESS_EXIT(logger))
+	mux.HandleFunc("POST /PROCESS_EXIT", PROCESS_EXIT(logger))
 	mux.HandleFunc("POST /THREAD_CREATE", THREAD_CREATE(logger))
-	mux.HandleFunc("PATCH /THREAD_JOIN/{tid}", THREAD_JOIN(logger))
-	mux.HandleFunc("DELETE /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
-	mux.HandleFunc("DELETE /THREAD_EXIT", THREAD_EXIT(logger))
+	mux.HandleFunc("POTS /THREAD_JOIN/{tid}", THREAD_JOIN(logger))
+	mux.HandleFunc("POST /THREAD_CANCEL/{tid}", THREAD_CANCEL(logger))
+	mux.HandleFunc("POST /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
 	mux.HandleFunc("PATCH /dump_response/{response}", Respuesta_dump(logger))
 	mux.HandleFunc("POST /MUTEX_CREATE/{mutex}", MUTEX_CREATE(logger))
-	mux.HandleFunc("PATCH /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
-	mux.HandleFunc("PATCH /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
-	mux.HandleFunc("PUT /IO/{ms}", IO(logger))
+	mux.HandleFunc("POST /MUTEX_LOCK/{mutex}", MUTEX_LOCK(logger))
+	mux.HandleFunc("POST /MUTEX_UNLOCK/{mutex}", MUTEX_UNLOCK(logger))
+	mux.HandleFunc("POST /IO/{ms}", IO(logger))
 
 	mux.HandleFunc("PUT /recibir-desalojo", Recibir_desalojo(logger))
 
@@ -333,19 +333,25 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// Query path - Verbo PATCH
+// BODY - Verbo PATCH
 // Si el mutex no existe responde con "HILO_FINALIZADO" y finaliza el hilo
 // Si el mutex se le asigna a un hilo responde "MUTEX_ASIGNADO"
 // Si el mutex queda libre responde "MUTEX_LIBRE"
 // Si el hilo no posee el mutex responde "HILO_NO_POSEE_MUTEX"
 func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_UNLOCK", utils.Execute.PID, utils.Execute.TID))
+
 		// Tomamos el valor del tid de la variable de la URL
-		mutexName := r.PathValue("mutex")
+		var mutexName cicloDeInstruccion.EstructuraRecurso
+		err := json.NewDecoder(r.Body).Decode(&mutexName)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+		}
 
 		// Verificamos que el mutex exista caso contrario mandamos el hilo a exit
-		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName]
+		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso]
 		if !existe {
 			planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
 			respuesta, err := json.Marshal("HILO_FINALIZADO")
@@ -360,13 +366,13 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Si el mutex existe, lo asignamos o liberamos segun corresponda
-		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] == strconv.Itoa(int(utils.Execute.TID)) {
+		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] == strconv.Itoa(int(utils.Execute.TID)) {
 			for _, bloqueado := range planificador.ColaBlocked {
 				// Si alguien quiere el mutex
 				count := 0
-				if bloqueado.PID == utils.Execute.PID && bloqueado.Motivo == utils.Mutex && bloqueado.QuienFue == mutexName {
+				if bloqueado.PID == utils.Execute.PID && bloqueado.Motivo == utils.Mutex && bloqueado.QuienFue == mutexName.Recurso {
 					count++
-					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = strconv.Itoa(int(bloqueado.TID))
+					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = strconv.Itoa(int(bloqueado.TID))
 					utils.Desencolar(&planificador.ColaBlocked) //! Acá creo que hay que cambiarla por la funcion de desencolar por motivo (Consultar con lucas)
 					respuesta, err := json.Marshal("MUTEX_ASIGNADO")
 					if err != nil {
@@ -378,7 +384,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 				}
 				// Si el mutex no lo necesita nadie
 				if count == 0 {
-					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = "LIBRE"
+					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = "LIBRE"
 					respuesta, err := json.Marshal("MUTEX_LIBRE")
 					if err != nil {
 						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)

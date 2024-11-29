@@ -17,6 +17,7 @@ import (
 )
 
 // ?                       VARIABLES GLOBALES                    //
+
 // * Variable global para controlar el ciclo de ejecución
 var Control = true
 
@@ -392,8 +393,12 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		Control = false
 
 	case "MUTEX_UNLOCK":
+
 		//	Informar memoria
-		mutexUnlock := EstructuraRecurso{} //! Corregir
+		mutexUnlock := EstructuraRecurso{
+			Recurso: args[0],
+		}
+
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
