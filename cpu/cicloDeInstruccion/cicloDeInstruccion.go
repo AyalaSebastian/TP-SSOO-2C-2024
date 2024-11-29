@@ -36,55 +36,56 @@ var InterrupcionRecibida *types.InterruptionInfo
 func Comenzar_cpu(logger *slog.Logger) {
 
 	logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: ## TID: %d - Solicito Contexto Ejecución", GlobalPIDTID.TID))
-	client.SolicitarContextoEjecucion(GlobalPIDTID, logger)
+	if client.SolicitarContextoEjecucion(GlobalPIDTID, logger) != nil {
 
-	for {
+		for {
 
-		//tid == tidanterior
+			//tid == tidanterior
 
-		// Obtener el valor actual del PC antes de Fetch
-		pcActual := client.ReceivedContextoEjecucion.Registros.PC
+			// Obtener el valor actual del PC antes de Fetch
+			pcActual := client.ReceivedContextoEjecucion.Registros.PC
 
-		//		Fetch(logger)
-		//		Decode(logger)
-		//		Execute(logger)
-		//		checkInterrupt(logger)
+			//		Fetch(logger)
+			//		Decode(logger)
+			//		Execute(logger)
+			//		checkInterrupt(logger)
 
-		if GlobalPIDTID != AnteriorPIDTID {
+			if GlobalPIDTID != AnteriorPIDTID {
 
-			// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
-			err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
-			if err != nil {
-				logger.Error("Error en Fetch: ", slog.Any("error", err))
-				break // Salimos del ciclo si hay error en Fetch
+				// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
+				err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
+				if err != nil {
+					logger.Error("Error en Fetch: ", slog.Any("error", err))
+					break // Salimos del ciclo si hay error en Fetch
+				}
+
+				// Si no hay más instrucciones, salir del ciclo
+				if Instruccion == "" {
+					logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
+					break
+				}
+
+				// 2. Decode: interpretar la instrucción obtenida
+				Decode(Instruccion, logger)
+
+				// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
+
 			}
 
-			// Si no hay más instrucciones, salir del ciclo
-			if Instruccion == "" {
-				logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
-				break
+			// 4. Chequear interrupciones
+			CheckInterrupt(GlobalPIDTID.TID, logger)
+
+			// Si el PC no fue modificado por alguna instrucción, lo incrementamos en 1
+			if client.ReceivedContextoEjecucion.Registros.PC == pcActual {
+				client.ReceivedContextoEjecucion.Registros.PC++
+				logger.Info(fmt.Sprintf("PC no modificado por instrucción. Actualizado PC a: %d", client.ReceivedContextoEjecucion.Registros.PC))
+			} else {
+				logger.Info(fmt.Sprintf("PC modificado por instrucción a: %d", client.ReceivedContextoEjecucion.Registros.PC))
 			}
 
-			// 2. Decode: interpretar la instrucción obtenida
-			Decode(Instruccion, logger)
-
-			// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
-
 		}
-
-		// 4. Chequear interrupciones
-		CheckInterrupt(GlobalPIDTID.TID, logger)
-
-		// Si el PC no fue modificado por alguna instrucción, lo incrementamos en 1
-		if client.ReceivedContextoEjecucion.Registros.PC == pcActual {
-			client.ReceivedContextoEjecucion.Registros.PC++
-			logger.Info(fmt.Sprintf("PC no modificado por instrucción. Actualizado PC a: %d", client.ReceivedContextoEjecucion.Registros.PC))
-		} else {
-			logger.Info(fmt.Sprintf("PC modificado por instrucción a: %d", client.ReceivedContextoEjecucion.Registros.PC))
-		}
-
+		logger.Info("Fin de la ejecución del CPU.")
 	}
-	logger.Info("Fin de la ejecución del CPU.")
 }
 
 //! /////////////////////////////////////////////////////////////////////////////

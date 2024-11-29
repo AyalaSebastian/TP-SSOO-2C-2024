@@ -33,7 +33,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 
-	mux.HandleFunc("GET/actualizar_contexto", Actualizar_Contexto(logger))
+	mux.HandleFunc("GET /actualizar_contexto", Actualizar_Contexto(logger))
 	//envia proxima instr a cpu fase fetch
 	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
 
@@ -53,7 +53,7 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		//nuevo estructura de NuevoProcesoEnMemoria
-		var magic types.NuevoProcesoEnMemoria
+		var magic types.PathTamanio
 		err := decoder.Decode(&magic)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
@@ -64,10 +64,10 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// Llamar a Inicializar_proceso con los parámetros correspondientes
-		memUsuario.AsignarPID(magic.PCB.PID, magic.Tamanio, magic.Pseudo)
+		memUsuario.AsignarPID(magic.PID, magic.Tamanio, magic.Path)
 
 		// Si la inicialización fue exitosa
-		logger.Info(fmt.Sprintf("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PCB.PID, magic.Tamanio))
+		logger.Info(fmt.Sprintf("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PID, magic.Tamanio))
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -303,6 +303,7 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
+		w.WriteHeader(http.StatusOK)
 		// Log de éxito
 		logger.Info(fmt.Sprintf("Contexto completo enviado para PID %d y TID %d", pidTid.PID, pidTid.TID))
 	}
