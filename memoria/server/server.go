@@ -431,7 +431,8 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 
 		instruccion := memSistema.BuscarSiguienteInstruccion(requestData.PID, requestData.TID, requestData.PC)
 		logger.Info(fmt.Sprintf("## OBTENER INSTRUCCION -(PID:TID) -(%d:%d) - Instruccion: %s", requestData.PID, requestData.TID, instruccion))
-		client.Enviar_QueryPath(instruccion, utils.Configs.IpCPU, utils.Configs.PortCPU, "obtener-instruccion", "GET", logger)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(instruccion))
 	}
 }
 

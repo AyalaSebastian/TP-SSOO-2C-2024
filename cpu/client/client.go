@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -131,7 +130,6 @@ func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 		logger.Error("La respuesta del servidor no fue OK")
 		return // Indica que la respuesta no fue exitosa
 	}
-	os.Exit(0)
 }
 
 // EnviarDesalojo envia el PID, TID y el motivo del desalojo a la API Kernel utilizando la configuración global de IP y puerto.

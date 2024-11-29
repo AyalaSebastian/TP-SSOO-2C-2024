@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -112,7 +113,7 @@ func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 	url := fmt.Sprintf("http://%s:%d/instruccion", utils.Configs.IpMemory, utils.Configs.PortMemory)
 
 	// Crear la solicitud POST
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		logger.Error("Error al crear la solicitud: ", slog.Any("error", err))
 		return err
@@ -136,18 +137,17 @@ func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 		return fmt.Errorf("error en la respuesta de Fetch: Código de estado %d", resp.StatusCode)
 	}
 
-	// Decodificar la respuesta para obtener la instrucción
-	var fetchedInstruction struct {
-		Instruccion string `json:"instruccion"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&fetchedInstruction)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Error al decodificar la instrucción recibida: ", slog.Any("error", err))
+		fmt.Println("Error al leer el cuerpo de la respuesta:", err)
 		return err
 	}
 
+	// Convertir a string
+	bodyString := string(bodyBytes)
+
 	// Guardar la instrucción en la variable global
-	Instruccion = fetchedInstruction.Instruccion
+	Instruccion = bodyString
 
 	// Log de Fetch exitoso
 	logger.Info(fmt.Sprintf("Fetch Instrucción: ## TID: %d - FETCH - Program Counter: %d", tid, pc))
@@ -192,10 +192,11 @@ type estructuraProcessCreate struct {
 	tamanio              int
 	PrioridadTID0        int
 }
-type estructuraThreadCreate struct {
-	archivoInstrucciones string
-	Prioridad            int
-}
+
+// type estructuraThreadCreate struct {
+// 	archivoInstrucciones string
+// 	Prioridad            int
+// }
 
 // Función Execute para ejecutar la instrucción decodificada
 func Execute(operacion string, args []string, logger *slog.Logger) {
@@ -299,9 +300,18 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.CederControlAKernell(processCreate, "PROCESS_CREATE", logger)
 
 	case "THREAD_CREATE":
+		// Parsear la prioridad a entero
+		prio, err := strconv.Atoi(args[1])
+		if err != nil {
+			logger.Error("Error al convertir la prioridad para THREAD_CREATE")
+			return
+		}
 
 		//	Informar memoria
-		threadCreate := estructuraThreadCreate{}
+		threadCreate := types.ThreadCreateParams{
+			Path:      args[0],
+			Prioridad: prio,
+		}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
