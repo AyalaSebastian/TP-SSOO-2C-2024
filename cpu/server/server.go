@@ -9,15 +9,11 @@ import (
 	"github.com/sisoputnfrba/tp-golang/cpu/cicloDeInstruccion"
 	"github.com/sisoputnfrba/tp-golang/cpu/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/conexiones"
-	"github.com/sisoputnfrba/tp-golang/utils/server"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
 
 func Inicializar_cpu(logger *slog.Logger) {
 	mux := http.NewServeMux()
-
-	//seguro borraremos esto
-	mux.HandleFunc("/mensaje", server.Recibir_handshake(logger))
 
 	// Endpoints de kernel
 	mux.HandleFunc("POST /EJECUTAR_KERNEL", Recibir_PIDTID(logger))
@@ -48,12 +44,12 @@ func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 		logger.Info("PID y TID actualizados", slog.Any(
 			"PID", pidtid.PID), slog.Any("TID", pidtid.TID))
 
-		// Llamar a Comenzar_cpu para iniciar el proceso de CPU
-
-		cicloDeInstruccion.Comenzar_cpu(logger)
-
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("PID y TID almacenados y CPU iniciada"))
+
+		// Llamar a Comenzar_cpu para iniciar el proceso de CPU
+		cicloDeInstruccion.Comenzar_cpu(logger)
+
 	}
 }
 

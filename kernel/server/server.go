@@ -131,9 +131,11 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
 
+		client.Enviar_Body((types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}), utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 	}
 }
 

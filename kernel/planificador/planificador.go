@@ -138,7 +138,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 	}
 
 	// Ingresar a la cola de READY
-	utils.Encolar_ColaReady(ColaReady, tcb) //! Vamos a tener que modificar esto por el nivel de prioridad
+	utils.Encolar_ColaReady(ColaReady, tcb)
 
 	logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 }
