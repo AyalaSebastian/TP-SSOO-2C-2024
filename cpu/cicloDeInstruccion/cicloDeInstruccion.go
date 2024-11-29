@@ -36,19 +36,11 @@ var InterrupcionRecibida *types.InterruptionInfo
 func Comenzar_cpu(logger *slog.Logger) {
 
 	logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: ## TID: %d - Solicito Contexto Ejecución", GlobalPIDTID.TID))
-	if client.SolicitarContextoEjecucion(GlobalPIDTID, logger) != nil {
+	if client.SolicitarContextoEjecucion(GlobalPIDTID, logger) == nil {
 
 		for {
-
-			//tid == tidanterior
-
 			// Obtener el valor actual del PC antes de Fetch
 			pcActual := client.ReceivedContextoEjecucion.Registros.PC
-
-			//		Fetch(logger)
-			//		Decode(logger)
-			//		Execute(logger)
-			//		checkInterrupt(logger)
 
 			if GlobalPIDTID != AnteriorPIDTID {
 

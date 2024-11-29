@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
@@ -99,9 +98,18 @@ func CargarPseudocodigo(pid int, tid int, path string) map[string]string {
 	}
 	defer file.Close()
 	var contextosEjecucion = make(map[int]map[int]*types.ContextoEjecucionTID)
-	time.Sleep(1 * time.Second)
+
+	if contextosEjecucion[pid] == nil {
+		contextosEjecucion[pid] = make(map[int]*types.ContextoEjecucionTID)
+	}
+	if contextosEjecucion[pid][tid] == nil {
+		contextosEjecucion[pid][tid] = &types.ContextoEjecucionTID{
+			LISTAINSTRUCCIONES: make(map[string]string),
+		}
+	}
 
 	contexto := contextosEjecucion[pid][tid]
+
 	scanner := bufio.NewScanner(file)
 	instruccionNum := 0 // Indice de instrucciones
 
