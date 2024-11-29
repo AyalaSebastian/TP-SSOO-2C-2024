@@ -381,7 +381,9 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 
 	case "MUTEX_LOCK":
 		//	Informar memoria
-		mutexLock := EstructuraRecurso{} //! Corregir
+		mutexLock := EstructuraRecurso{
+			Recurso: args[0],
+		}
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
