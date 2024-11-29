@@ -1,5 +1,0 @@
-time=2024-11-28T18:19:39.251-03:00 level=INFO msg="Logger iniciado"
-time=2024-11-28T18:19:39.280-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"
-time=2024-11-28T18:20:12.801-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
-time=2024-11-28T18:20:12.801-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
-time=2024-11-28T18:20:12.805-03:00 level=ERROR msg="La respuesta del servidor no fue OK. Código: 404"
