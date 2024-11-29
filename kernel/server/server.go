@@ -268,19 +268,24 @@ func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// QUERY PATH - VERBO PATCH
+// BODY - VERBO PATCH
 // 3 CASOS:
 // 1. Si el mutex no existe, finaliza el hilo y responde con "HILO_FINALIZADO"
 // 2. Si el mutex esta libre, lo toma y responde con "MUTEX_TOMADO"
 // 3. Si el mutex esta ocupado, bloquea el hilo y responde con "HILO_BLOQUEADO"
 func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_LOCK", utils.Execute.PID, utils.Execute.TID))
-		// Tomamos el valor del tid de la variable de la URL
-		mutexName := r.PathValue("mutex")
+
+		var mutexName cicloDeInstruccion.EstructuraRecurso
+		err := json.NewDecoder(r.Body).Decode(&mutexName)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
+		}
 
 		// Verificamos que el mutex exista - si NO existe mandamos el hilo a Exit
-		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName]
+		_, existe := utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso]
 		if !existe {
 			planificador.Finalizar_hilo(utils.Execute.TID, utils.Execute.PID, logger)
 			respuesta, err := json.Marshal("HILO_FINALIZADO")
@@ -295,8 +300,8 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Tomamos el mutex si esta libre
-		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] == "LIBRE" {
-			utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] = strconv.Itoa(int(utils.Execute.TID))
+		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] == "LIBRE" {
+			utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = strconv.Itoa(int(utils.Execute.TID))
 			respuesta, err := json.Marshal("MUTEX_TOMADO")
 			if err != nil {
 				w.Write([]byte("Error al codificar mensaje como JSON"))
@@ -308,8 +313,8 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Si no esta libre, bloqueamos el hilo
-		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName] != "LIBRE" {
-			bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.Mutex, QuienFue: mutexName}
+		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] != "LIBRE" {
+			bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.Mutex, QuienFue: mutexName.Recurso}
 			utils.Encolar(&planificador.ColaBlocked, bloqueado)
 			logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: MUTEX", utils.Execute.PID, utils.Execute.TID))
 
