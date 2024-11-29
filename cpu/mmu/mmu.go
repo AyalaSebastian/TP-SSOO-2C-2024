@@ -12,8 +12,8 @@ import (
 
 func TraducirDireccion(proceso *types.Proceso, direccionLogica uint32, logger *slog.Logger) (uint32, error) {
 
-	direccionFisica := proceso.ContextoEjecucion.Registros.Base + direccionLogica
-	if direccionFisica >= proceso.ContextoEjecucion.Registros.Limite {
+	direccionFisica := proceso.ContextoEjecucion.Base + direccionLogica
+	if direccionFisica >= proceso.ContextoEjecucion.Limite {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", proceso.Tid))
 		// Devolver el Tid al Kernel con motivo de Segmentation Fault

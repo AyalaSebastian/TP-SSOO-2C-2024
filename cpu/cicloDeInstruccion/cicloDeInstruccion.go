@@ -331,6 +331,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			Path:      args[0],
 			Prioridad: prio,
 		}
+		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID

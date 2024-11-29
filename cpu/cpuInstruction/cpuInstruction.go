@@ -17,7 +17,7 @@ import (
 // Función para asignar el valor a un registro
 func AsignarValorRegistro(registro string, valor uint32, tid uint32, logger *slog.Logger) {
 	// Obtener una referencia a los registros
-	registros := &client.ReceivedContextoEjecucion
+	registros := client.ReceivedContextoEjecucion
 
 	// Asignar el valor al registro correspondiente
 	switch registro {
@@ -120,7 +120,7 @@ func LogRegistro(registro string, pidtid types.PIDTID, logger *slog.Logger) {
 
 // Función auxiliar para obtener el valor de un registro
 func obtenerValorRegistro(registro string, logger *slog.Logger) uint32 {
-	registros := &client.ReceivedContextoEjecucion.Registros
+	registros := client.ReceivedContextoEjecucion
 
 	switch registro {
 	case "PC":
