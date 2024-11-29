@@ -74,10 +74,6 @@ type RegCPU struct {
 	Limite uint32 `json:"limite"` // Tamanio de la particion del proceso
 }
 
-type ContextoEjecucion struct {
-	Registros RegCPU `json:"registros"`
-}
-
 /*
 type Particion struct {
 	Registros RegCPU `json:"registros"`
@@ -87,7 +83,7 @@ type Particion struct {
 type Proceso struct {
 	Pid               uint32
 	Tid               uint32
-	ContextoEjecucion ContextoEjecucion
+	ContextoEjecucion RegCPU
 }
 
 // Estructura para almacenar el nombre de la interrupción y el TID
@@ -113,7 +109,6 @@ type ContextoEjecucionPID struct {
 }
 
 type ContextoEjecucionTID struct {
-	TID                uint32            `json:"tid"`
 	PC                 uint32            `json:"pc"` // Program Counter (Proxima instruccion a ejecutar)
 	AX                 uint32            `json:"ax"` // Registro Numerico de proposito general
 	BX                 uint32            `json:"bx"` // Registro Numerico de proposito general

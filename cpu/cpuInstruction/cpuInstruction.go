@@ -17,7 +17,7 @@ import (
 // Función para asignar el valor a un registro
 func AsignarValorRegistro(registro string, valor uint32, tid uint32, logger *slog.Logger) {
 	// Obtener una referencia a los registros
-	registros := &client.ReceivedContextoEjecucion.Registros
+	registros := &client.ReceivedContextoEjecucion
 
 	// Asignar el valor al registro correspondiente
 	switch registro {

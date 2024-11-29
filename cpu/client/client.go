@@ -12,7 +12,7 @@ import (
 )
 
 // Variable global para almacenar el contexto de ejecución
-var ReceivedContextoEjecucion *types.ContextoEjecucion = nil
+var ReceivedContextoEjecucion *types.RegCPU = nil
 
 func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
 	// Codificar el dato
@@ -41,7 +41,7 @@ func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error 
 	}
 
 	// Decodificar el cuerpo de la respuesta
-	var contexto types.ContextoEjecucion
+	var contexto types.RegCPU
 	err = json.NewDecoder(resp.Body).Decode(&contexto)
 	if err != nil {
 		logger.Error("Error al decodificar el contexto de ejecución", slog.Any("error", err))

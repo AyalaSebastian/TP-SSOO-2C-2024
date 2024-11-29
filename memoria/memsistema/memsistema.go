@@ -29,7 +29,6 @@ func CrearContextoTID(pid uint32, tid uint32, archivoPseudocodigo string) {
 	listaInstrucciones := CargarPseudocodigo(int(pid), int(tid), archivoPseudocodigo)
 	if proceso, exists := ContextosPID[pid]; exists {
 		proceso.TIDs[tid] = types.ContextoEjecucionTID{
-			TID:                tid,
 			PC:                 0,
 			AX:                 0,
 			BX:                 0,
@@ -131,7 +130,7 @@ func BuscarSiguienteInstruccion(pid, tid uint32, pc uint32) string {
 	if proceso, exists := ContextosPID[pid]; exists {
 		if hilo, tidExists := proceso.TIDs[tid]; tidExists {
 			indiceInstruccion := pc
-			instruccion, existe := hilo.LISTAINSTRUCCIONES[fmt.Sprintf("instr_%d", indiceInstruccion)]
+			instruccion, existe := hilo.LISTAINSTRUCCIONES[fmt.Sprintf("%d", indiceInstruccion)]
 			if !existe {
 				fmt.Printf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
 				return ""

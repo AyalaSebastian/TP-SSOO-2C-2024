@@ -33,7 +33,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 
-	mux.HandleFunc("GET /actualizar_contexto", Actualizar_Contexto(logger))
+	mux.HandleFunc("POST /actualizar_contexto", Actualizar_Contexto(logger))
 	//envia proxima instr a cpu fase fetch
 	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
 
@@ -320,91 +320,33 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-/*
-func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
-	retardoDePeticion()
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Decodificar la solicitud para obtener el PID y TID
-		var pidTid struct {
-			PID uint32 `json:"pid"`
-			TID uint32 `json:"tid"`
-		}
-
-		err := json.NewDecoder(r.Body).Decode(&pidTid)
-		if err != nil {
-			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
-			return
-		}
-
-		// Buscar el contexto para el PID en el mapa ContextosPID
-		contextoPID, existePID := memSistema.ContextosPID[pidTid.PID]
-
-		// Verificar si el PID existe
-		if !existePID {
-			http.Error(w, "PID no encontrado", http.StatusNotFound)
-			return
-		}
-
-		// Buscar el TID dentro del contexto del PID
-		contextoTID, existeTID := contextoPID.TIDs[pidTid.TID]
-
-		// Verificar si el TID existe dentro del PID
-		if !existeTID {
-			http.Error(w, "TID no encontrado en el PID", http.StatusNotFound)
-			return
-		}
-
-		// Log de solicitud de contexto OBLIGATORIO
-		logger.Info(fmt.Sprintf("## Contexto Solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
-
-		// Crear el contexto completo usando la estructura que CPU espera (RegCPU)
-		contextoCompleto := types.RegCPU{
-			PC:     contextoTID.PC,
-			AX:     contextoTID.AX,
-			BX:     contextoTID.BX,
-			CX:     contextoTID.CX,
-			DX:     contextoTID.DX,
-			EX:     contextoTID.EX,
-			FX:     contextoTID.FX,
-			GX:     contextoTID.GX,
-			HX:     contextoTID.HX,
-			Base:   contextoPID.Base,
-			Limite: contextoPID.Limite,
-		}
-
-		// Codificar el contexto completo como JSON y enviarlo como respuesta
-		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(contextoCompleto)
-		if err != nil {
-			http.Error(w, "Error al codificar la respuesta", http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Printf("Contexto completo enviado para PID %d y TID %d\n", pidTid.PID, pidTid.TID)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
-}
-*/
-
 // hecha, pegar una revisada
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var req struct {
-			ContextoDeEjecucion types.ContextoEjecucionTID
-			TID                 uint32
-			PID                 uint32
-		}
+		var req types.Proceso
 		err := json.NewDecoder(r.Body).Decode(&req)
+
+		contexto := types.ContextoEjecucionTID{
+			PC:                 req.ContextoEjecucion.PC, // Program Counter (Proxima instruccion a ejecutar)
+			AX:                 req.ContextoEjecucion.AX, // Acumulador
+			BX:                 req.ContextoEjecucion.BX, // Base
+			CX:                 req.ContextoEjecucion.CX, // Contador
+			DX:                 req.ContextoEjecucion.DX, // Datos
+			EX:                 req.ContextoEjecucion.EX, // Extra
+			FX:                 req.ContextoEjecucion.FX, // Flag
+			GX:                 req.ContextoEjecucion.GX, // General
+			HX:                 req.ContextoEjecucion.HX, // General
+			LISTAINSTRUCCIONES: memSistema.ContextosPID[req.Pid].TIDs[req.Tid].LISTAINSTRUCCIONES,
+		}
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		memSistema.Actualizar_TID(req.PID, req.TID, req.ContextoDeEjecucion)
-		logger.Info(fmt.Sprintf("## Contexto Actualizado - (PID:TID) - (%d:%d) ", req.PID, req.TID))
+		memSistema.Actualizar_TID(req.Pid, req.Tid, contexto)
+		logger.Info(fmt.Sprintf("## Contexto Actualizado - (PID:TID) - (%d:%d) ", req.Pid, req.Tid))
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 

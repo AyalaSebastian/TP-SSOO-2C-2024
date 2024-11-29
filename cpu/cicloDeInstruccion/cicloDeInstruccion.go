@@ -29,7 +29,7 @@ var AnteriorPIDTID types.PIDTID
 var Instruccion string
 
 // * Función global que representa el estado de los registros de la CPU
-var ContextoEjecucion types.ContextoEjecucion
+var ContextoEjecucion types.RegCPU
 
 // * Variable global para almacenar la información de interrupción
 var InterrupcionRecibida *types.InterruptionInfo
@@ -46,39 +46,39 @@ func Comenzar_cpu(logger *slog.Logger) {
 				break
 			}
 			// Obtener el valor actual del PC antes de Fetch
-			pcActual := client.ReceivedContextoEjecucion.Registros.PC
+			pcActual := client.ReceivedContextoEjecucion.PC
 
-			if GlobalPIDTID != AnteriorPIDTID {
+			// if GlobalPIDTID != AnteriorPIDTID {
 
-				// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
-				err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
-				if err != nil {
-					logger.Error("Error en Fetch: ", slog.Any("error", err))
-					break // Salimos del ciclo si hay error en Fetch
-				}
-
-				// Si no hay más instrucciones, salir del ciclo
-				if Instruccion == "" {
-					logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
-					break
-				}
-
-				// 2. Decode: interpretar la instrucción obtenida
-				Decode(Instruccion, logger)
-
-				// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
-
+			// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
+			err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
+			if err != nil {
+				logger.Error("Error en Fetch: ", slog.Any("error", err))
+				break // Salimos del ciclo si hay error en Fetch
 			}
+
+			// Si no hay más instrucciones, salir del ciclo
+			if Instruccion == "" {
+				logger.Info("No hay más instrucciones. Ciclo de ejecución terminado.")
+				break
+			}
+
+			// 2. Decode: interpretar la instrucción obtenida
+			Decode(Instruccion, logger)
+
+			// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
+
+			// }
 
 			// 4. Chequear interrupciones
 			CheckInterrupt(GlobalPIDTID.TID, logger)
 
 			// Si el PC no fue modificado por alguna instrucción, lo incrementamos en 1
-			if client.ReceivedContextoEjecucion.Registros.PC == pcActual {
-				client.ReceivedContextoEjecucion.Registros.PC++
-				logger.Info(fmt.Sprintf("PC no modificado por instrucción. Actualizado PC a: %d", client.ReceivedContextoEjecucion.Registros.PC))
+			if client.ReceivedContextoEjecucion.PC == pcActual {
+				client.ReceivedContextoEjecucion.PC++
+				logger.Info(fmt.Sprintf("PC no modificado por instrucción. Actualizado PC a: %d", client.ReceivedContextoEjecucion.PC))
 			} else {
-				logger.Info(fmt.Sprintf("PC modificado por instrucción a: %d", client.ReceivedContextoEjecucion.Registros.PC))
+				logger.Info(fmt.Sprintf("PC modificado por instrucción a: %d", client.ReceivedContextoEjecucion.PC))
 			}
 
 		}
@@ -98,7 +98,7 @@ func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 	}
 
 	// Obtener el valor del PC (Program Counter) de la variable global
-	pc := client.ReceivedContextoEjecucion.Registros.PC
+	pc := client.ReceivedContextoEjecucion.PC
 
 	// Crear la estructura de solicitud
 	requestData := struct {
@@ -334,8 +334,8 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		AnteriorPIDTID = GlobalPIDTID
-		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
 		Control = false
+		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
 
 	case "THREAD_JOIN":
 
