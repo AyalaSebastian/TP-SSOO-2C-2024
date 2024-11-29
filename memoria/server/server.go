@@ -31,7 +31,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	// Comunicacion con CPU
 	//pasa el contexto de ejecucion a cpu
 	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
-	mux.HandleFunc("/contexto", Obtener_Contexto_De_Ejecucion(logger))
+	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 
 	mux.HandleFunc("GET/actualizar_contexto", Actualizar_Contexto(logger))
 	//envia proxima instr a cpu fase fetch
@@ -246,9 +246,69 @@ func Compactar(logger *slog.Logger) http.HandlerFunc {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 // Función HTTP para obtener el contexto de ejecución completo para un PID-TID
+func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
+	retardoDePeticion()
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
 
-// modificar w http.ResponseWriter, r *http.Request, y listo
+		// Decodificar la solicitud para obtener el PID y TID
+		var pidTid types.PIDTID // Mover la estructura a un paquete compartido si es común
+		err := json.NewDecoder(r.Body).Decode(&pidTid)
+		if err != nil {
+			logger.Error("Error al decodificar la solicitud", slog.Any("error", err))
+			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
+			return
+		}
 
+		// Buscar el contexto para el PID en el mapa ContextosPID
+		contextoPID, existePID := memSistema.ContextosPID[pidTid.PID]
+		if !existePID {
+			logger.Error(fmt.Sprintf("PID %d no encontrado", pidTid.PID))
+			http.Error(w, "PID no encontrado", http.StatusNotFound)
+			return
+		}
+
+		// Buscar el TID dentro del contexto del PID
+		contextoTID, existeTID := contextoPID.TIDs[pidTid.TID]
+		if !existeTID {
+			logger.Error(fmt.Sprintf("TID %d no encontrado en el PID %d", pidTid.TID, pidTid.PID))
+			http.Error(w, "TID no encontrado en el PID", http.StatusNotFound)
+			return
+		}
+
+		// Log de solicitud de contexto OBLIGATORIO
+		logger.Info(fmt.Sprintf("## Contexto Solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
+
+		// Crear el contexto completo usando la estructura que CPU espera (RegCPU)
+		contextoCompleto := types.RegCPU{
+			PC:     contextoTID.PC,
+			AX:     contextoTID.AX,
+			BX:     contextoTID.BX,
+			CX:     contextoTID.CX,
+			DX:     contextoTID.DX,
+			EX:     contextoTID.EX,
+			FX:     contextoTID.FX,
+			GX:     contextoTID.GX,
+			HX:     contextoTID.HX,
+			Base:   contextoPID.Base,
+			Limite: contextoPID.Limite,
+		}
+
+		// Codificar el contexto completo como JSON y enviarlo como respuesta
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(contextoCompleto)
+		if err != nil {
+			logger.Error("Error al codificar la respuesta", slog.Any("error", err))
+			http.Error(w, "Error al codificar la respuesta", http.StatusInternalServerError)
+			return
+		}
+
+		// Log de éxito
+		logger.Info(fmt.Sprintf("Contexto completo enviado para PID %d y TID %d", pidTid.PID, pidTid.TID))
+	}
+}
+
+/*
 func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -309,8 +369,11 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		fmt.Printf("Contexto completo enviado para PID %d y TID %d\n", pidTid.PID, pidTid.TID)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
 	}
 }
+*/
 
 // hecha, pegar una revisada
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {

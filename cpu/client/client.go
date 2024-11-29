@@ -15,8 +15,52 @@ import (
 // Variable global para almacenar el contexto de ejecución
 var ReceivedContextoEjecucion *types.ContextoEjecucion = nil
 
+func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
+	// Codificar el dato
+	body, err := json.Marshal(pidTid)
+	if err != nil {
+		logger.Error("Se produjo un error codificando el mensaje", slog.Any("error", err))
+		return fmt.Errorf("error al codificar PIDTID a JSON: %w", err)
+	}
+
+	// Construir la URL del endpoint usando las configuraciones globales
+	endpoint := "contexto"
+	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpMemory, utils.Configs.PortMemory, endpoint)
+
+	// Realizar la solicitud POST
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error("Se produjo un error enviando mensaje al módulo de memoria", slog.Any("error", err))
+		return fmt.Errorf("error al enviar solicitud al módulo de memoria: %w", err)
+	}
+	defer resp.Body.Close() // Asegurar el cierre del body
+
+	// Validar el código de estado
+	if resp.StatusCode != http.StatusOK {
+		logger.Error(fmt.Sprintf("La respuesta del servidor no fue OK. Código: %d", resp.StatusCode))
+		return fmt.Errorf("respuesta del servidor no fue OK: %d", resp.StatusCode)
+	}
+
+	// Decodificar el cuerpo de la respuesta
+	var contexto types.ContextoEjecucion
+	err = json.NewDecoder(resp.Body).Decode(&contexto)
+	if err != nil {
+		logger.Error("Error al decodificar el contexto de ejecución", slog.Any("error", err))
+		return fmt.Errorf("error al decodificar el cuerpo de la respuesta: %w", err)
+	}
+
+	// Guardar el contexto recibido en la variable global
+	ReceivedContextoEjecucion = &contexto
+
+	Proceso.ContextoEjecucion = contexto
+
+	logger.Info("Contexto de ejecución recibido con éxito")
+	return nil
+}
+
 var Proceso types.Proceso
 
+/*
 // Función que solicita el contexto de ejecución al módulo de memoria
 func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error {
 	url := fmt.Sprintf("http://%s:%d/contexto", utils.Configs.IpMemory, utils.Configs.PortMemory) // URL del módulo de memoria
@@ -67,6 +111,7 @@ func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error 
 
 	return nil
 }
+*/
 
 func DevolverTIDAlKernel(tid uint32, logger *slog.Logger, endpoint string, motivo string) bool {
 	cliente := &http.Client{}
