@@ -63,7 +63,6 @@ func LiberarParticionPorPID(pid uint32, logger *slog.Logger) error {
 	// Liberar la partición y actualizar el bitmap
 	BitmapParticiones[particion] = false
 	delete(PidAParticion, pid) // Eliminar la entrada del mapa
-	fmt.Printf("Proceso %d liberado de la partición %d\n", pid, particion+1)
 
 	// Comprobar si el esquema es dinámico
 	if utils.Configs.Scheme == "DINAMICA" {
@@ -162,7 +161,6 @@ func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 			if tamanio_proceso <= particion[i] {
 				PidAParticion[pid] = i
 				BitmapParticiones[i] = true
-				fmt.Printf("Proceso %d asignado a la partición %d\n", pid, i+1)
 				memSistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
 				memSistema.CrearContextoTID(pid, 0, path)
 				return true
@@ -193,7 +191,6 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	} else {
 		PidAParticion[pid] = pos_menor
 		BitmapParticiones[pos_menor] = true
-		fmt.Printf("Proceso %d asignado a la partición %d\n", pid, pos_menor+1)
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
 		return true
 	}
@@ -219,7 +216,6 @@ func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	} else {
 		PidAParticion[pid] = pos_mayor
 		BitmapParticiones[pos_mayor] = true
-		fmt.Printf("Proceso %d asignado a la partición %d\n", pid, pos_mayor+1)
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_mayor].Base), uint32(Particiones[pos_mayor].Limite))
 		return true
 	}
@@ -297,7 +293,6 @@ func AsignarParticion(pid uint32, posicion, tamanio_proceso int) {
 	PidAParticion[pid] = posicion
 	BitmapParticiones = append(BitmapParticiones, false)
 	ParticionesDinamicas = append(ParticionesDinamicas, nuevaParticion)
-	fmt.Printf("Proceso %d asignado a la partición %d\n", pid, posicion+1)
 	base := baseDinamica(posicion)
 	memSistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
 }

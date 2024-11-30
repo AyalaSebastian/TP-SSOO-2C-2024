@@ -80,7 +80,7 @@ func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad in
 		logger.Info(fmt.Sprintf("## (%d:%d) Se crea el Hilo - Estado: READY", pcb.PID, tcb.TID))
 
 		// Desbloquear el planificador para procesar el hilo en READY
-		utils.Planificador.Signal()
+		Semaforo.Signal()
 		return true, ""
 	}
 	if alt == "COMPACTACION" {
@@ -233,7 +233,7 @@ func FIFO(logger *slog.Logger) {
 			logger.Info("No hay procesos en la cola de Ready")
 			// utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
-			Semaforo.Signal()
+			// Semaforo.Signal()
 			continue
 		}
 		proximo, _ := utils.Desencolar_TCB(ColaReady, 0)

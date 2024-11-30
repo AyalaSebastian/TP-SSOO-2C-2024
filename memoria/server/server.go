@@ -22,7 +22,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 	// Endpoints
 	mux.HandleFunc("POST /CREAR-PROCESO", Crear_proceso(logger))
-	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", FinalizarProceso(logger))
+	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", FinalizarProceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
@@ -94,25 +94,24 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Decodificar la solicitud para obtener el PID
-		var pid struct {
-			PID uint32 `json:"pid"`
-		}
-		err := json.NewDecoder(r.Body).Decode(&pid)
+		param := r.PathValue("pid")
+		pid, err := strconv.ParseUint(param, 10, 32)
 		if err != nil {
-			http.Error(w, "Error al decodificar la solicitud", http.StatusBadRequest)
+			fmt.Println("Error al convertir:", err)
 			return
 		}
+		pidUint32 := uint32(pid)
 
 		//marca la particion como libre en memoria de usuario
-		memUsuario.LiberarParticionPorPID(pid.PID, logger)
+		memUsuario.LiberarParticionPorPID(pidUint32, logger)
 		// Ejecutar la función para eliminar el contexto del PID en Memoria de sistema
-		memSistema.EliminarContextoPID(pid.PID)
+		memSistema.EliminarContextoPID(pidUint32)
 
 		///////////////////necesito que me envien el tamaño del proceso para ponerlo en el log/////////////////////
 		//como no lo tengo lo saco del log
 
 		// Log de destrucción del proceso
-		logger.Info(fmt.Sprintf("Destrucción de Proceso: ## Proceso Destruido - PID: %d - ", pid.PID))
+		logger.Info(fmt.Sprintf("Destrucción de Proceso: ## Proceso Destruido - PID: %d - ", pidUint32))
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)

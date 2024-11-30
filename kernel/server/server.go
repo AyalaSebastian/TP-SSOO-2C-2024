@@ -65,10 +65,10 @@ func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: PROCESS_EXIT", utils.Execute.PID, utils.Execute.TID))
 		planificador.Finalizar_proceso(utils.Execute.PID, logger)
 		utils.Execute = nil
-		utils.Planificador.Signal()
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
+		planificador.Semaforo.Signal()
 	}
 }
 
@@ -157,6 +157,7 @@ func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+		planificador.Semaforo.Signal()
 	}
 }
 
