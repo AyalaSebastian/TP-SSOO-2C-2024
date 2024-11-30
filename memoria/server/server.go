@@ -314,7 +314,7 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		// w.WriteHeader(http.StatusOK)
 		// Log de éxito
 		logger.Info(fmt.Sprintf("Contexto completo enviado para PID %d y TID %d", pidTid.PID, pidTid.TID))
 	}
