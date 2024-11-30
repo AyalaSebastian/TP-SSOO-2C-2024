@@ -265,8 +265,8 @@ func EscribirMemoria(registroDireccion, registroDatos string, tid uint32, logger
 	}
 
 	// Crear la URL del módulo de Memoria
-	ipMemory := "127.0.0.1" // La IP del módulo de Memoria
-	portMemory := 8080      // El puerto del módulo de Memoria
+	ipMemory := utils.Configs.IpMemory     // La IP del módulo de Memoria
+	portMemory := utils.Configs.PortMemory // El puerto del módulo de Memoria
 	url := fmt.Sprintf("http://%s:%d/write_mem", ipMemory, portMemory)
 
 	// Crear la solicitud POST

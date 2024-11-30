@@ -465,9 +465,6 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 			// Descartar la interrupción al no coincidir el TID
 			InterrupcionRecibida = nil
 		}
-	} else {
-		// Log si no hay ninguna interrupción activa
-		logger.Info("No hay interrupciones pendientes para el TID actual", slog.Any("TID", tidActual))
 	}
 }
 
