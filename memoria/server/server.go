@@ -135,7 +135,7 @@ func Crear_hilo(logger *slog.Logger) http.HandlerFunc {
 		}
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
-		memSistema.CrearContextoTID(magic.TID, magic.PID, magic.Path)
+		memSistema.CrearContextoTID(magic.PID, magic.TID, magic.Path)
 
 		logger.Info(fmt.Sprintf("## Hilo Creado - (PID:TID) - (%d:%d)", magic.PID, magic.PID))
 		w.WriteHeader(http.StatusOK)

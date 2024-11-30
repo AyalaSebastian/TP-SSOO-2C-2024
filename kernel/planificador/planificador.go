@@ -235,7 +235,7 @@ func FIFO(logger *slog.Logger) {
 			TID: proximo.TID,
 		}
 		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-		utils.MutexPlanificador.Unlock()
+		// utils.MutexPlanificador.Unlock()
 	}
 }
 

@@ -214,22 +214,24 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 
 		// Mandamos el hilo a block
 		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: strconv.Itoa(int(tid.TID))}
-		utils.Execute = nil
+
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
 		if utils.Configs.SchedulerAlgorithm == "FIFO" {
 			utils.Desencolar_TCB(planificador.ColaReady, 0)
 		} else {
 			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)].Prioridad)
 		}
-		utils.Planificador.Signal()
-		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
 
+		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
+		utils.Execute = nil
 		respuesta, err := json.Marshal("OK")
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+		utils.Planificador.Signal()
+		utils.MutexPlanificador.Unlock()
 	}
 }
 
