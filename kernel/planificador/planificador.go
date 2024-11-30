@@ -28,7 +28,7 @@ func Inicializar_colas() {
 	ColaIO = []utils.SolicitudIO{}
 	MapColasMultinivel = make(map[int][]types.TCB)
 	Semaforo = utils.NewSemaphore(1)
-	// Semaforo.Wait()
+	Semaforo.Wait()
 	utils.Execute = &utils.ExecuteActual{PID: 1000000000, TID: 1000000000} // Inicializo con un valor que no se va a usar
 }
 
@@ -221,13 +221,14 @@ func FIFO(logger *slog.Logger) {
 		// utils.Planificador.Wait()
 		Semaforo.Wait()
 
-		// if utils.Execute.PID != 1000000000 { // Si hay un proceso en ejecución, no hacer nada
-		// 	// utils.MutexPlanificador.Unlock()
-		// 	time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
-		// 	Semaforo.Signal()
-		// 	continue
-		// }
+		if utils.Execute.PID != 1000000000 { // Si hay un proceso en ejecución, no hacer nada
+			utils.MutexPlanificador.Unlock()
+			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
+			Semaforo.Signal()
+			continue
+		}
 		// Si no hay nada en la cola de ready, no hacer nada
+
 		if len(ColaReady[0]) == 0 {
 			logger.Info("No hay procesos en la cola de Ready")
 			// utils.MutexPlanificador.Unlock()
