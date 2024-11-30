@@ -80,7 +80,7 @@ func Eliminar_TCBs_de_cola_Block(pcb *types.PCB, cola *[]Bloqueado, logger *slog
 		if tcb.PID != pcb.PID {
 			nuevaCola = append(nuevaCola, tcb) // Mantiene los TCBs que no pertenecen al PCB actual
 		} else {
-			logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
+			logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola de BLOCK", tcb.TID, tcb.PID))
 		}
 	}
 	*cola = nuevaCola
@@ -95,7 +95,7 @@ func Eliminar_TCBs_de_cola_Block_Finalizar_Hilo(tcb Bloqueado, cola *[]Bloqueado
 		} else if tcb.PID == tcbCola.PID && tcb.TID != tcbCola.TID {
 			nuevaCola = append(nuevaCola, tcbCola)
 		}
-		logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola", tcb.TID, tcb.PID))
+		logger.Info(fmt.Sprintf("TCB con TID %d y PID %d eliminado de la cola de BLOCK", tcb.TID, tcb.PID))
 	}
 	*cola = nuevaCola
 }

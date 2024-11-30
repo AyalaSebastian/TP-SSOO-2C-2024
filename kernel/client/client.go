@@ -39,7 +39,7 @@ func Enviar_Body[T any](dato T, ip string, puerto int, endpoint string, logger *
 func Enviar_QueryPath[T any](dato T, ip string, puerto int, endpoint string, verbo string, logger *slog.Logger) bool {
 	cliente := &http.Client{}
 	url := fmt.Sprintf("http://%s:%d/%s/%v", ip, puerto, endpoint, dato)
-	req, err := http.NewRequest("verbo", url, nil)
+	req, err := http.NewRequest(verbo, url, nil)
 	if err != nil {
 		return false
 	}

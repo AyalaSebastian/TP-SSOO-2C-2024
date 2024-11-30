@@ -106,7 +106,7 @@ func Reintentar_procesos(logger *slog.Logger) {
 // Se le pasa el pid del proceso a finalizar
 func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 
-	success := client.Enviar_QueryPath(pid, utils.Configs.IpMemory, utils.Configs.PortMemory, "finalizar-proceso", "PATCH", logger)
+	success := client.Enviar_QueryPath(pid, utils.Configs.IpMemory, utils.Configs.PortMemory, "FINALIZAR-PROCESO", "PATCH", logger)
 
 	if success {
 		OK := utils.Enviar_proceso_a_exit(pid, ColaReady, &ColaBlocked, &ColaExit, logger)
@@ -160,6 +160,8 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	}
 	logger.Info("Se comunico a memoria la finalizacion del hilo")
 
+	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
+
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
 	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
 
@@ -169,7 +171,6 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	// Mandar a la cola de exit
 	utils.Encolar(&ColaExit, utils.MapaPCB[PID].TCBs[TID])
 
-	logger.Info(fmt.Sprintf("## (%d:%d) Finaliza el hilo", PID, TID))
 	Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
 }
 
@@ -205,13 +206,13 @@ func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
 		go FIFO(logger)
 	case "PRIORIDADES":
 		logger.Info("Iniciando planificador por Prioridades")
-		// go PRIORIDADES(logger)
+		go PRIORIDADES(logger)
 	case "CMN":
 		logger.Info("Iniciando planificador CMN")
-		//go COLAS_MULTINIVEL(logger)
+		go COLAS_MULTINIVEL(logger)
 	default:
 		logger.Info("Tipo de planificador no reconocido. Usando FIFO por defecto.")
-		//go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
+		go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
 	}
 }
 
