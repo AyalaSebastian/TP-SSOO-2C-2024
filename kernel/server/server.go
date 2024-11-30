@@ -230,8 +230,10 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
-		utils.Planificador.Signal()
-		utils.MutexPlanificador.Unlock()
+
+		planificador.Semaforo.Signal()
+		// utils.Planificador.Signal()
+		// utils.MutexPlanificador.Unlock()
 	}
 }
 

@@ -18,6 +18,8 @@ var ColaExit []types.TCB //Cola de procesos finalizados
 var ColaIO []utils.SolicitudIO
 var MapColasMultinivel map[int][]types.TCB
 
+var Semaforo *utils.Semaphore
+
 func Inicializar_colas() {
 	ColaNew = []types.ProcesoNew{}
 	ColaReady = make(map[int][]types.TCB)
@@ -25,6 +27,8 @@ func Inicializar_colas() {
 	ColaExit = []types.TCB{}
 	ColaIO = []utils.SolicitudIO{}
 	MapColasMultinivel = make(map[int][]types.TCB)
+	Semaforo = utils.NewSemaphore(1)
+	// Semaforo.Wait()
 	utils.Execute = &utils.ExecuteActual{PID: 1000000000, TID: 1000000000} // Inicializo con un valor que no se va a usar
 }
 
@@ -201,31 +205,34 @@ func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
 		go FIFO(logger)
 	case "PRIORIDADES":
 		logger.Info("Iniciando planificador por Prioridades")
-		go PRIORIDADES(logger)
+		// go PRIORIDADES(logger)
 	case "CMN":
 		logger.Info("Iniciando planificador CMN")
-		go COLAS_MULTINIVEL(logger)
+		//go COLAS_MULTINIVEL(logger)
 	default:
 		logger.Info("Tipo de planificador no reconocido. Usando FIFO por defecto.")
-		go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
+		//go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
 	}
 }
 
 func FIFO(logger *slog.Logger) {
 	for {
-		utils.MutexPlanificador.Lock()
-		utils.Planificador.Wait()
+		// utils.MutexPlanificador.Lock()
+		// utils.Planificador.Wait()
+		Semaforo.Wait()
 
 		if utils.Execute.PID != 1000000000 { // Si hay un proceso en ejecución, no hacer nada
 			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
+			Semaforo.Signal()
 			continue
 		}
 		// Si no hay nada en la cola de ready, no hacer nada
 		if len(ColaReady[0]) == 0 {
 			logger.Info("No hay procesos en la cola de Ready")
-			utils.MutexPlanificador.Unlock()
+			// utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
+			Semaforo.Signal()
 			continue
 		}
 		proximo, _ := utils.Desencolar_TCB(ColaReady, 0)
@@ -284,6 +291,7 @@ func PRIORIDADES(logger *slog.Logger) {
 func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 	for {
+
 		utils.MutexPlanificador.Lock()
 		utils.Planificador.Wait()
 		proximo, hayAlguien := seleccionarSiguienteHilo()

@@ -1,0 +1,81 @@
+time=2024-11-30T01:54:32.913-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-30T01:54:32.917-03:00 level=INFO msg="Levantando servidor en el puerto: 8004"
+time=2024-11-30T01:56:35.150-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-30T01:56:35.150-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-30T01:56:35.153-03:00 level=INFO msg="Contexto de ejecución recibido con éxito"
+time=2024-11-30T01:56:35.153-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 0"
+time=2024-11-30T01:56:35.153-03:00 level=INFO msg="Decodificando la instrucción: SET DX 0"
+time=2024-11-30T01:56:35.153-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SET - Registro: DX, Valor: 0”"
+time=2024-11-30T01:56:35.153-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:35.153-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 1"
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 1"
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="Decodificando la instrucción: SET AX 1"
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SET - Registro: AX, Valor: 1”"
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 2"
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 2"
+time=2024-11-30T01:56:35.154-03:00 level=INFO msg="Decodificando la instrucción: THREAD_CREATE PLANI_THREAD 6"
+time=2024-11-30T01:56:35.155-03:00 level=INFO msg="## TID: 0 - Actualizo Contexto Ejecución"
+time=2024-11-30T01:56:35.161-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-30T01:56:35.161-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-30T01:56:35.163-03:00 level=INFO msg="Contexto de ejecución recibido con éxito"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 3"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="Decodificando la instrucción: SUM DX AX"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SET - Registro: DX, Valor: 1”"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SUM - Registro Destino: DX, Registro Origen: AX”"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 4"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 4"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="Decodificando la instrucción: THREAD_CREATE PLANI_THREAD 5"
+time=2024-11-30T01:56:35.164-03:00 level=INFO msg="## TID: 0 - Actualizo Contexto Ejecución"
+time=2024-11-30T01:56:35.168-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-30T01:56:35.168-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Contexto de ejecución recibido con éxito"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 5"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Decodificando la instrucción: SUM DX AX"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SET - Registro: DX, Valor: 2”"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SUM - Registro Destino: DX, Registro Origen: AX”"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 6"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 6"
+time=2024-11-30T01:56:35.169-03:00 level=INFO msg="Decodificando la instrucción: THREAD_CREATE PLANI_THREAD 5"
+time=2024-11-30T01:56:35.170-03:00 level=INFO msg="## TID: 0 - Actualizo Contexto Ejecución"
+time=2024-11-30T01:56:35.174-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-30T01:56:35.174-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-30T01:56:35.175-03:00 level=INFO msg="Contexto de ejecución recibido con éxito"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 7"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="Decodificando la instrucción: SUM DX AX"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SET - Registro: DX, Valor: 3”"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SUM - Registro Destino: DX, Registro Origen: AX”"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 8"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 8"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="Decodificando la instrucción: THREAD_CREATE PLANI_THREAD 6"
+time=2024-11-30T01:56:35.176-03:00 level=INFO msg="## TID: 0 - Actualizo Contexto Ejecución"
+time=2024-11-30T01:56:35.179-03:00 level=INFO msg="PID y TID actualizados" PID=1 TID=0
+time=2024-11-30T01:56:35.179-03:00 level=INFO msg="Obtención de Contexto de Ejecución: ## TID: 0 - Solicito Contexto Ejecución"
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="Contexto de ejecución recibido con éxito"
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 9"
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="Decodificando la instrucción: SUM DX AX"
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SET - Registro: DX, Valor: 4”"
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="Instrucción Ejecutada: “## TID: 0 - Ejecutando: SUM - Registro Destino: DX, Registro Origen: AX”"
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:35.180-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 10"
+time=2024-11-30T01:56:35.181-03:00 level=INFO msg="Fetch Instrucción: ## TID: 0 - FETCH - Program Counter: 10"
+time=2024-11-30T01:56:35.181-03:00 level=INFO msg="Decodificando la instrucción: THREAD_JOIN 4"
+time=2024-11-30T01:56:35.181-03:00 level=INFO msg="## TID: 0 - Actualizo Contexto Ejecución"
+time=2024-11-30T01:56:38.690-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:38.690-03:00 level=INFO msg="PC no modificado por instrucción. Actualizado PC a: 11"
+time=2024-11-30T01:56:38.690-03:00 level=INFO msg="Fin de la ejecución del CPU."
+time=2024-11-30T01:56:38.691-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:38.691-03:00 level=INFO msg="PC modificado por instrucción a: 11"
+time=2024-11-30T01:56:38.691-03:00 level=INFO msg="Fin de la ejecución del CPU."
+time=2024-11-30T01:56:38.691-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:38.691-03:00 level=INFO msg="PC modificado por instrucción a: 11"
+time=2024-11-30T01:56:38.691-03:00 level=INFO msg="Fin de la ejecución del CPU."
+time=2024-11-30T01:56:38.692-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:38.692-03:00 level=INFO msg="PC modificado por instrucción a: 11"
+time=2024-11-30T01:56:38.692-03:00 level=INFO msg="Fin de la ejecución del CPU."
+time=2024-11-30T01:56:38.693-03:00 level=INFO msg="No hay interrupciones pendientes para el TID actual" TID=0
+time=2024-11-30T01:56:38.693-03:00 level=INFO msg="PC modificado por instrucción a: 11"
+time=2024-11-30T01:56:38.693-03:00 level=INFO msg="Fin de la ejecución del CPU."
