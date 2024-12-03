@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -21,9 +22,12 @@ func NewSemaphore(size int) *Semaphore {
 }
 
 func (s *Semaphore) Wait() {
+	fmt.Println("Esperando signal")
 	<-s.ch // Bloquea hasta que haya un permiso
+	fmt.Println("Signal recibido")
 }
 
 func (s *Semaphore) Signal() {
+	fmt.Println("Signal enviado")
 	s.ch <- struct{}{} // Libera un permiso
 }

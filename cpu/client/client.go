@@ -120,7 +120,7 @@ func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8001))
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", utils.Configs.IpKernel, utils.Configs.PortKernel))
 		return
 	}
 	// Aseguramos que el body sea cerrado

@@ -223,8 +223,6 @@ func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
 
 func FIFO(logger *slog.Logger) {
 	for {
-		// utils.MutexPlanificador.Lock()
-		// utils.Planificador.Wait()
 		Semaforo.Wait()
 
 		// if utils.Execute.PID != 1000000000 { // Si hay un proceso en ejecución, no hacer nada
@@ -237,26 +235,24 @@ func FIFO(logger *slog.Logger) {
 
 		if len(ColaReady[0]) == 0 {
 			logger.Info("No hay procesos en la cola de Ready")
-			// utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			// Semaforo.Signal()
 			continue
 		}
 		proximo, _ := utils.Desencolar_TCB(ColaReady, 0)
+
 		// Lo ponemos a "ejecutar"
 		utils.Execute = &utils.ExecuteActual{
 			PID: proximo.PID,
 			TID: proximo.TID,
 		}
+
 		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-		// utils.MutexPlanificador.Unlock()
 	}
 }
 
 func PRIORIDADES(logger *slog.Logger) {
 	for {
-		// utils.MutexPlanificador.Lock() //! SACAR
-		// utils.Planificador.Wait()
 		Semaforo.Wait()
 
 		if len(ColaReady[0]) > 0 {
@@ -287,9 +283,10 @@ func PRIORIDADES(logger *slog.Logger) {
 					}
 				}
 				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+			} else {
+				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 			}
 		} else {
-			// utils.MutexPlanificador.Unlock() //! SACAR
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 		}
 	}

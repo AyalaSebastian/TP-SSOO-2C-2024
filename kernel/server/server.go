@@ -114,6 +114,7 @@ func Respuesta_dump(logger *slog.Logger) http.HandlerFunc {
 func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_CREATE", utils.Execute.PID, utils.Execute.TID))
+
 		// Agarramos los parametros del body
 		var params types.ThreadCreateParams
 		err := json.NewDecoder(r.Body).Decode(&params)
@@ -132,10 +133,14 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
 
+		if utils.Configs.SchedulerAlgorithm != "FIFO" {
+			planificador.Semaforo.Signal()
+		} else {
+			client.Enviar_Body((types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}), utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
-
-		client.Enviar_Body((types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}), utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 	}
 }
 
