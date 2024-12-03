@@ -22,7 +22,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 
 	// Endpoints
 	mux.HandleFunc("POST /CREAR-PROCESO", Crear_proceso(logger))
-	mux.HandleFunc("PATCH /finalizar-proceso/{pid}", FinalizarProceso(logger))
+	mux.HandleFunc("PATCH /FINALIZAR-PROCESO/{pid}", FinalizarProceso(logger))
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
@@ -368,7 +368,6 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Error al leer la solicitud: %v", err), http.StatusBadRequest)
 			return
 		}
-		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: OBTENER INSTRUCCION", requestData.PID, requestData.TID))
 
 		instruccion := memSistema.BuscarSiguienteInstruccion(requestData.PID, requestData.TID, requestData.PC)
 		logger.Info(fmt.Sprintf("## OBTENER INSTRUCCION -(PID:TID) -(%d:%d) - Instruccion: %s", requestData.PID, requestData.TID, instruccion))
