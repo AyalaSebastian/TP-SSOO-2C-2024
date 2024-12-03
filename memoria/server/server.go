@@ -111,7 +111,7 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		//como no lo tengo lo saco del log
 
 		// Log de destrucción del proceso
-		logger.Info(fmt.Sprintf("Destrucción de Proceso: ## Proceso Destruido - PID: %d - ", pidUint32))
+		logger.Info(fmt.Sprintf("## Proceso Destruido - PID: %d - ", pidUint32))
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
@@ -163,13 +163,13 @@ func FinalizarHilo(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Log de solicitud de finalización del hilo
-		logger.Info(fmt.Sprintf("Finalización de hilo: ## Finalizar hilo solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
+		logger.Info(fmt.Sprintf("## Finalizar hilo solicitado - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
 
 		// Ejecutar la función para eliminar el contexto del TID en Memoria
 		memSistema.EliminarContextoTID(pidTid.PID, pidTid.TID)
 
 		// Log de destrucción del hilo
-		logger.Info(fmt.Sprintf("Destrucción de Hilo: ## Hilo Destruido - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
+		logger.Info(fmt.Sprintf("## Hilo Destruido - (PID:TID) - (%d:%d)", pidTid.PID, pidTid.TID))
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
@@ -233,7 +233,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 		w.Write([]byte("OK"))
 
 		// Log de éxito
-		logger.Info(fmt.Sprintf("Memory Dump realizado con éxito: %d-%d-%d.dmp", pidTid.PID, pidTid.TID, timestamp))
+		logger.Info(fmt.Sprintf("## Memory Dump Solicitado - (PID:TID) - (%d:%d) ", pidTid.PID, pidTid.TID))
 	}
 }
 
