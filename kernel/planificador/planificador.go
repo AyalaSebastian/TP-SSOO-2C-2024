@@ -29,7 +29,8 @@ func Inicializar_colas() {
 	MapColasMultinivel = make(map[int][]types.TCB)
 	Semaforo = utils.NewSemaphore(1)
 	//Semaforo.Wait()
-	utils.Execute = &utils.ExecuteActual{PID: 1000000000, TID: 1000000000} // Inicializo con un valor que no se va a usar
+	utils.Execute = nil
+	// &utils.ExecuteActual{PID: 1000000000, TID: 1000000000} // Inicializo con un valor que no se va a usar
 }
 
 // Se le pasa el archivo de pseudocódigo, el tamaño del proceso y la prioridad
@@ -50,8 +51,11 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 				if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
 					logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
 					Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger)
-					utils.MutexPlanificador.Unlock()
-					utils.Planificador.Signal()
+					// utils.MutexPlanificador.Unlock() //! OJO AL PIOJO
+					// utils.Planificador.Signal()
+
+					// planificador.Semaforo.Signal()
+
 				}
 
 			}
@@ -125,9 +129,10 @@ func Finalizar_proceso(pid uint32, logger *slog.Logger) {
 func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 
 	// Crear TCB
+
 	pcb := utils.Obtener_PCB_por_PID(utils.Execute.PID)
 	if pcb == nil {
-		panic("No se encontro el PCB")
+		logger.Error("No se encontro el PCB") //! SACAR
 	}
 	tcb := generadores.Generar_TCB(pcb, prioridad)
 
@@ -138,7 +143,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 		Path: path,
 	}
 	if !client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "CREAR_HILO", logger) {
-		panic("Error al crear hilo")
+		logger.Error("Error al crear hilo") //! SACAR
 	}
 
 	// Ingresar a la cola de READY
@@ -156,7 +161,7 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 		PID: PID,
 	}
 	if !client.Enviar_Body(infoMemoria, utils.Configs.IpMemory, utils.Configs.PortMemory, "FINALIZAR_HILO", logger) {
-		panic("Error al Finalizar hilo")
+		logger.Error("Error al finalizar hilo") //! SACAR
 	}
 	logger.Info("Se comunico a memoria la finalizacion del hilo")
 
@@ -250,8 +255,9 @@ func FIFO(logger *slog.Logger) {
 
 func PRIORIDADES(logger *slog.Logger) {
 	for {
-		utils.MutexPlanificador.Lock()
-		utils.Planificador.Wait()
+		// utils.MutexPlanificador.Lock() //! SACAR
+		// utils.Planificador.Wait()
+		Semaforo.Wait()
 
 		if len(ColaReady[0]) > 0 {
 			siguienteHilo := ColaReady[0][0]
@@ -281,10 +287,9 @@ func PRIORIDADES(logger *slog.Logger) {
 					}
 				}
 				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-				utils.MutexPlanificador.Unlock()
 			}
 		} else {
-			utils.MutexPlanificador.Unlock()
+			// utils.MutexPlanificador.Unlock() //! SACAR
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 		}
 	}

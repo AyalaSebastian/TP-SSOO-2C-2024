@@ -157,6 +157,8 @@ func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+
+		utils.Execute = nil
 		planificador.Semaforo.Signal()
 	}
 }
@@ -188,7 +190,7 @@ func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// QUERY PATH - VERBO PATCH
+// BODY - VERBO POST
 // EL TID A QUE BLOQUEA SE MANDA POR PARAMETRO DE LA URL EJ: /THREAD_JOIN/1
 // SI NO EXISTE EL TID, SE RESPONDE CON "CONTINUAR_EJECUCION", SI EXISTE SE RESPONDE CON "OK"
 func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
@@ -225,6 +227,7 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
 		utils.Execute = nil
+
 		respuesta, err := json.Marshal("OK")
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
@@ -233,8 +236,6 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		w.Write(respuesta)
 
 		planificador.Semaforo.Signal()
-		// utils.Planificador.Signal()
-		// utils.MutexPlanificador.Unlock()
 	}
 }
 
