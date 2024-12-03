@@ -195,3 +195,19 @@ time=2024-11-30T03:30:07.540-03:00 level=INFO msg="## OBTENER INSTRUCCION -(PID:
 time=2024-11-30T03:30:11.754-03:00 level=INFO msg="## Contexto Actualizado - (PID:TID) - (1:2) "
 time=2024-11-30T03:30:11.761-03:00 level=INFO msg="Finalización de hilo: ## Finalizar hilo solicitado - (PID:TID) - (1:2)"
 time=2024-11-30T03:30:11.762-03:00 level=INFO msg="Destrucción de Hilo: ## Hilo Destruido - (PID:TID) - (1:2)"
+time=2024-11-30T09:11:46.103-03:00 level=INFO msg="Logger iniciado"
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=1 "iniciada con Base"=0 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=2 "iniciada con Base"=32 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=3 "iniciada con Base"=64 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=4 "iniciada con Base"=96 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=5 "iniciada con Base"=128 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=6 "iniciada con Base"=160 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=7 "iniciada con Base"=192 "y Límite"=32
+time=2024-11-30T09:11:46.112-03:00 level=INFO msg="Partición fija" Número=8 "iniciada con Base"=224 "y Límite"=32
+time=2024-11-30T09:11:51.115-03:00 level=INFO msg="Levantando servidor en el puerto: 8002"
+time=2024-11-30T09:13:20.681-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {Path:PLANI_PROC Tamanio:32 PID:1}"
+time=2024-11-30T09:13:20.695-03:00 level=INFO msg="## Proceso Creado - PID: 1  - Tamaño: 32"
+time=2024-11-30T09:14:25.234-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {Path:PLANI_PROC Tamanio:32 PID:1}"
+time=2024-11-30T09:14:25.235-03:00 level=INFO msg="## Proceso Creado - PID: 1  - Tamaño: 32"
+time=2024-11-30T09:14:44.829-03:00 level=INFO msg="Me llegaron los siguientes parametros para crear proceso: {Path:PLANI_PROC Tamanio:32 PID:1}"
+time=2024-11-30T09:14:44.829-03:00 level=INFO msg="## Proceso Creado - PID: 1  - Tamaño: 32"

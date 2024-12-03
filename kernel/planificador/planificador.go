@@ -205,13 +205,13 @@ func Iniciar_planificador(config utils.Config, logger *slog.Logger) {
 		go FIFO(logger)
 	case "PRIORIDADES":
 		logger.Info("Iniciando planificador por Prioridades")
-		// go PRIORIDADES(logger)
+		go PRIORIDADES(logger)
 	case "CMN":
 		logger.Info("Iniciando planificador CMN")
-		//go COLAS_MULTINIVEL(logger)
+		go COLAS_MULTINIVEL(logger)
 	default:
 		logger.Info("Tipo de planificador no reconocido. Usando FIFO por defecto.")
-		//go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
+		go FIFO(logger) // Por defecto, usa FIFO si no se reconoce el tipo
 	}
 }
 
