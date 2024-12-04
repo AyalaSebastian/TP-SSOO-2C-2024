@@ -32,14 +32,11 @@ func Iniciar_memoria(logger *slog.Logger) {
 	//pasa el contexto de ejecucion a cpu
 	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
-
 	mux.HandleFunc("POST /actualizar_contexto", Actualizar_Contexto(logger))
 	//envia proxima instr a cpu fase fetch
 	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
-
 	//recibo msj de cpu para que haga la instruccion read mem
 	mux.HandleFunc("/read_mem/{direccionFisica}", Read_Mem(logger))
-
 	//recibo msj de cpu para que haga la instruccion write mem
 	mux.HandleFunc("POST /write_mem", Write_Mem(logger))
 
@@ -255,7 +252,7 @@ func Compactar(logger *slog.Logger) http.HandlerFunc {
 //////////////////////     COMUNICACION CON CPU      //////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-// Función HTTP para obtener el contexto de ejecución completo para un PID-TID
+// Función que envia el contexto del pid y tid a cpu
 func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 	retardoDePeticion()
 	return func(w http.ResponseWriter, r *http.Request) {
