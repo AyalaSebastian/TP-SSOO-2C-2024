@@ -170,11 +170,14 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	// Mover al estado de ready lo que estaban bloqueados por ese TID (THREAD_JOIN y MUTEX)
 	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
 
-	// Quitar de la lista de los TCBs del PCB
-	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
+	// Sacar al hilo de la cola de READY
+	utils.Desencolar_TCB(ColaReady, utils.MapaPCB[PID].TCBs[TID].Prioridad)
 
 	// Mandar a la cola de exit
 	utils.Encolar(&ColaExit, utils.MapaPCB[PID].TCBs[TID])
+
+	// Quitar de la lista de los TCBs del PCB
+	utils.Sacar_TCB_Del_Map(&utils.MapaPCB, PID, TID, logger)
 
 	Reintentar_procesos(logger) // Intentar inicializar procesos en ColaNew
 }
@@ -225,18 +228,9 @@ func FIFO(logger *slog.Logger) {
 	for {
 		Semaforo.Wait()
 
-		// if utils.Execute.PID != 1000000000 { // Si hay un proceso en ejecución, no hacer nada
-		// 	utils.MutexPlanificador.Unlock()
-		// 	time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
-		// 	Semaforo.Signal()
-		// 	continue
-		// }
-		// Si no hay nada en la cola de ready, no hacer nada
-
 		if len(ColaReady[0]) == 0 {
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
-			// Semaforo.Signal()
 			continue
 		}
 		proximo, _ := utils.Desencolar_TCB(ColaReady, 0)
@@ -292,18 +286,20 @@ func PRIORIDADES(logger *slog.Logger) {
 	}
 }
 
+var SignalEnviado = false
+
 func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 	for {
 
-		utils.MutexPlanificador.Lock()
-		utils.Planificador.Wait()
+		Semaforo.Wait()
+
+		// Agarro el proximo y lo elimino de la cola de ready
 		proximo, hayAlguien := seleccionarSiguienteHilo()
 
 		// Si no hay nadie en la cola de ready
 		if !hayAlguien {
 			logger.Info("No hay procesos en la cola de Ready")
-			utils.MutexPlanificador.Unlock()
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
 			continue
 		}
@@ -312,13 +308,16 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		if utils.Execute == nil || proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
 			if utils.Execute != nil {
 				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
-				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
+				// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 			}
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
 			utils.Execute = &utils.ExecuteActual{
 				PID: proximo.PID,
 				TID: proximo.TID,
 			}
+
+			// En caso de no haber sido ejecutado lo vuelvo a poner donde estaba
+			InsertarEnPosicion(ColaReady[proximo.Prioridad], proximo, 0)
 
 			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 
@@ -327,41 +326,68 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 			timer := time.NewTimer(quantum)
 
 			//! No es la mejor implementacion por la carga de la cpu
+
 		outer:
 			for {
 				select {
 				case <-timer.C: // Aca lo que pasa cuando se finaliza el quantum
-					logger.Info(fmt.Sprintf("## (%d:%d) Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
-					Meter_A_Planificar_Colas_Multinivel(utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID], logger)
-					utils.Execute = nil
+
+					if !SignalEnviado { //! HABLAR ESTO CON ALEX
+
+						logger.Info(fmt.Sprintf("## (%d:%d) Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
+						Meter_A_Planificar_Colas_Multinivel(utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID], logger)
+						utils.Execute = nil
+						SignalEnviado = true
+						Semaforo.Signal()
+
+					}
 					break outer
 				default:
+
 					// Aquí verificamos el estado del hilo
-					_, existe := utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID]
-					if !existe {
+					// _, existe := utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID]
+					if utils.Execute == nil && !SignalEnviado {
 						logger.Info("Hilo terminado")
 						timer.Stop() // Detenemos el temporizador si el hilo terminó
+						if !SignalEnviado {
+							SignalEnviado = true
+							Semaforo.Signal()
+						}
 						break outer
 					}
 
 					time.Sleep(10 * time.Millisecond) // Pausa breve para evitar un bucle apretado
 				}
 			}
-			utils.MutexPlanificador.Unlock()
+			continue
 		}
+
+		// Si no se desaloja el hilo actual
+		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 	}
 }
 
 func seleccionarSiguienteHilo() (types.TCB, bool) {
 
+	// Encontrar el índice máximo de la cola de ready
+	maxIndex := -1
+	for index := range ColaReady {
+		if index > maxIndex {
+			maxIndex = index
+		}
+	}
+
 	// Recorremos las colas desde la de mayor prioridad hasta la menor
-	for prioridad := 0; prioridad <= len(ColaReady); prioridad++ {
+	for prioridad := 0; prioridad <= maxIndex; prioridad++ {
 		if len(ColaReady[prioridad]) > 0 {
 			// Tomar el primer hilo de la cola
 			siguienteHilo := ColaReady[prioridad][0]
 
 			// Removerlo de la cola y colocarlo al final
-			ColaReady[prioridad] = append(ColaReady[prioridad][1:], siguienteHilo) // ESTO HAY QUE MODIFICARLO, ESTA MAL
+
+			// ColaReady[prioridad] = append(ColaReady[prioridad][1:], ColaReady[prioridad][0])
+			// ColaReady[prioridad] = ColaReady[prioridad][1:]
+			// ColaReady[prioridad] = InsertarEnPosicion(ColaReady[prioridad], siguienteHilo,0)
 			return siguienteHilo, true
 		}
 	}
@@ -373,4 +399,10 @@ func Meter_A_Planificar_Colas_Multinivel(tcb types.TCB, logger *slog.Logger) {
 
 	// Agrego el tcb a la cola correspondiente, si no existe la cola se crea automáticamente
 	ColaReady[tcb.Prioridad] = append(ColaReady[tcb.Prioridad], tcb)
+}
+
+func InsertarEnPosicion(slice []types.TCB, elemento types.TCB, posicion int) []types.TCB {
+
+	nuevoSlice := append(slice[:posicion], append([]types.TCB{elemento}, slice[posicion:]...)...)
+	return nuevoSlice
 }

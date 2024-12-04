@@ -23,6 +23,7 @@ func Encolar_ColaReady(colaReady map[int][]types.TCB, tcb types.TCB) {
 
 // Sirve para desencolar un TCB de la cola de ready indicando su prioridad (para FIFO y PRIORIDADES usamos 0); Retorna el elemento y un booleano que indica si fue exitoso
 func Desencolar_TCB(colasReady map[int][]types.TCB, prioridad int) (*types.TCB, bool) {
+
 	// Verifica si existe una cola para la prioridad dada
 	cola, existe := colasReady[prioridad]
 	if !existe || len(cola) == 0 {
