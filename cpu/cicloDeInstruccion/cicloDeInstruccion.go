@@ -39,7 +39,9 @@ var InterrupcionRecibida *types.InterruptionInfo
 
 func Comenzar_cpu(logger *slog.Logger) {
 
-	logger.Info(fmt.Sprintf("Obtención de Contexto de Ejecución: ## TID: %d - Solicito Contexto Ejecución", GlobalPIDTID.TID))
+	// Log de inicio de la CPU
+	logger.Info("Iniciando Ejecucion de CPU")
+	logger.Info(fmt.Sprintf("## TID: %d - Solicito Contexto Ejecución", GlobalPIDTID.TID))
 	if client.SolicitarContextoEjecucion(GlobalPIDTID, logger) == nil {
 
 		for {
@@ -77,7 +79,7 @@ func Comenzar_cpu(logger *slog.Logger) {
 			// Si el PC no fue modificado por alguna instrucción, lo incrementamos en 1
 			if client.ReceivedContextoEjecucion.PC == pcActual {
 				client.ReceivedContextoEjecucion.PC++
-				logger.Info(fmt.Sprintf("PC no modificado por instrucción. Actualizado PC a: %d", client.ReceivedContextoEjecucion.PC))
+				logger.Info(fmt.Sprintf("Actualizado PC a: %d", client.ReceivedContextoEjecucion.PC))
 			} else {
 				logger.Info(fmt.Sprintf("PC modificado por instrucción a: %d", client.ReceivedContextoEjecucion.PC))
 			}
@@ -156,7 +158,7 @@ func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 	Instruccion = bodyString
 
 	// Log de Fetch exitoso
-	logger.Info(fmt.Sprintf("Fetch Instrucción: ## TID: %d - FETCH - Program Counter: %d", tid, pc))
+	logger.Info(fmt.Sprintf("## TID: %d - FETCH - Program Counter: %d", tid, pc))
 
 	return nil
 }
@@ -450,7 +452,7 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 	if InterrupcionRecibida != nil {
 		if InterrupcionRecibida.TID == tidActual {
 			// Log de la interrupción recibida
-			logger.Info("Interrupción Recibida: ## Llega interrupcion al puerto Interrupt", slog.Any("TID", tidActual))
+			logger.Info("## Llega interrupcion al puerto Interrupt")
 
 			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 

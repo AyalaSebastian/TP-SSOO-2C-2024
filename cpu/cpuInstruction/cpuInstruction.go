@@ -49,7 +49,7 @@ func AsignarValorRegistro(registro string, valor uint32, tid uint32, logger *slo
 	}
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: SET - Registro: %s, Valor: %d”", tid, registro, valor))
+	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: SET - Registro: %s, Valor: %d", tid, registro, valor))
 }
 
 // Función para sumar el valor de dos registros
@@ -66,7 +66,7 @@ func SumarRegistros(registroDestino, registroOrigen string, tid uint32, logger *
 	AsignarValorRegistro(registroDestino, nuevoValor, tid, logger)
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: SUM - Registro Destino: %s, Registro Origen: %s”", tid, registroDestino, registroOrigen))
+	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: SUM - Registro Destino: %s, Registro Origen: %s", tid, registroDestino, registroOrigen))
 }
 
 // Función para restar el valor de dos registros
@@ -83,7 +83,7 @@ func RestarRegistros(registroDestino, registroOrigen string, tid uint32, logger 
 	AsignarValorRegistro(registroDestino, nuevoValor, tid, logger)
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: SUB - Registro Destino: %s, Registro Origen: %s”", tid, registroDestino, registroOrigen))
+	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: SUB - Registro Destino: %s, Registro Origen: %s", tid, registroDestino, registroOrigen))
 }
 
 // Función para realizar el salto condicional JNZ
@@ -105,7 +105,7 @@ func SaltarSiNoCero(registro, instruccion string, tid uint32, logger *slog.Logge
 		AsignarValorRegistro("PC", uint32(instruccionNueva), tid, logger)
 
 		// Log de la instrucción ejecutada
-		logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: JNZ - Registro: %s, Nueva Instrucción: %s”", tid, registro, instruccion))
+		logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: JNZ - Registro: %s, Nueva Instrucción: %s", tid, registro, instruccion))
 	}
 }
 
@@ -115,7 +115,7 @@ func LogRegistro(registro string, pidtid types.PIDTID, logger *slog.Logger) {
 	valor := obtenerValorRegistro(registro, logger)
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: LOG - Registro: %s, Valor: %d”", pidtid.TID, registro, valor))
+	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: LOG - Registro: %s, Valor: %d", pidtid.TID, registro, valor))
 }
 
 // Función auxiliar para obtener el valor de un registro
@@ -295,5 +295,5 @@ func EscribirMemoria(registroDireccion, registroDatos string, tid uint32, logger
 	}
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("Instrucción Ejecutada: “## TID: %d - Ejecutando: WRITE_MEM - Dirección Física: %d, Valor: %d”", tid, direccionFisica, valorDatos))
+	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: WRITE_MEM - Dirección Física: %d, Valor: %d", tid, direccionFisica, valorDatos))
 }
