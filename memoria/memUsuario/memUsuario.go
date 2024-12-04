@@ -192,6 +192,7 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 		PidAParticion[pid] = pos_menor
 		BitmapParticiones[pos_menor] = true
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
+		memSistema.CrearContextoTID(pid, 0, path)
 		return true
 	}
 }
@@ -217,6 +218,7 @@ func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 		PidAParticion[pid] = pos_mayor
 		BitmapParticiones[pos_mayor] = true
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_mayor].Base), uint32(Particiones[pos_mayor].Limite))
+		memSistema.CrearContextoTID(pid, 0, path)
 		return true
 	}
 }
@@ -226,7 +228,7 @@ func FirstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	for i := 0; i < len(BitmapParticiones); i++ {
 		if !BitmapParticiones[i] {
 			if tamanio_proceso < ParticionesDinamicas[i] {
-				AsignarParticion(pid, i, tamanio_proceso)
+				AsignarParticion(pid, i, tamanio_proceso, path)
 				return true
 			}
 		}
@@ -249,7 +251,7 @@ func BestFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	if pos_menor == -1 {
 		return false // no hay huecos hay que compactar o tirar interrupcion
 	} else {
-		AsignarParticion(pid, pos_menor, tamanio_proceso)
+		AsignarParticion(pid, pos_menor, tamanio_proceso, path)
 		return true
 	}
 }
@@ -271,7 +273,7 @@ func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	if pos_mayor == -1 {
 		return false
 	} else {
-		AsignarParticion(pid, pos_mayor, tamanio_proceso)
+		AsignarParticion(pid, pos_mayor, tamanio_proceso, path)
 		return true
 	}
 }
@@ -286,7 +288,7 @@ func baseDinamica(posicion int) uint32 {
 	}
 }
 
-func AsignarParticion(pid uint32, posicion, tamanio_proceso int) {
+func AsignarParticion(pid uint32, posicion, tamanio_proceso int, path string) {
 	nuevaParticion := ParticionesDinamicas[posicion] - tamanio_proceso
 	ParticionesDinamicas[posicion] = tamanio_proceso
 	BitmapParticiones[posicion] = true
@@ -295,6 +297,7 @@ func AsignarParticion(pid uint32, posicion, tamanio_proceso int) {
 	ParticionesDinamicas = append(ParticionesDinamicas, nuevaParticion)
 	base := baseDinamica(posicion)
 	memSistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
+	memSistema.CrearContextoTID(pid, 0, path)
 }
 
 func SePuedeCompactar(tamanio_proceso int) bool {
