@@ -136,8 +136,7 @@ func Librerar_Bloqueados_De_Hilo(colaBloqueados *[]Bloqueado, colaReady map[int]
 		if bloqueado.PID == tcb.PID && bloqueado.Motivo == THREAD_JOIN {
 			num, err := strconv.ParseUint(bloqueado.QuienFue, 10, 32)
 			if err != nil {
-				logger.Error("El error esta en el primer if")
-				panic(err)
+				logger.Error("El error esta en el primer if de Librerar_Bloqueados_De_Hilo")
 			}
 			num32 := uint32(num)
 			if num32 == tcb.TID {

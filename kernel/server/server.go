@@ -133,7 +133,10 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
 
-		if utils.Configs.SchedulerAlgorithm != "FIFO" {
+		if utils.Configs.SchedulerAlgorithm == "PRIORIDADES" {
+			planificador.Semaforo.Signal()
+		} else if utils.Configs.SchedulerAlgorithm == "CMN" {
+			planificador.SignalEnviado = true
 			planificador.Semaforo.Signal()
 		} else {
 			client.Enviar_Body((types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}), utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
@@ -164,6 +167,7 @@ func THREAD_EXIT(logger *slog.Logger) http.HandlerFunc {
 		w.Write(respuesta)
 
 		utils.Execute = nil
+		planificador.SignalEnviado = true
 		planificador.Semaforo.Signal()
 	}
 }
@@ -201,7 +205,8 @@ func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
 func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
-		// Tomamos el valor del tid de la variable de la URL
+
+		// Tomamos el valor del body
 		var tid cicloDeInstruccion.EstructuraTid
 		err := json.NewDecoder(r.Body).Decode(&tid)
 		if err != nil {
@@ -227,7 +232,9 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		if utils.Configs.SchedulerAlgorithm == "FIFO" {
 			utils.Desencolar_TCB(planificador.ColaReady, 0)
 		} else {
-			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)].Prioridad)
+			// utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)].Prioridad)
+			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
+
 		}
 
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: THREAD_JOIN", utils.Execute.PID, utils.Execute.TID))
@@ -240,7 +247,12 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
 
-		planificador.Semaforo.Signal()
+		if utils.Configs.SchedulerAlgorithm == "CMN" {
+			planificador.SignalEnviado = true
+			planificador.Semaforo.Signal()
+		} else {
+			planificador.Semaforo.Signal()
+		}
 	}
 }
 
