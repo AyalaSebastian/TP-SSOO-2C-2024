@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -57,23 +58,17 @@ func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 // Función para recibir la interrupción y el TID desde la solicitud
 func RecibirInterrupcion(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Extraer el nombre de la interrupción desde la URL
-		nombreInterrupcion := r.URL.Path[len("/interruption/"):]
 
-		// Decodificar el cuerpo de la solicitud JSON para obtener el TID
-		var data struct {
-			TID uint32 `json:"tid"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			http.Error(w, "Error al decodificar el JSON de la solicitud", http.StatusBadRequest)
-			logger.Error("Error al decodificar JSON", slog.String("error", err.Error()))
-			return
+		var bodyInterrupcion types.InterruptionInfo
+		err := json.NewDecoder(r.Body).Decode(&bodyInterrupcion)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s\n", err.Error()))
 		}
 
 		// Almacenar el nombre de la interrupción y el TID en la variable
 		var interrupcion = types.InterruptionInfo{
-			NombreInterrupcion: nombreInterrupcion,
-			TID:                data.TID,
+			NombreInterrupcion: bodyInterrupcion.NombreInterrupcion,
+			TID:                bodyInterrupcion.TID,
 		}
 
 		cicloDeInstruccion.InterrupcionRecibida = &interrupcion
@@ -81,7 +76,7 @@ func RecibirInterrupcion(logger *slog.Logger) http.HandlerFunc {
 		//cicloDeInstruccion.InterrupcionRecibida = append(cicloDeInstruccion.InterrupcionRecibida, interrupcion)
 
 		// Log de confirmación de la actualización
-		logger.Info("Interrupción y TID actualizados", slog.String("Interrupción", nombreInterrupcion), slog.Any("TID", data.TID))
+		logger.Info("Interrupción y TID actualizados", slog.String("Interrupción", bodyInterrupcion.NombreInterrupcion), slog.Any("TID", bodyInterrupcion.TID))
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Interrupción y TID almacenados"))

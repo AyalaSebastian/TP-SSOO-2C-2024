@@ -68,6 +68,8 @@ func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
+
+		planificador.SignalEnviado = true //! fijarme si ponerlo con un condicional
 		planificador.Semaforo.Signal()
 	}
 }
@@ -265,7 +267,7 @@ func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_CREATE", utils.Execute.PID, utils.Execute.TID))
 
-		// Tomamos el valor del tid de la variable de la URL
+		// Tomamos el valor del tid de la variable del body
 		var mutexName cicloDeInstruccion.EstructuraRecurso
 		err := json.NewDecoder(r.Body).Decode(&mutexName)
 		if err != nil {
@@ -289,6 +291,9 @@ func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
+
+		// Mandamos a que siga ejecutando el hilo que invoco la syscall
+		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
 	}
