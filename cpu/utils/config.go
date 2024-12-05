@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// * Variable global para controlar el ciclo de ejecución
+var Control = true
+
 type Config struct {
 	IpMemory   string `json:"ip_memory"`
 	PortMemory int    `json:"port_memory"`

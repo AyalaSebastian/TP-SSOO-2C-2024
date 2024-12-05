@@ -59,6 +59,7 @@ func SolicitarContextoEjecucion(pidTid types.PIDTID, logger *slog.Logger) error 
 
 var Proceso types.Proceso
 
+// creo que ya no la usa nadie
 func DevolverTIDAlKernel(tid uint32, logger *slog.Logger, endpoint string, motivo string) bool {
 	cliente := &http.Client{}
 	url := fmt.Sprintf("http://%s:%d/%s/%v", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint, tid)
@@ -111,6 +112,9 @@ func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logg
 
 func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 
+	//finalizar cpu
+	utils.Control = false
+
 	body, err := json.Marshal(dato)
 	if err != nil {
 		logger.Error("Se produjo un error codificando el mensaje")
@@ -135,6 +139,9 @@ func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 // EnviarDesalojo envia el PID, TID y el motivo del desalojo a la API Kernel utilizando la configuración global de IP y puerto.
 func EnviarDesalojo(pid uint32, tid uint32, motivo string, logger *slog.Logger) {
 
+	//finalizar cpu
+	utils.Control = false
+
 	// Crear el objeto que contiene los datos a enviar
 	hiloDesalojado := types.HiloDesalojado{
 		PID:    pid,
@@ -150,7 +157,7 @@ func EnviarDesalojo(pid uint32, tid uint32, motivo string, logger *slog.Logger) 
 	}
 
 	// Formar la URL de la API Kernel usando las configuraciones globales
-	url := fmt.Sprintf("http://%s:%d/desalojo", utils.Configs.IpKernel, utils.Configs.PortKernel)
+	url := fmt.Sprintf("http://%s:%d/recibir-desalojo", utils.Configs.IpKernel, utils.Configs.PortKernel)
 
 	// Enviar la solicitud POST
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
