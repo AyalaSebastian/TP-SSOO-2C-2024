@@ -325,7 +325,9 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+
 			utils.Execute = nil
+			planificador.SignalEnviado = true
 			utils.Planificador.Signal()
 			return
 		}
@@ -340,13 +342,24 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+
+			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 			return
 		}
 
 		// Si no esta libre, bloqueamos el hilo
 		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] != "LIBRE" {
 			bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.Mutex, QuienFue: mutexName.Recurso}
+
+			// Encolamos en ColaBlock y desencolamos de ColaReady
 			utils.Encolar(&planificador.ColaBlocked, bloqueado)
+			if utils.Configs.SchedulerAlgorithm != "FIFO" {
+				utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
+			} else {
+				utils.Desencolar_TCB(planificador.ColaReady, 0)
+
+			}
+
 			logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: MUTEX", utils.Execute.PID, utils.Execute.TID))
 
 			// Respondemos con un HILO_BLOQUEADO
@@ -356,7 +369,9 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+
 			utils.Execute = nil
+			planificador.SignalEnviado = true
 			utils.Planificador.Signal()
 			return
 		}
@@ -364,7 +379,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// BODY - Verbo PATCH
+// BODY - Verbo POST
 // Si el mutex no existe responde con "HILO_FINALIZADO" y finaliza el hilo
 // Si el mutex se le asigna a un hilo responde "MUTEX_ASIGNADO"
 // Si el mutex queda libre responde "MUTEX_LIBRE"
@@ -374,7 +389,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: MUTEX_UNLOCK", utils.Execute.PID, utils.Execute.TID))
 
-		// Tomamos el valor del tid de la variable de la URL
+		// Tomamos el valor del tid de la variable del body
 		var mutexName cicloDeInstruccion.EstructuraRecurso
 		err := json.NewDecoder(r.Body).Decode(&mutexName)
 		if err != nil {
@@ -391,7 +406,9 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+
 			utils.Execute = nil
+			planificador.SignalEnviado = true
 			utils.Planificador.Signal()
 			return
 		}
@@ -404,13 +421,21 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 				if bloqueado.PID == utils.Execute.PID && bloqueado.Motivo == utils.Mutex && bloqueado.QuienFue == mutexName.Recurso {
 					count++
 					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = strconv.Itoa(int(bloqueado.TID))
+
+					// Desencolamos de la cola de bloqueados y encolamos en la cola de ready
 					utils.Desencolar(&planificador.ColaBlocked) //! Acá creo que hay que cambiarla por la funcion de desencolar por motivo (Consultar con lucas)
+					utils.Encolar_ColaReady(planificador.ColaReady, utils.MapaPCB[bloqueado.PID].TCBs[bloqueado.TID])
+
 					respuesta, err := json.Marshal("MUTEX_ASIGNADO")
 					if err != nil {
 						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 					}
 					w.WriteHeader(http.StatusOK)
 					w.Write(respuesta)
+
+					utils.Execute = nil
+					planificador.SignalEnviado = true
+					planificador.Semaforo.Signal()
 					return
 				}
 				// Si el mutex no lo necesita nadie
@@ -422,6 +447,8 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 					}
 					w.WriteHeader(http.StatusOK)
 					w.Write(respuesta)
+
+					client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 					return
 				}
 			}
@@ -434,6 +461,8 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+
+		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 	}
 }
 
@@ -482,10 +511,12 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 			utils.Execute = nil
 			logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
 			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+			planificador.SignalEnviado = true
 			utils.Planificador.Signal()
 		case "SEGMENTATION FAULT":
 			planificador.Finalizar_proceso(magic.PID, logger)
 			utils.Execute = nil
+			planificador.SignalEnviado = true
 			utils.Planificador.Signal()
 		}
 

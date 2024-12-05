@@ -55,7 +55,7 @@ func EliminarContextoPID(pid uint32) {
 }
 
 // Función para eliminar el contexto de ejecución de un hilo (TID) asociado a un proceso (PID)
-func EliminarContextoTID(pid, tid uint32) {
+func EliminarContextoTID(pid uint32, tid uint32) {
 	if proceso, exists := ContextosPID[pid]; exists {
 		if _, tidExists := proceso.TIDs[tid]; tidExists {
 			delete(proceso.TIDs, tid)

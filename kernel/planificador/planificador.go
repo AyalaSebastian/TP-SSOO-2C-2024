@@ -3,6 +3,7 @@ package planificador
 import (
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/sisoputnfrba/tp-golang/kernel/client"
@@ -19,6 +20,12 @@ var ColaIO []utils.SolicitudIO
 var MapColasMultinivel map[int][]types.TCB
 
 var Semaforo *utils.Semaphore
+
+// Variables para el tema de los quantums
+var (
+	mu              sync.Mutex
+	ExecuteContador int
+)
 
 func Inicializar_colas() {
 	ColaNew = []types.ProcesoNew{}
@@ -292,6 +299,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 	for {
 
 		Semaforo.Wait()
+		SignalEnviado = false
 
 		// Agarro el proximo y lo elimino de la cola de ready
 		proximo, hayAlguien := seleccionarSiguienteHilo()
@@ -300,73 +308,74 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		if !hayAlguien {
 			logger.Info("No hay procesos en la cola de Ready")
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
+
 			continue
 		}
 
 		// Si hay alguien en la cola de ready
 		if utils.Execute == nil || proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+
+			mu.Lock()
+			execID := ExecuteContador + 1
+			utils.Execute = &utils.ExecuteActual{
+				PID:       proximo.PID,
+				TID:       proximo.TID,
+				IDexecute: execID,
+			}
+
+			ExecuteContador = execID
+
+			exec := utils.Execute
+
+			mu.Unlock()
+
 			if utils.Execute != nil {
 				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
-				// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 			}
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
-			utils.Execute = &utils.ExecuteActual{
-				PID: proximo.PID,
-				TID: proximo.TID,
-			}
+			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+			go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
 
-			// En caso de no haber sido ejecutado lo vuelvo a poner donde estaba
+		} else {
+
+			// Si el hilo que estaba en ejec tiene mayor prioridad sigue ejecutando ese mismo
+
+			mu.Lock()
 			InsertarEnPosicion(ColaReady[proximo.Prioridad], proximo, 0)
 
-			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-
-			// Temporizador para el quantum
-			quantum := time.Duration(utils.Configs.Quantum) * time.Millisecond
-			timer := time.NewTimer(quantum)
-
-			//! No es la mejor implementacion por la carga de la cpu
-
-		outer:
-			for {
-				select {
-				case <-timer.C: // Aca lo que pasa cuando se finaliza el quantum
-					timer.Stop()
-					logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
-					client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN QUANTUM", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPT", logger)
-
-					// if !SignalEnviado { //! HABLAR ESTO CON ALEX
-
-					// 	client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN QUANTUM", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPT", logger)
-					// logger.Info(fmt.Sprintf("## (%d:%d) Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
-					// Meter_A_Planificar_Colas_Multinivel(utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID], logger)
-					// utils.Execute = nil
-					// SignalEnviado = true
-					// Semaforo.Signal()
-
-					// }
-					break outer
-				default:
-
-					// Aquí verificamos el estado del hilo
-					// _, existe := utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID]
-					if utils.Execute == nil && !SignalEnviado {
-						logger.Info("Hilo terminado")
-						timer.Stop() // Detenemos el temporizador si el hilo terminó
-						if !SignalEnviado {
-							SignalEnviado = true
-							Semaforo.Signal()
-						}
-						break outer
-					}
-
-					time.Sleep(10 * time.Millisecond) // Pausa breve para evitar un bucle apretado
-				}
+			execID := ExecuteContador + 1
+			utils.Execute = &utils.ExecuteActual{
+				PID:       utils.Execute.PID,
+				TID:       utils.Execute.TID,
+				IDexecute: execID,
 			}
-			continue
+
+			ExecuteContador = execID
+
+			exec := utils.Execute
+
+			mu.Unlock()
+
+			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+			go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
+
 		}
 
-		// Si no se desaloja el hilo actual
-		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+	}
+}
+
+func Quantum(exec *utils.ExecuteActual, logger *slog.Logger) {
+	quantum := time.Duration(utils.Configs.Quantum) * time.Millisecond
+	timer := time.NewTimer(quantum)
+
+	<-timer.C
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if utils.Execute != nil && utils.Execute.IDexecute == exec.IDexecute {
+		logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
+		client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN QUANTUM", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 	}
 }
 
