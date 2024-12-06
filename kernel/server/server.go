@@ -135,9 +135,7 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
 
-		if utils.Configs.SchedulerAlgorithm == "PRIORIDADES" {
-			planificador.Semaforo.Signal()
-		} else if utils.Configs.SchedulerAlgorithm == "CMN" {
+		if utils.Configs.SchedulerAlgorithm != "FIFO" {
 			planificador.SignalEnviado = true
 			planificador.Semaforo.Signal()
 		} else {
@@ -189,15 +187,20 @@ func THREAD_CANCEL(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Finalizamos el hilo
-		planificador.Finalizar_hilo(uint32(tid.TID), utils.Execute.PID, logger)
+		_, existe := utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)]
+		if existe {
+			planificador.Finalizar_hilo(uint32(tid.TID), utils.Execute.PID, logger)
+		}
 
 		// Respondemos con un OK
 		respuesta, err := json.Marshal("OK")
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
+		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 	}
 }
 
@@ -224,6 +227,7 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(respuesta)
+			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 			return
 		}
 
@@ -234,7 +238,6 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		if utils.Configs.SchedulerAlgorithm == "FIFO" {
 			utils.Desencolar_TCB(planificador.ColaReady, 0)
 		} else {
-			// utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(tid.TID)].Prioridad)
 			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
 
 		}

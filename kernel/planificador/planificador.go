@@ -51,7 +51,7 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		if !success {
 			// Si no se pudo incializar el proceso y necesita compactacion
 			if alt == "COMPACTACION" {
-				utils.MutexPlanificador.Lock()
+				utils.MutexPlanificador.Lock() //! HACERLO CON UNA VARIABLE
 				for utils.Execute != nil {
 					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 				}
@@ -316,6 +316,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		if utils.Execute == nil || proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
 
 			mu.Lock()
+
 			execID := ExecuteContador + 1
 			utils.Execute = &utils.ExecuteActual{
 				PID:       proximo.PID,
