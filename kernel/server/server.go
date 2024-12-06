@@ -33,7 +33,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("POST /MUTEX_UNLOCK", MUTEX_UNLOCK(logger))
 	mux.HandleFunc("POST /IO", IO(logger))
 
-	mux.HandleFunc("PUT /recibir-desalojo", Recibir_desalojo(logger))
+	mux.HandleFunc("POST /recibir-desalojo", Recibir_desalojo(logger))
 
 	conexiones.LevantarServidor(strconv.Itoa(utils.Configs.Port), mux, logger)
 
@@ -60,6 +60,15 @@ func PROCESS_CREATE(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+func Colas_vacias(colas map[int][]types.TCB) bool {
+	for _, cola := range colas {
+		if len(cola) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: PROCESS_EXIT", utils.Execute.PID, utils.Execute.TID))
@@ -69,8 +78,10 @@ func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 
-		planificador.SignalEnviado = true //! fijarme si ponerlo con un condicional
-		planificador.Semaforo.Signal()
+		if !Colas_vacias(planificador.ColaReady) {
+			planificador.SignalEnviado = true
+			planificador.Semaforo.Signal()
+		}
 	}
 }
 
@@ -78,10 +89,14 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: DUMP_MEMORY", utils.Execute.PID, utils.Execute.TID))
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
+		pcb := utils.Obtener_PCB_por_PID(parametros.PID)
 		utils.Execute = nil
 		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID, Motivo: utils.DUMP}
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
-		utils.Planificador.Signal()
+		utils.Eliminar_TCBs_de_cola_Ready(pcb, planificador.ColaReady, logger)
+
+		planificador.SignalEnviado = true
+		planificador.Semaforo.Signal()
 
 		client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
@@ -331,7 +346,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 
 			utils.Execute = nil
 			planificador.SignalEnviado = true
-			utils.Planificador.Signal()
+			planificador.Semaforo.Signal()
 			return
 		}
 
@@ -375,7 +390,7 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 
 			utils.Execute = nil
 			planificador.SignalEnviado = true
-			utils.Planificador.Signal()
+			planificador.Semaforo.Signal()
 			return
 		}
 
@@ -412,7 +427,7 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 
 			utils.Execute = nil
 			planificador.SignalEnviado = true
-			utils.Planificador.Signal()
+			planificador.Semaforo.Signal()
 			return
 		}
 
@@ -489,8 +504,10 @@ func IO(logger *slog.Logger) http.HandlerFunc {
 		utils.Encolar(&planificador.ColaIO, solicitud)
 		utils.Encolar(&planificador.ColaBlocked, utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID}) // Acá me falta el motivo pero no se como ponerlo
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: IO", utils.Execute.PID, utils.Execute.TID))
+
 		utils.Execute = nil
-		utils.Planificador.Signal()
+		planificador.SignalEnviado = true
+		planificador.Semaforo.Signal()
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -510,17 +527,25 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		switch magic.Motivo {
-		case "FIN QUANTUM":
+		case "FIN_QUANTUM":
+			if utils.Execute != nil {
+				logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
+			}
 			utils.Execute = nil
-			logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
 			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
 			planificador.SignalEnviado = true
-			utils.Planificador.Signal()
-		case "SEGMENTATION FAULT":
+			planificador.Semaforo.Signal()
+		case "SEGMENTATION_FAULT":
 			planificador.Finalizar_proceso(magic.PID, logger)
 			utils.Execute = nil
 			planificador.SignalEnviado = true
-			utils.Planificador.Signal()
+			planificador.Semaforo.Signal()
+		case "PRIORIDAD":
+			utils.Execute = nil
+			logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por PRIORIDAD", magic.PID, magic.TID))
+			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+			planificador.SignalEnviado = true
+			planificador.Semaforo.Signal()
 		}
 
 		w.WriteHeader(http.StatusOK)

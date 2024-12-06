@@ -2,11 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"sync"
 )
-
-var MutexPlanificador sync.Mutex
-var Planificador = sync.NewCond(&MutexPlanificador)
 
 type Semaphore struct {
 	ch chan struct{}

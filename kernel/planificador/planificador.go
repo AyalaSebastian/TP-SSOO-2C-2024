@@ -1,6 +1,7 @@
 package planificador
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -21,6 +22,8 @@ var MapColasMultinivel map[int][]types.TCB
 
 var Semaforo *utils.Semaphore
 
+var ctx, cancel = context.WithCancel(context.Background())
+
 // Variables para el tema de los quantums
 var (
 	mu              sync.Mutex
@@ -35,9 +38,7 @@ func Inicializar_colas() {
 	ColaIO = []utils.SolicitudIO{}
 	MapColasMultinivel = make(map[int][]types.TCB)
 	Semaforo = utils.NewSemaphore(1)
-	//Semaforo.Wait()
 	utils.Execute = nil
-	// &utils.ExecuteActual{PID: 1000000000, TID: 1000000000} // Inicializo con un valor que no se va a usar
 }
 
 // Se le pasa el archivo de pseudocódigo, el tamaño del proceso y la prioridad
@@ -51,7 +52,7 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		if !success {
 			// Si no se pudo incializar el proceso y necesita compactacion
 			if alt == "COMPACTACION" {
-				utils.MutexPlanificador.Lock() //! HACERLO CON UNA VARIABLE
+				// utils.MutexPlanificador.Lock() //! HACERLO CON UNA VARIABLE
 				for utils.Execute != nil {
 					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 				}
@@ -313,7 +314,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		}
 
 		// Si hay alguien en la cola de ready
-		if utils.Execute == nil || proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+		if utils.Execute == nil {
 
 			mu.Lock()
 
@@ -330,39 +331,59 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 			mu.Unlock()
 
-			if utils.Execute != nil {
-				logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
-			}
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
-			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+			client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", ctx, logger)
 			go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
+
+		} else if proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+
+			// mu.Lock()
+
+			// execID := ExecuteContador + 1
+			// utils.Execute = &utils.ExecuteActual{
+			// 	PID:       proximo.PID,
+			// 	TID:       proximo.TID,
+			// 	IDexecute: execID,
+			// }
+
+			// ExecuteContador = execID
+
+			// exec := utils.Execute
+
+			// mu.Unlock()
+
+			logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
+			client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 
 		} else {
 
 			// Si el hilo que estaba en ejec tiene mayor prioridad sigue ejecutando ese mismo
 
-			mu.Lock()
-			InsertarEnPosicion(ColaReady[proximo.Prioridad], proximo, 0)
+			// mu.Lock()
+			// InsertarEnPosicion(ColaReady[proximo.Prioridad], proximo, 0)
 
-			execID := ExecuteContador + 1
-			utils.Execute = &utils.ExecuteActual{
-				PID:       utils.Execute.PID,
-				TID:       utils.Execute.TID,
-				IDexecute: execID,
-			}
+			// execID := ExecuteContador + 1
+			// utils.Execute = &utils.ExecuteActual{
+			// 	PID:       utils.Execute.PID,
+			// 	TID:       utils.Execute.TID,
+			// 	IDexecute: execID,
+			// }
 
-			ExecuteContador = execID
+			// ExecuteContador = execID
 
-			exec := utils.Execute
+			// exec := utils.Execute
 
-			mu.Unlock()
+			// mu.Unlock()
 
-			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-			go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
+			// client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", ctx, logger)
+			// go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
+
+			//! OJO AL PIOJO
 
 		}
 
 	}
+
 }
 
 func Quantum(exec *utils.ExecuteActual, logger *slog.Logger) {
@@ -375,8 +396,8 @@ func Quantum(exec *utils.ExecuteActual, logger *slog.Logger) {
 	defer mu.Unlock()
 
 	if utils.Execute != nil && utils.Execute.IDexecute == exec.IDexecute {
-		logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", utils.Execute.PID, utils.Execute.TID))
-		client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN QUANTUM", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
+		// cancel()
+		client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN_QUANTUM", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 	}
 }
 
