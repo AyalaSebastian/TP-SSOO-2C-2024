@@ -48,7 +48,7 @@ func Recibir_PIDTID(logger *slog.Logger) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("PID y TID almacenados y CPU iniciada"))
 
-		cicloDeInstruccion.Control = true
+		utils.Control = true
 		// Llamar a Comenzar_cpu para iniciar el proceso de CPU
 		cicloDeInstruccion.Comenzar_cpu(logger)
 
@@ -72,11 +72,9 @@ func RecibirInterrupcion(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		cicloDeInstruccion.InterrupcionRecibida = &interrupcion
-		// Añadir la interrupción a la cola global
-		//cicloDeInstruccion.InterrupcionRecibida = append(cicloDeInstruccion.InterrupcionRecibida, interrupcion)
 
-		// Log de confirmación de la actualización
-		logger.Info("Interrupción y TID actualizados", slog.String("Interrupción", bodyInterrupcion.NombreInterrupcion), slog.Any("TID", bodyInterrupcion.TID))
+		// Log de confirmación
+		logger.Info("## Llega interrupcion al puerto Interrupt")
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Interrupción y TID almacenados"))

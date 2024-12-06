@@ -152,7 +152,7 @@ func obtenerValorRegistro(registro string, logger *slog.Logger) uint32 {
 }
 
 // Función para leer un valor de una dirección física de memoria y almacenarlo en un registro
-func LeerMemoria(registroDatos, registroDireccion string, pidtid types.PIDTID, logger *slog.Logger) {
+func LeerMemoria(registroDatos string, registroDireccion string, pidtid types.PIDTID, logger *slog.Logger) {
 
 	// Obtener el valor de la dirección lógica del registro de dirección
 	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
@@ -230,7 +230,7 @@ func LeerMemoria(registroDatos, registroDireccion string, pidtid types.PIDTID, l
 }
 
 // Función para escribir un valor de un registro en una dirección física de memoria
-func EscribirMemoria(registroDireccion, registroDatos string, tid uint32, logger *slog.Logger) {
+func EscribirMemoria(registroDireccion string, registroDatos string, tid uint32, logger *slog.Logger) {
 
 	// Obtener el valor de la dirección lógica y el valor de datos de los registros
 	direccionLogica := obtenerValorRegistro(registroDireccion, logger)

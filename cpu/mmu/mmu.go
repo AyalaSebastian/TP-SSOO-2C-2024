@@ -14,12 +14,13 @@ func TraducirDireccion(proceso *types.Proceso, direccionLogica uint32, logger *s
 
 	direccionFisica := proceso.ContextoEjecucion.Base + direccionLogica
 	if direccionFisica >= proceso.ContextoEjecucion.Limite {
+
+		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", proceso.Tid))
-		// Devolver el Tid al Kernel con motivo de Segmentation Fault
-		if client.DevolverTIDAlKernel(proceso.Tid, logger, "THREAD_INTERRUPT", "Segmentation Fault") {
-			log.Printf("Segmentation Fault en Tid %d", proceso.Tid)
-		}
+		client.EnviarDesalojo(proceso.Pid, proceso.Tid, "SEGMENTATION FAULT", logger)
+		log.Printf("Segmentation Fault en Tid %d", proceso.Tid)
+
 		return 0, errors.New("segmentation fault")
 	}
 
