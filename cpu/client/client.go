@@ -113,7 +113,7 @@ func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logg
 func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 
 	//finalizar cpu
-	utils.Control = false
+	// utils.Control = false  //! CUIDADOOOOOO
 
 	body, err := json.Marshal(dato)
 	if err != nil {
@@ -131,6 +131,40 @@ func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		logger.Error("La respuesta del servidor no fue OK")
+		return // Indica que la respuesta no fue exitosa
+	}
+}
+
+func CederControlAKernell2[T any](dato T, endpoint string, logger *slog.Logger) {
+
+	//finalizar cpu
+	// utils.Control = false  //! CUIDADOOOOOO
+
+	body, err := json.Marshal(dato)
+	if err != nil {
+		logger.Error("Se produjo un error codificando el mensaje")
+		return
+	}
+
+	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", utils.Configs.IpKernel, utils.Configs.PortKernel))
+		return
+	}
+	// Aseguramos que el body sea cerrado
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusAccepted {
+		logger.Error("La respuesta del servidor no fue OK")
+		return // Indica que la respuesta no fue exitosa
+	}
+	if resp.StatusCode == http.StatusOK {
+		utils.Control = false
+		return
+	}
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		logger.Error("La respuesta del servidor no fue OK")
 		return // Indica que la respuesta no fue exitosa
 	}

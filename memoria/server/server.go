@@ -29,8 +29,6 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("PATCH /compactar", Compactar(logger))
 
 	// Comunicacion con CPU
-	//pasa el contexto de ejecucion a cpu
-	//mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
 	mux.HandleFunc("POST /actualizar_contexto", Actualizar_Contexto(logger))
 	//envia proxima instr a cpu fase fetch
@@ -254,10 +252,10 @@ func Compactar(logger *slog.Logger) http.HandlerFunc {
 
 // Función que envia el contexto del pid y tid a cpu
 func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
-	retardoDePeticion()
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
+		retardoDePeticion()
 		// Decodificar la solicitud para obtener el PID y TID
 		var pidTid types.PIDTID // Mover la estructura a un paquete compartido si es común
 		err := json.NewDecoder(r.Body).Decode(&pidTid)
@@ -318,9 +316,9 @@ func Obtener_Contexto_De_Ejecucion(logger *slog.Logger) http.HandlerFunc {
 
 // hecha, pegar una revisada
 func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
-	retardoDePeticion()
-	return func(w http.ResponseWriter, r *http.Request) {
 
+	return func(w http.ResponseWriter, r *http.Request) {
+		retardoDePeticion()
 		var req types.Proceso
 		err := json.NewDecoder(r.Body).Decode(&req)
 
@@ -351,9 +349,9 @@ func Actualizar_Contexto(logger *slog.Logger) http.HandlerFunc {
 
 // hecha, pegar una revisada
 func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
-	retardoDePeticion()
-	return func(w http.ResponseWriter, r *http.Request) {
 
+	return func(w http.ResponseWriter, r *http.Request) {
+		retardoDePeticion()
 		var requestData struct {
 			PC  uint32 `json:"pc"`
 			TID uint32 `json:"tid"`
@@ -374,8 +372,10 @@ func Obtener_Instrucción(logger *slog.Logger) http.HandlerFunc {
 }
 
 func Read_Mem(logger *slog.Logger) http.HandlerFunc {
-	retardoDePeticion()
+
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		retardoDePeticion()
 		// Crear una estructura para la solicitud que contiene la dirección física
 		var requestData struct {
 			DireccionFisica uint32 `json:"direccion_fisica"`
@@ -434,8 +434,10 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 
 // hecha
 func Write_Mem(logger *slog.Logger) http.HandlerFunc {
-	retardoDePeticion()
+
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		retardoDePeticion()
 		var requestData struct {
 			DireccionFisica uint32 `json:"direccion_fisica"`
 			Valor           uint32 `json:"valor"`
@@ -491,7 +493,7 @@ func Write_Mem(logger *slog.Logger) http.HandlerFunc {
 
 // a partir del tiempo que nos pasa el archivo configs esperamos esa cantidad en milisegundos antes de seguir con la ejecucion del proceso
 func retardoDePeticion() {
-	time.Sleep(time.Duration((utils.Configs.ResponseDelay * int(time.Millisecond))))
+	time.Sleep(time.Duration(utils.Configs.ResponseDelay) * time.Millisecond)
 }
 
 // que se le enviaria a file system en memory dump (todos los datos que tengamos del proceso)

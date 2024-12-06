@@ -82,7 +82,7 @@ func Comenzar_cpu(logger *slog.Logger) {
 			}
 
 		}
-		logger.Info("Fin de la ejecución del CPU.")
+		logger.Info("Fin de ciclo de CPU.")
 	}
 }
 
@@ -347,11 +347,12 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 
 		//	Informar memoria
+		// utils.Control = false
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
-		client.CederControlAKernell(threadJoin, "THREAD_JOIN", logger)
+		client.CederControlAKernell2(threadJoin, "THREAD_JOIN", logger)
 
 	case "THREAD_CANCEL":
 
@@ -442,6 +443,7 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 			proceso.ContextoEjecucion.PC++
 			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 			logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+			// utils.Control = false
 			client.EnviarDesalojo(proceso.Pid, proceso.Tid, InterrupcionRecibida.NombreInterrupcion, logger)
 
 			// Eliminar la interrupción después de procesarla
