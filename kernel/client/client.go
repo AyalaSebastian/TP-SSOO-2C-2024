@@ -36,7 +36,7 @@ func Enviar_Body[T any](dato T, ip string, puerto int, endpoint string, logger *
 	return true // Indica que la respuesta fue exitosa
 }
 
-// func Enviar_Body_Async[T any](dato T, ip string, puerto int, endpoint string, ctx context.Context, logger *slog.Logger) {
+// func Enviar_Body_Async[T any](dato T, ip string, puerto int, endpoint string, logger *slog.Logger) {
 // 	go func() {
 
 // 		body, err := json.Marshal(dato)

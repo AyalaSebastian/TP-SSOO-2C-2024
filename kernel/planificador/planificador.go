@@ -266,26 +266,31 @@ func PRIORIDADES(logger *slog.Logger) {
 			}
 			// Vemos si no hay nadie ejecutando o si la prioridad del siguiente hilo es mayor
 			if utils.Execute == nil || siguienteHilo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
+
 				if utils.Execute != nil {
-					logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
 					// Enviamos la interrupción de desalojo por Prioridades
-					client.Enviar_QueryPath(utils.Execute.TID, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPT", "POST", logger)
-				}
-				logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
-				utils.Execute = &utils.ExecuteActual{
-					PID: siguienteHilo.PID,
-					TID: siguienteHilo.TID,
-				}
-				// Remueve el hilo seleccionado de la cola de READY
-				for i, tcb := range ColaReady[0] {
-					if tcb.TID == siguienteHilo.TID {
-						ColaReady[0] = append(ColaReady[0][:i], ColaReady[0][i+1:]...)
-						break
+					client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "PRIORIDAD", logger)
+				} else {
+					logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
+					utils.Execute = &utils.ExecuteActual{
+						PID: siguienteHilo.PID,
+						TID: siguienteHilo.TID,
 					}
+					// Remueve el hilo seleccionado de la cola de READY
+					for i, tcb := range ColaReady[0] {
+						if tcb.TID == siguienteHilo.TID {
+							ColaReady[0] = append(ColaReady[0][:i], ColaReady[0][i+1:]...)
+							break
+						}
+					}
+					client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", ctx, logger)
+
 				}
-				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+
 			} else {
-				client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+
+				// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+
 			}
 		} else {
 			time.Sleep(100 * time.Millisecond) // Espera antes de volver a intentar
@@ -352,7 +357,6 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 			// mu.Unlock()
 
-			logger.Info(fmt.Sprintf("Desalojando hilo %d (PID: %d) con prioridad %d", utils.Execute.TID, utils.Execute.PID, utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad))
 			client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 
 		} else {

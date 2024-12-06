@@ -153,9 +153,10 @@ func THREAD_CREATE(logger *slog.Logger) http.HandlerFunc {
 		if utils.Configs.SchedulerAlgorithm != "FIFO" {
 			planificador.SignalEnviado = true
 			planificador.Semaforo.Signal()
-		} else {
-			client.Enviar_Body((types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}), utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 		}
+		//  else {
+		// client.Enviar_Body((types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}), utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+		// }
 
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
@@ -240,9 +241,8 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 			if err != nil {
 				http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 			}
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusAccepted)
 			w.Write(respuesta)
-			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 			return
 		}
 
@@ -250,7 +250,7 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: strconv.Itoa(int(tid.TID))}
 
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
-		if utils.Configs.SchedulerAlgorithm == "FIFO" {
+		if utils.Configs.SchedulerAlgorithm == "FIFO" || utils.Configs.SchedulerAlgorithm == "PRIORIDADES" {
 			utils.Desencolar_TCB(planificador.ColaReady, 0)
 		} else {
 			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
@@ -264,15 +264,13 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
 
-		if utils.Configs.SchedulerAlgorithm == "CMN" {
-			planificador.SignalEnviado = true
-			planificador.Semaforo.Signal()
-		} else {
-			planificador.Semaforo.Signal()
-		}
+		planificador.SignalEnviado = true
+		planificador.Semaforo.Signal()
+
 	}
 }
 
