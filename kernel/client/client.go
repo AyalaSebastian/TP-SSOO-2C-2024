@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,6 +34,64 @@ func Enviar_Body[T any](dato T, ip string, puerto int, endpoint string, logger *
 	}
 
 	return true // Indica que la respuesta fue exitosa
+}
+
+// func Enviar_Body_Async[T any](dato T, ip string, puerto int, endpoint string, logger *slog.Logger) {
+// 	go func() {
+
+// 		body, err := json.Marshal(dato)
+// 		if err != nil {
+// 			logger.Error("Se produjo un error codificando el mensaje")
+// 			return
+// 		}
+
+// 		url := fmt.Sprintf("http://%s:%d/%s", ip, puerto, endpoint)
+// 		resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+// 		if err != nil {
+// 			logger.Error(fmt.Sprintf("Error enviando mensaje a ip:%s puerto:%d: %s", ip, puerto, err.Error()))
+// 			return
+// 		}
+// 		defer resp.Body.Close()
+
+// 		if resp.StatusCode != http.StatusOK {
+// 			logger.Error("La respuesta del servidor no fue OK")
+// 			return
+// 		}
+
+// 		logger.Info("Mensaje enviado exitosamente")
+
+// 	}()
+// }
+
+func Enviar_Body_Async[T any](dato T, ip string, puerto int, endpoint string, ctx context.Context, logger *slog.Logger) {
+	go func() {
+		body, err := json.Marshal(dato)
+		if err != nil {
+			logger.Error("Se produjo un error codificando el mensaje")
+			return
+		}
+
+		url := fmt.Sprintf("http://%s:%d/%s", ip, puerto, endpoint)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error creando la solicitud HTTP: %s", err.Error()))
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error enviando mensaje: %s", err.Error()))
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			logger.Error("La respuesta del servidor no fue OK")
+			return
+		}
+	}()
 }
 
 // IMPORTANTE! Es QueryPath, no se le pasa un Body

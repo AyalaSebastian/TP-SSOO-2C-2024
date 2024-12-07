@@ -19,8 +19,9 @@ type SolicitudIO struct {
 
 // Hilo ejecutando actualmente
 type ExecuteActual struct {
-	PID uint32 `json:"pid"`
-	TID uint32 `json:"tid"`
+	PID       uint32 `json:"pid"`
+	TID       uint32 `json:"tid"`
+	IDexecute int    `json:"idexecute"`
 }
 
 var Execute *ExecuteActual

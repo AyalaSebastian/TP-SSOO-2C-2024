@@ -18,9 +18,6 @@ import (
 
 // ?                       VARIABLES GLOBALES                    //
 
-// * Variable global para controlar el ciclo de ejecución
-var Control = true
-
 // * Variable global para almacenar PID y TID
 var GlobalPIDTID types.PIDTID
 
@@ -45,7 +42,7 @@ func Comenzar_cpu(logger *slog.Logger) {
 	if client.SolicitarContextoEjecucion(GlobalPIDTID, logger) == nil {
 
 		for {
-			if !Control {
+			if !utils.Control {
 				break
 			}
 			// Obtener el valor actual del PC antes de Fetch
@@ -85,7 +82,7 @@ func Comenzar_cpu(logger *slog.Logger) {
 			}
 
 		}
-		logger.Info("Fin de la ejecución del CPU.")
+		logger.Info("Fin de ciclo de CPU.")
 	}
 }
 
@@ -289,8 +286,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(dumpMemory, "DUMP_MEMORY", logger)
 
 	case "IO":
@@ -305,8 +301,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(io, "IO", logger)
 
 	case "PROCESS_CREATE":
@@ -324,8 +319,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(processCreate, "PROCESS_CREATE", logger)
 
 	case "THREAD_CREATE":
@@ -340,8 +334,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadCreate, "THREAD_CREATE", logger)
 
 	case "THREAD_JOIN":
@@ -354,12 +347,12 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 
 		//	Informar memoria
+		// utils.Control = false
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
-		client.CederControlAKernell(threadJoin, "THREAD_JOIN", logger)
+		//AnteriorPIDTID = GlobalPIDTID
+		client.CederControlAKernell2(threadJoin, "THREAD_JOIN", logger)
 
 	case "THREAD_CANCEL":
 
@@ -373,8 +366,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadCancel, "THREAD_CANCEL", logger)
 
 	case "MUTEX_CREATE":
@@ -385,8 +377,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(mutexCreate, "MUTEX_CREATE", logger)
 
 	case "MUTEX_LOCK":
@@ -397,8 +388,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(mutexLock, "MUTEX_LOCK", logger)
 
 	case "MUTEX_UNLOCK":
@@ -411,8 +401,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(mutexUnlock, "MUTEX_UNLOCK", logger)
 
 	case "THREAD_EXIT":
@@ -421,8 +410,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(threadExit, "THREAD_EXIT", logger)
 
 	case "PROCESS_EXIT":
@@ -431,8 +419,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-		AnteriorPIDTID = GlobalPIDTID
-		Control = false
+		//AnteriorPIDTID = GlobalPIDTID
 		client.CederControlAKernell(processExit, "PROCESS_EXIT", logger)
 
 	default:
@@ -452,10 +439,11 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 	if InterrupcionRecibida != nil {
 		if InterrupcionRecibida.TID == tidActual {
 			// Log de la interrupción recibida
-			logger.Info("## Llega interrupcion al puerto Interrupt")
-
+			logger.Info(fmt.Sprintf("Atendiendo Interrupcion: %s ", InterrupcionRecibida.NombreInterrupcion))
+			proceso.ContextoEjecucion.PC++
 			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
-
+			logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
+			// utils.Control = false
 			client.EnviarDesalojo(proceso.Pid, proceso.Tid, InterrupcionRecibida.NombreInterrupcion, logger)
 
 			// Eliminar la interrupción después de procesarla
