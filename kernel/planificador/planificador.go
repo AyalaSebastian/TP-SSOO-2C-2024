@@ -337,6 +337,8 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 			mu.Unlock()
 
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
+
+			utils.Desencolar_TCB(ColaReady, proximo.Prioridad)
 			client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", ctx, logger)
 			go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
 

@@ -48,8 +48,6 @@ func Comenzar_cpu(logger *slog.Logger) {
 			// Obtener el valor actual del PC antes de Fetch
 			pcActual := client.ReceivedContextoEjecucion.PC
 
-			// if GlobalPIDTID != AnteriorPIDTID {
-
 			// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
 			err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
 			if err != nil {
@@ -352,7 +350,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
-		client.CederControlAKernell2(threadJoin, "THREAD_JOIN", logger)
+		CederControlAKernell2(threadJoin, "THREAD_JOIN", logger)
 
 	case "THREAD_CANCEL":
 
@@ -465,4 +463,38 @@ func parcearArgs(arg string, logger *slog.Logger) int {
 		return -1 // Return a default value or handle the error appropriately
 	}
 	return argParseado
+}
+
+// PONGO ACA POR UN TEMA DE INCLUCIONES CIRCULARES
+
+func CederControlAKernell2[T any](dato T, endpoint string, logger *slog.Logger) {
+
+	body, err := json.Marshal(dato)
+	if err != nil {
+		logger.Error("Se produjo un error codificando el mensaje")
+		return
+	}
+
+	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint)
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", utils.Configs.IpKernel, utils.Configs.PortKernel))
+		return
+	}
+	// Aseguramos que el body sea cerrado
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusAccepted {
+		logger.Error("La respuesta del servidor no fue OK")
+		return // Indica que la respuesta no fue exitosa
+	}
+	if resp.StatusCode == http.StatusOK {
+		utils.Control = false
+		GlobalPIDTID = types.PIDTID{TID: 10000, PID: 0}
+		return
+	}
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
+		logger.Error("La respuesta del servidor no fue OK")
+		return // Indica que la respuesta no fue exitosa
+	}
 }

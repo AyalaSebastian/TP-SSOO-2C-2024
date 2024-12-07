@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/sisoputnfrba/tp-golang/memoria/utils"
 	"github.com/sisoputnfrba/tp-golang/utils/types"
 )
+
+var mu sync.Mutex
 
 // Mapa para almacenar los contextos de ejecución de los procesos y sus hilos asociados
 var ContextosPID = make(map[uint32]types.ContextoEjecucionPID) // Contexto por PID
@@ -71,8 +74,10 @@ func EliminarContextoTID(pid uint32, tid uint32) {
 func Actualizar_TID(pid uint32, tid uint32, contexto types.ContextoEjecucionTID) {
 	if proceso, exists := ContextosPID[pid]; exists {
 		if _, tidExists := proceso.TIDs[tid]; tidExists {
+			mu.Lock()
 			proceso.TIDs[tid] = contexto // Actualizar el contexto en el mapa
 			ContextosPID[pid] = proceso  // Actualizar el contexto en el mapa
+			mu.Unlock()
 		} else {
 			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
 		}
