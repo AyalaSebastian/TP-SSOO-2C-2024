@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Inicializamos la configuracion y el logger
-	utils.Configs = utils.Iniciar_configuracion("config.json")
+	utils.Configs = utils.Iniciar_configuracion("config-p.json")
 	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
 	logger.Info("Logger iniciado")
 
