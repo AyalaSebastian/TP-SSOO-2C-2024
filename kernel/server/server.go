@@ -356,10 +356,10 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 				w.Write([]byte("Error al codificar mensaje como JSON"))
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusAccepted)
 			w.Write(respuesta)
 
-			client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+			// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 			return
 		}
 

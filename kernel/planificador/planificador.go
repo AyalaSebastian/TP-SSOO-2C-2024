@@ -178,7 +178,11 @@ func Finalizar_hilo(TID uint32, PID uint32, logger *slog.Logger) {
 	utils.Librerar_Bloqueados_De_Hilo(&ColaBlocked, ColaReady, utils.MapaPCB[PID].TCBs[TID], logger)
 
 	// Sacar al hilo de la cola de READY
-	utils.Desencolar_TCB(ColaReady, utils.MapaPCB[PID].TCBs[TID].Prioridad)
+	// if utils.Configs.SchedulerAlgorithm != "CMN" {
+	// 	utils.Desencolar_TCB(ColaReady, 0)
+	// } else {
+	// 	utils.Desencolar_TCB(ColaReady, utils.MapaPCB[PID].TCBs[TID].Prioridad)
+	// }
 
 	// Mandar a la cola de exit
 	utils.Encolar(&ColaExit, utils.MapaPCB[PID].TCBs[TID])
@@ -420,14 +424,9 @@ func seleccionarSiguienteHilo() (types.TCB, bool) {
 	// Recorremos las colas desde la de mayor prioridad hasta la menor
 	for prioridad := 0; prioridad <= maxIndex; prioridad++ {
 		if len(ColaReady[prioridad]) > 0 {
+
 			// Tomar el primer hilo de la cola
 			siguienteHilo := ColaReady[prioridad][0]
-
-			// Removerlo de la cola y colocarlo al final
-
-			// ColaReady[prioridad] = append(ColaReady[prioridad][1:], ColaReady[prioridad][0])
-			// ColaReady[prioridad] = ColaReady[prioridad][1:]
-			// ColaReady[prioridad] = InsertarEnPosicion(ColaReady[prioridad], siguienteHilo,0)
 			return siguienteHilo, true
 		}
 	}
