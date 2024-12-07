@@ -142,7 +142,7 @@ func Fetch(tid uint32, pid uint32, logger *slog.Logger) error {
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error al leer el cuerpo de la respuesta:", err)
+		// fmt.Println("Error al leer el cuerpo de la respuesta:", err)
 		return err
 	}
 

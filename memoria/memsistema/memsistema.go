@@ -53,7 +53,7 @@ func EliminarContextoPID(pid uint32) {
 	if _, exists := ContextosPID[pid]; exists {
 		delete(ContextosPID, pid)
 	} else {
-		fmt.Printf("Contexto PID %d no existe\n", pid)
+		// fmt.Printf("Contexto PID %d no existe\n", pid)
 	}
 }
 
@@ -64,10 +64,10 @@ func EliminarContextoTID(pid uint32, tid uint32) {
 			delete(proceso.TIDs, tid)
 			ContextosPID[pid] = proceso // Actualizar el contexto en el mapa
 		} else {
-			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
+			// fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
 		}
 	} else {
-		fmt.Printf("PID %d no existe\n", pid)
+		// fmt.Printf("PID %d no existe\n", pid)
 	}
 }
 
@@ -78,11 +78,7 @@ func Actualizar_TID(pid uint32, tid uint32, contexto types.ContextoEjecucionTID)
 			proceso.TIDs[tid] = contexto // Actualizar el contexto en el mapa
 			ContextosPID[pid] = proceso  // Actualizar el contexto en el mapa
 			mu.Unlock()
-		} else {
-			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
 		}
-	} else {
-		fmt.Printf("PID %d no existe\n", pid)
 	}
 }
 
@@ -131,17 +127,17 @@ func BuscarSiguienteInstruccion(pid, tid uint32, pc uint32) string {
 			indiceInstruccion := pc
 			instruccion, existe := hilo.LISTAINSTRUCCIONES[fmt.Sprintf("%d", indiceInstruccion)]
 			if !existe {
-				fmt.Printf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
+				// fmt.Printf("Instrucción no encontrada para PC %d en TID %d", pc, tid)
 				return ""
 			}
 
 			return instruccion
 		} else {
-			fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
+			// fmt.Printf("TID %d no existe en el PID %d\n", tid, pid)
 			return ""
 		}
 	} else {
-		fmt.Printf("PID %d no existe\n", pid)
+		// fmt.Printf("PID %d no existe\n", pid)
 		return ""
 	}
 }

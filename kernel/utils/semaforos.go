@@ -1,9 +1,5 @@
 package utils
 
-import (
-	"fmt"
-)
-
 type Semaphore struct {
 	ch chan struct{}
 }
@@ -18,12 +14,12 @@ func NewSemaphore(size int) *Semaphore {
 }
 
 func (s *Semaphore) Wait() {
-	fmt.Println("Esperando signal")
+	// fmt.Println("Esperando signal")
 	<-s.ch // Bloquea hasta que haya un permiso
-	fmt.Println("Signal recibido")
+	// fmt.Println("Signal recibido")
 }
 
 func (s *Semaphore) Signal() {
-	fmt.Println("Signal enviado")
+	// fmt.Println("Signal enviado")
 	s.ch <- struct{}{} // Libera un permiso
 }
