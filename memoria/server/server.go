@@ -34,7 +34,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	//envia proxima instr a cpu fase fetch
 	mux.HandleFunc("GET /instruccion", Obtener_Instrucción(logger))
 	//recibo msj de cpu para que haga la instruccion read mem
-	mux.HandleFunc("/read_mem/{direccionFisica}", Read_Mem(logger))
+	mux.HandleFunc("POST /read_mem", Read_Mem(logger))
 	//recibo msj de cpu para que haga la instruccion write mem
 	mux.HandleFunc("POST /write_mem", Write_Mem(logger))
 
@@ -66,8 +66,11 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		if sePudo {
 			logger.Info(fmt.Sprintf("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PID, magic.Tamanio))
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
 
+			return
+		}
+		if !sePudo {
+			logger.Info("NO SE CREO EL PROCESO")
 			return
 		}
 		if msj == "COMPACTACION" {
@@ -418,7 +421,6 @@ func Read_Mem(logger *slog.Logger) http.HandlerFunc {
 		// Serializar la respuesta en JSON
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
 		if err := json.NewEncoder(w).Encode(responseData); err != nil {
 			// Si hay error al serializar la respuesta, responder con error
 			http.Error(w, fmt.Sprintf("Error al enviar la respuesta: %v", err), http.StatusInternalServerError)
