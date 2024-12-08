@@ -280,12 +280,11 @@ func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 
 // Hay que calcular bien las bases y limites que estan mal
 func baseDinamica(posicion int) uint32 {
-
-	if posicion <= 0 {
-		return uint32(0)
-	} else {
-		return uint32(Particiones[posicion-1].Base + Particiones[posicion-1].Limite)
+	var acumulador = 0
+	for i := 0; i < posicion; i++ {
+		acumulador += ParticionesDinamicas[i]
 	}
+	return uint32(acumulador + 1)
 }
 
 func AsignarParticion(pid uint32, posicion, tamanio_proceso int, path string) {
