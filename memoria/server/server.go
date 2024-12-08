@@ -219,7 +219,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 
 		// Enviar la estructura al FileSystem para crear el archivo con el dump
 		// Usamos el endpoint "dump" para enviar la estructura
-		exito := client.Enviar_QueryPath(memoryDumpRequest, utils.Configs.IpFilesystem, utils.Configs.PortFilesystem, "dump", "POST", logger)
+		exito := client.Enviar_Body(memoryDumpRequest, utils.Configs.IpFilesystem, utils.Configs.PortFilesystem, "dump", logger)
 		if !exito {
 			logger.Error("Error al enviar el dump al FileSystem")
 			http.Error(w, "Error al enviar el dump al FileSystem", http.StatusInternalServerError)
