@@ -290,7 +290,7 @@ func baseDinamica(posicion int) uint32 {
 	for i := 0; i < posicion; i++ {
 		base += ParticionesDinamicas[i]
 	}
-	return uint32(acumulador + 1)
+	return uint32(base + 1)
 }
 
 func AsignarParticion(pid uint32, posicion, tamanio_proceso int, path string) {
