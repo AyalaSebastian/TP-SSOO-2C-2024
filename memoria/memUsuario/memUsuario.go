@@ -114,22 +114,27 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
 	var asigno = false
 	algoritmo := utils.Configs.SearchAlgorithm
 	esquema := utils.Configs.Scheme
+
+	// Comprobación del esquema de memoria
 	if esquema == "FIJAS" {
+		// Algoritmos de particionamiento fijo
 		switch algoritmo {
 		case "FIRST":
 			asigno = FirstFitFijo(pid, tamanio_proceso, path)
-
 		case "BEST":
 			asigno = BestFitFijo(pid, tamanio_proceso, path)
 		case "WORST":
 			asigno = WorstFitFijo(pid, tamanio_proceso, path)
 		}
-		if !asigno {
-			return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
-		} else {
+
+		// Resultado para particiones fijas
+		if asigno {
 			return true, "OK"
+		} else {
+			return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
 		}
 	} else if esquema == "DINAMICAS" {
+		// Algoritmos de particionamiento dinámico
 		switch algoritmo {
 		case "FIRST":
 			asigno = FirstFitDinamico(pid, tamanio_proceso, path)
@@ -138,19 +143,23 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
 		case "WORST":
 			asigno = WorstFitDinamico(pid, tamanio_proceso, path)
 		}
+
+		// Si se asignó la partición correctamente, retornamos
 		if asigno {
 			return true, "OK"
 		} else {
+			// Si no se pudo asignar, intentamos compactar
 			compactar := SePuedeCompactar(tamanio_proceso)
 			if compactar {
 				return false, "COMPACTAR"
 			} else {
 				return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
 			}
-
 		}
 	}
-	return false, "ESQUEMA MEMORIA ERRORRRRRRR"
+
+	// Si el esquema es incorrecto, retornamos un error
+	return false, "ESQUEMA MEMORIA ERROR"
 }
 
 // first fit para particiones fijas
@@ -223,37 +232,35 @@ func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	}
 }
 
-// empiezo con un solo espacio de memoria de 1024 bytes, si no esta reservado lo hago con el pid entrante, sino no hay espacio
 func FirstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	for i := 0; i < len(BitmapParticiones); i++ {
-		if !BitmapParticiones[i] {
-			if tamanio_proceso < ParticionesDinamicas[i] {
-				AsignarParticion(pid, i, tamanio_proceso, path)
-				return true
-			}
+		if !BitmapParticiones[i] && ParticionesDinamicas[i] >= tamanio_proceso {
+			AsignarParticion(pid, i, tamanio_proceso, path)
+			return true
 		}
 	}
-	return false
+	return false // No hay partición adecuada
 }
+
 func BestFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	var pos_menor = -1
-	var menor = 1024
+	var menor = 30000 // Valor arbitrario para comparar
+
 	for i := 0; i < len(BitmapParticiones); i++ {
-		if !BitmapParticiones[i] {
-			if tamanio_proceso < ParticionesDinamicas[i] {
-				if ParticionesDinamicas[i] <= menor {
-					menor = ParticionesDinamicas[i]
-					pos_menor = i
-				}
+		if !BitmapParticiones[i] && ParticionesDinamicas[i] >= tamanio_proceso {
+			if ParticionesDinamicas[i] < menor { // Busca la partición más ajustada
+				menor = ParticionesDinamicas[i]
+				pos_menor = i
 			}
 		}
 	}
+
 	if pos_menor == -1 {
-		return false // no hay huecos hay que compactar o tirar interrupcion
-	} else {
-		AsignarParticion(pid, pos_menor, tamanio_proceso, path)
-		return true
+		return false // No hay partición adecuada
 	}
+
+	AsignarParticion(pid, pos_menor, tamanio_proceso, path)
+	return true
 }
 
 // empiezo con un solo espacio de memoria de 1024 bytes, si no esta reservado lo hago con el pid entrante, sino no hay espacio
@@ -262,7 +269,7 @@ func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	var mayor = 0
 	for i := 0; i < len(BitmapParticiones); i++ {
 		if !BitmapParticiones[i] {
-			if tamanio_proceso < ParticionesDinamicas[i] {
+			if tamanio_proceso <= ParticionesDinamicas[i] {
 				if ParticionesDinamicas[i] >= mayor {
 					mayor = ParticionesDinamicas[i]
 					pos_mayor = i
@@ -278,22 +285,30 @@ func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	}
 }
 
-// Hay que calcular bien las bases y limites que estan mal
 func baseDinamica(posicion int) uint32 {
-	var acumulador = 0
+	var base = 0
 	for i := 0; i < posicion; i++ {
-		acumulador += ParticionesDinamicas[i]
+		base += ParticionesDinamicas[i]
 	}
 	return uint32(acumulador + 1)
 }
 
 func AsignarParticion(pid uint32, posicion, tamanio_proceso int, path string) {
-	nuevaParticion := ParticionesDinamicas[posicion] - tamanio_proceso
+	espacioDisponible := ParticionesDinamicas[posicion]
+	nuevaParticion := espacioDisponible - tamanio_proceso
+
+	if nuevaParticion > 0 {
+		// Si queda espacio, creamos una nueva partición
+		ParticionesDinamicas = append(ParticionesDinamicas[:posicion+1], append([]int{nuevaParticion}, ParticionesDinamicas[posicion+1:]...)...)
+		BitmapParticiones = append(BitmapParticiones[:posicion+1], append([]bool{false}, BitmapParticiones[posicion+1:]...)...)
+	}
+
+	// Actualizar la partición asignada
 	ParticionesDinamicas[posicion] = tamanio_proceso
 	BitmapParticiones[posicion] = true
 	PidAParticion[pid] = posicion
-	BitmapParticiones = append(BitmapParticiones, false)
-	ParticionesDinamicas = append(ParticionesDinamicas, nuevaParticion)
+
+	// Crear contexto de memoria
 	base := baseDinamica(posicion)
 	memSistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
 	memSistema.CrearContextoTID(pid, 0, path)
@@ -312,25 +327,31 @@ func SePuedeCompactar(tamanio_proceso int) bool {
 
 func Compactar() bool {
 	var espacioLibre = 0
+	var nuevasParticiones []int // Para almacenar las particiones compactadas
+	var nuevoBitmap []bool      // Para el nuevo estado del bitmap
 
+	// Recorremos las particiones actuales
 	for i := 0; i < len(BitmapParticiones); i++ {
-		if !BitmapParticiones[i] {
+		if BitmapParticiones[i] {
+			// Si la partición está ocupada, la copiamos al nuevo arreglo
+			nuevasParticiones = append(nuevasParticiones, ParticionesDinamicas[i])
+			nuevoBitmap = append(nuevoBitmap, true)
+		} else {
+			// Si está libre, sumamos su espacio a `espacioLibre`
 			espacioLibre += ParticionesDinamicas[i]
-			espacioACompactar := ParticionesDinamicas[i]
-
-			//armo las particiones de vuelta sin los huecos libres
-			for x, v := range ParticionesDinamicas {
-				if v == espacioACompactar {
-					ParticionesDinamicas = append(ParticionesDinamicas[:x], ParticionesDinamicas[x+1:]...)
-					break // Sale del bucle después de eliminar el primer valor encontrado
-				}
-			}
 		}
 	}
-	// agrego una particion al final con el espacio de todos los huecos eliminados
+
+	// Si hay espacio libre, lo añadimos como una partición al final
 	if espacioLibre > 0 {
-		ParticionesDinamicas = append(ParticionesDinamicas, espacioLibre)
-		return true
+		nuevasParticiones = append(nuevasParticiones, espacioLibre)
+		nuevoBitmap = append(nuevoBitmap, false)
 	}
-	return false
+
+	// Actualizamos las particiones y el bitmap globales
+	ParticionesDinamicas = nuevasParticiones
+	BitmapParticiones = nuevoBitmap
+
+	// Retorna `true` si hubo compactación (es decir, si se encontró espacio libre)
+	return espacioLibre > 0
 }

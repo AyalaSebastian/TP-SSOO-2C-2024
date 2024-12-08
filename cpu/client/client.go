@@ -136,40 +136,6 @@ func CederControlAKernell[T any](dato T, endpoint string, logger *slog.Logger) {
 	}
 }
 
-func CederControlAKernell2[T any](dato T, endpoint string, logger *slog.Logger) {
-
-	//finalizar cpu
-	// utils.Control = false  //! CUIDADOOOOOO
-
-	body, err := json.Marshal(dato)
-	if err != nil {
-		logger.Error("Se produjo un error codificando el mensaje")
-		return
-	}
-
-	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpKernel, utils.Configs.PortKernel, endpoint)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", utils.Configs.IpKernel, utils.Configs.PortKernel))
-		return
-	}
-	// Aseguramos que el body sea cerrado
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusAccepted {
-		logger.Error("La respuesta del servidor no fue OK")
-		return // Indica que la respuesta no fue exitosa
-	}
-	if resp.StatusCode == http.StatusOK {
-		utils.Control = false
-		return
-	}
-	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
-		logger.Error("La respuesta del servidor no fue OK")
-		return // Indica que la respuesta no fue exitosa
-	}
-}
-
 // EnviarDesalojo envia el PID, TID y el motivo del desalojo a la API Kernel utilizando la configuración global de IP y puerto.
 func EnviarDesalojo(pid uint32, tid uint32, motivo string, logger *slog.Logger) {
 
