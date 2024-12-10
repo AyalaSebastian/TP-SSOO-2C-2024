@@ -250,10 +250,12 @@ func THREAD_JOIN(logger *slog.Logger) http.HandlerFunc {
 		bloqueado := utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.THREAD_JOIN, QuienFue: strconv.Itoa(int(tid.TID))}
 
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
+
+		//! Verificar si hay que sacar esto
 		if utils.Configs.SchedulerAlgorithm == "FIFO" || utils.Configs.SchedulerAlgorithm == "PRIORIDADES" {
-			utils.Desencolar_TCB(planificador.ColaReady, 0)
+			// utils.Desencolar_TCB(planificador.ColaReady, 0)
 		} else {
-			utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
+			// utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
 
 		}
 

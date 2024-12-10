@@ -32,6 +32,8 @@ var ContextoEjecucion types.RegCPU
 // * Variable global para almacenar la información de interrupción
 var InterrupcionRecibida *types.InterruptionInfo
 
+var PCpaqueande uint32
+
 /////////////////////////////////////////////////////////////////////
 
 func Comenzar_cpu(logger *slog.Logger) {
@@ -47,6 +49,7 @@ func Comenzar_cpu(logger *slog.Logger) {
 			}
 			// Obtener el valor actual del PC antes de Fetch
 			pcActual := client.ReceivedContextoEjecucion.PC
+			PCpaqueande = client.ReceivedContextoEjecucion.PC
 
 			// 1. Fetch: obtener la próxima instrucción desde Memoria basada en el PC (Program Counter)
 			err := Fetch(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
@@ -438,10 +441,14 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 		if InterrupcionRecibida.TID == tidActual {
 			// Log de la interrupción recibida
 			logger.Info(fmt.Sprintf("Atendiendo Interrupcion: %s ", InterrupcionRecibida.NombreInterrupcion))
-			proceso.ContextoEjecucion.PC++
+			// proceso.ContextoEjecucion.PC++ //! ACA ESTA EL ERROR (SI FUNCIONA BORRAR TODA LA LINEA)
+
+			if client.ReceivedContextoEjecucion.PC == PCpaqueande {
+				proceso.ContextoEjecucion.PC++
+			}
+
 			client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 			logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
-			// utils.Control = false
 			client.EnviarDesalojo(proceso.Pid, proceso.Tid, InterrupcionRecibida.NombreInterrupcion, logger)
 
 			// Eliminar la interrupción después de procesarla

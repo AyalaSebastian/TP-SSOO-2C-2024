@@ -23,6 +23,7 @@ func AsignarValorRegistro(registro string, valor uint32, tid uint32, logger *slo
 	switch registro {
 	case "PC":
 		registros.PC = valor
+		logger.Info(fmt.Sprintf("BORRAR - Modificando PC a %d", int(registros.PC)))
 	case "AX":
 		registros.AX = valor
 	case "BX":
@@ -87,7 +88,7 @@ func RestarRegistros(registroDestino, registroOrigen string, tid uint32, logger 
 }
 
 // Función para realizar el salto condicional JNZ
-func SaltarSiNoCero(registro, instruccion string, tid uint32, logger *slog.Logger) {
+func SaltarSiNoCero(registro string, instruccion string, tid uint32, logger *slog.Logger) {
 
 	// Obtener el valor del registro
 	valorRegistro := obtenerValorRegistro(registro, logger)
