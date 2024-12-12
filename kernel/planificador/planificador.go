@@ -1,7 +1,6 @@
 package planificador
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -21,8 +20,6 @@ var ColaIO []utils.SolicitudIO
 var MapColasMultinivel map[int][]types.TCB
 
 var Semaforo *utils.Semaphore
-
-var ctx, cancel = context.WithCancel(context.Background())
 
 // Variables para el tema de los quantums
 var (
@@ -287,7 +284,7 @@ func PRIORIDADES(logger *slog.Logger) {
 							break
 						}
 					}
-					client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", ctx, logger)
+					client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 
 				}
 
@@ -343,25 +340,10 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
 
 			utils.Desencolar_TCB(ColaReady, proximo.Prioridad)
-			client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", ctx, logger)
+			client.Enviar_Body_Async(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 			go Quantum(exec, logger) // Comenzamos un hilo para que maneje el quantum
 
 		} else if proximo.Prioridad < utils.MapaPCB[utils.Execute.PID].TCBs[utils.Execute.TID].Prioridad {
-
-			// mu.Lock()
-
-			// execID := ExecuteContador + 1
-			// utils.Execute = &utils.ExecuteActual{
-			// 	PID:       proximo.PID,
-			// 	TID:       proximo.TID,
-			// 	IDexecute: execID,
-			// }
-
-			// ExecuteContador = execID
-
-			// exec := utils.Execute
-
-			// mu.Unlock()
 
 			client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 
@@ -406,7 +388,6 @@ func Quantum(exec *utils.ExecuteActual, logger *slog.Logger) {
 	defer Mu.Unlock()
 
 	if utils.Execute != nil && utils.Execute.IDexecute == exec.IDexecute {
-		// cancel()
 		client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN_QUANTUM", TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 	}
 }

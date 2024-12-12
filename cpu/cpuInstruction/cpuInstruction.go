@@ -23,7 +23,6 @@ func AsignarValorRegistro(registro string, valor uint32, tid uint32, logger *slo
 	switch registro {
 	case "PC":
 		registros.PC = valor
-		logger.Info(fmt.Sprintf("BORRAR - Modificando PC a %d", int(registros.PC)))
 	case "AX":
 		registros.AX = valor
 	case "BX":
