@@ -530,9 +530,13 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 		case "FIN_QUANTUM":
 			if utils.Execute != nil {
 				logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
+				utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+
 			}
+			planificador.Mu.Lock()
 			utils.Execute = nil
-			utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+			planificador.Mu.Unlock()
+			// utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
 			planificador.SignalEnviado = true
 			planificador.Semaforo.Signal()
 		case "SEGMENTATION_FAULT":

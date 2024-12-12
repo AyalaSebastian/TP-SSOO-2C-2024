@@ -70,6 +70,7 @@ func RecibirInterrupcion(logger *slog.Logger) http.HandlerFunc {
 		var interrupcion = types.InterruptionInfo{
 			NombreInterrupcion: bodyInterrupcion.NombreInterrupcion,
 			TID:                bodyInterrupcion.TID,
+			PID:                bodyInterrupcion.PID,
 		}
 
 		cicloDeInstruccion.InterrupcionRecibida = &interrupcion

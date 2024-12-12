@@ -72,7 +72,7 @@ func Comenzar_cpu(logger *slog.Logger) {
 			// }
 
 			// 4. Chequear interrupciones
-			CheckInterrupt(GlobalPIDTID.TID, logger)
+			CheckInterrupt(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
 
 			// Si el PC no fue modificado por alguna instrucción, lo incrementamos en 1
 			if client.ReceivedContextoEjecucion.PC == pcActual {
@@ -243,7 +243,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		}
 		registroDireccion := args[0]
 		registroDatos := args[1]
-		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, GlobalPIDTID.TID, logger)
+		cpuInstruction.EscribirMemoria(registroDireccion, registroDatos, GlobalPIDTID, logger)
 
 	case "SUM":
 		if len(args) != 2 {
@@ -421,6 +421,9 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
+
+		// ROMPO EL CICLO YA QUE SIEMPRE VA A FINALIZAR EL PROCESO
+		utils.Control = false
 		client.CederControlAKernell(processExit, "PROCESS_EXIT", logger)
 
 	default:
@@ -429,7 +432,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 	}
 }
 
-func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
+func CheckInterrupt(tidActual uint32, pidActual uint32, logger *slog.Logger) {
 
 	var proceso types.Proceso
 	proceso.ContextoEjecucion = *client.ReceivedContextoEjecucion
@@ -438,7 +441,7 @@ func CheckInterrupt(tidActual uint32, logger *slog.Logger) {
 
 	// Verificar si hay una interrupción pendiente
 	if InterrupcionRecibida != nil {
-		if InterrupcionRecibida.TID == tidActual {
+		if InterrupcionRecibida.TID == tidActual && InterrupcionRecibida.PID == pidActual {
 			// Log de la interrupción recibida
 			logger.Info(fmt.Sprintf("Atendiendo Interrupcion: %s ", InterrupcionRecibida.NombreInterrupcion))
 			// proceso.ContextoEjecucion.PC++ //! ACA ESTA EL ERROR (SI FUNCIONA BORRAR TODA LA LINEA)

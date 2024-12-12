@@ -90,6 +90,7 @@ type Proceso struct {
 type InterruptionInfo struct {
 	NombreInterrupcion string
 	TID                uint32
+	PID                uint32 //! ACA
 }
 
 // --------------------------------- Memoria ---------------------------------

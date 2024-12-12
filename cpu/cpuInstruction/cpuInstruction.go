@@ -158,7 +158,13 @@ func LeerMemoria(registroDatos string, registroDireccion string, pidtid types.PI
 	// Obtener el valor de la dirección lógica del registro de dirección
 	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
 
-	direccionFisica, err := mmu.TraducirDireccion(&client.Proceso, direccionLogica, logger)
+	procesoPaquende := types.Proceso{
+		Pid:               pidtid.PID,
+		Tid:               pidtid.TID,
+		ContextoEjecucion: *client.ReceivedContextoEjecucion,
+	}
+
+	direccionFisica, err := mmu.TraducirDireccion(&procesoPaquende, direccionLogica, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en READ_MEM: %v", err))
 		return
@@ -231,21 +237,27 @@ func LeerMemoria(registroDatos string, registroDireccion string, pidtid types.PI
 }
 
 // Función para escribir un valor de un registro en una dirección física de memoria
-func EscribirMemoria(registroDireccion string, registroDatos string, tid uint32, logger *slog.Logger) {
+func EscribirMemoria(registroDireccion string, registroDatos string, pidtid types.PIDTID, logger *slog.Logger) {
 
 	// Obtener el valor de la dirección lógica y el valor de datos de los registros
 	direccionLogica := obtenerValorRegistro(registroDireccion, logger)
 	valorDatos := obtenerValorRegistro(registroDatos, logger)
 
+	procesoPaquende := types.Proceso{
+		Pid:               pidtid.PID,
+		Tid:               pidtid.TID,
+		ContextoEjecucion: *client.ReceivedContextoEjecucion,
+	}
+
 	// Traducir la dirección lógica a una dirección física usando la MMU
-	direccionFisica, err := mmu.TraducirDireccion(&client.Proceso, direccionLogica, logger)
+	direccionFisica, err := mmu.TraducirDireccion(&procesoPaquende, direccionLogica, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error al traducir la dirección lógica en WRITE_MEM: %v", err))
 		return
 	}
 
 	// Log obligatorio de Escritura de Memoria
-	logger.Info(fmt.Sprintf("## TID: %d - Acción: ESCRIBIR - Dirección Física: %d", tid, direccionFisica))
+	logger.Info(fmt.Sprintf("## TID: %d - Acción: ESCRIBIR - Dirección Física: %d", pidtid.TID, direccionFisica))
 
 	// Crear la estructura de solicitud para el módulo Memoria
 	requestData := struct {
@@ -255,7 +267,7 @@ func EscribirMemoria(registroDireccion string, registroDatos string, tid uint32,
 	}{
 		DireccionFisica: direccionFisica,
 		Valor:           valorDatos,
-		TID:             tid,
+		TID:             pidtid.TID,
 	}
 
 	// Serializar los datos en JSON
@@ -296,5 +308,5 @@ func EscribirMemoria(registroDireccion string, registroDatos string, tid uint32,
 	}
 
 	// Log de la instrucción ejecutada
-	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: WRITE_MEM - Dirección Física: %d, Valor: %d", tid, direccionFisica, valorDatos))
+	logger.Info(fmt.Sprintf("## TID: %d - Ejecutando: WRITE_MEM - Dirección Física: %d, Valor: %d", pidtid.TID, direccionFisica, valorDatos))
 }

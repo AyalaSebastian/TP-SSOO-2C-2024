@@ -13,7 +13,7 @@ import (
 func TraducirDireccion(proceso *types.Proceso, direccionLogica uint32, logger *slog.Logger) (uint32, error) {
 
 	direccionFisica := proceso.ContextoEjecucion.Base + direccionLogica
-	if direccionFisica >= proceso.ContextoEjecucion.Limite {
+	if direccionFisica >= proceso.ContextoEjecucion.Base+proceso.ContextoEjecucion.Limite {
 
 		proceso.ContextoEjecucion.PC++
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)

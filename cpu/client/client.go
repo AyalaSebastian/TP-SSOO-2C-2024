@@ -97,7 +97,7 @@ func EnviarContextoDeEjecucion[T any](dato T, endpoint string, logger *slog.Logg
 	url := fmt.Sprintf("http://%s:%d/%s", utils.Configs.IpMemory, utils.Configs.PortMemory, endpoint)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", "127.0.0.1", 8002))
+		logger.Error(fmt.Sprintf("Se produjo un error enviando mensaje a ip:%s puerto:%d", utils.Configs.IpMemory, utils.Configs.PortMemory))
 		return false
 	}
 	// Aseguramos que el body sea cerrado

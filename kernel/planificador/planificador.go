@@ -26,7 +26,7 @@ var ctx, cancel = context.WithCancel(context.Background())
 
 // Variables para el tema de los quantums
 var (
-	mu              sync.Mutex
+	Mu              sync.Mutex
 	ExecuteContador int
 )
 
@@ -273,7 +273,7 @@ func PRIORIDADES(logger *slog.Logger) {
 
 				if utils.Execute != nil {
 					// Enviamos la interrupción de desalojo por Prioridades
-					client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "PRIORIDAD", logger)
+					client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "PRIORIDAD", logger)
 				} else {
 					logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", siguienteHilo.TID, siguienteHilo.PID, siguienteHilo.Prioridad))
 					utils.Execute = &utils.ExecuteActual{
@@ -325,7 +325,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 		// Si hay alguien en la cola de ready
 		if utils.Execute == nil {
 
-			mu.Lock()
+			Mu.Lock()
 
 			execID := ExecuteContador + 1
 			utils.Execute = &utils.ExecuteActual{
@@ -338,7 +338,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 			exec := utils.Execute
 
-			mu.Unlock()
+			Mu.Unlock()
 
 			logger.Info(fmt.Sprintf("Ejecutando hilo %d (PID: %d) con prioridad %d", proximo.TID, proximo.PID, proximo.Prioridad))
 
@@ -363,7 +363,7 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 			// mu.Unlock()
 
-			client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
+			client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "PRIORIDAD", TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 
 		} else {
 
@@ -402,12 +402,12 @@ func Quantum(exec *utils.ExecuteActual, logger *slog.Logger) {
 
 	<-timer.C
 
-	mu.Lock()
-	defer mu.Unlock()
+	Mu.Lock()
+	defer Mu.Unlock()
 
 	if utils.Execute != nil && utils.Execute.IDexecute == exec.IDexecute {
 		// cancel()
-		client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN_QUANTUM", TID: utils.Execute.TID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
+		client.Enviar_Body(types.InterruptionInfo{NombreInterrupcion: "FIN_QUANTUM", TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "INTERRUPCION_FIN_QUANTUM", logger)
 	}
 }
 
