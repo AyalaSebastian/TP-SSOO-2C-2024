@@ -433,42 +433,54 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 
 		// Si el mutex existe, lo asignamos o liberamos segun corresponda
 		if utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] == strconv.Itoa(int(utils.Execute.TID)) {
+			planificador.Mu.Lock()
+			defer planificador.Mu.Unlock()
+
+			nadieNecesitaMutex := true
+
 			for _, bloqueado := range planificador.ColaBlocked {
 				// Si alguien quiere el mutex
-				count := 0
 				if bloqueado.PID == utils.Execute.PID && bloqueado.Motivo == utils.Mutex && bloqueado.QuienFue == mutexName.Recurso {
-					count++
+
+					nadieNecesitaMutex = false
 					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = strconv.Itoa(int(bloqueado.TID))
 
 					// Desencolamos de la cola de bloqueados y encolamos en la cola de ready
-					utils.Desencolar(&planificador.ColaBlocked) //! Acá creo que hay que cambiarla por la funcion de desencolar por motivo (Consultar con lucas)
+
+					utils.Desencolar_cola_block(bloqueado, &planificador.ColaBlocked)
 					utils.Encolar_ColaReady(planificador.ColaReady, utils.MapaPCB[bloqueado.PID].TCBs[bloqueado.TID])
+
+					logger.Info(fmt.Sprintf("## (%d:%d) - Desbloqueado por: MUTEX y asignado a el", bloqueado.PID, bloqueado.TID))
 
 					respuesta, err := json.Marshal("MUTEX_ASIGNADO")
 					if err != nil {
 						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 					}
-					w.WriteHeader(http.StatusOK)
+					w.WriteHeader(http.StatusAccepted)
 					w.Write(respuesta)
 
-					utils.Execute = nil
-					planificador.SignalEnviado = true
-					planificador.Semaforo.Signal()
+					// utils.Execute = nil
+					// planificador.SignalEnviado = true
+					// planificador.Semaforo.Signal()
+
 					return
 				}
 				// Si el mutex no lo necesita nadie
-				if count == 0 {
-					utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = "LIBRE"
-					respuesta, err := json.Marshal("MUTEX_LIBRE")
-					if err != nil {
-						http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
-					}
-					w.WriteHeader(http.StatusOK)
-					w.Write(respuesta)
 
-					client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
-					return
+			}
+
+			if nadieNecesitaMutex {
+				utils.MapaPCB[utils.Execute.PID].Mutexs[mutexName.Recurso] = "LIBRE"
+				respuesta, err := json.Marshal("MUTEX_LIBRE")
+				if err != nil {
+					http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 				}
+
+				logger.Info(fmt.Sprintf("## %s quedo LIBRE", mutexName.Recurso))
+
+				w.WriteHeader(http.StatusAccepted)
+				w.Write(respuesta)
+				return
 			}
 		}
 
@@ -477,10 +489,11 @@ func MUTEX_UNLOCK(logger *slog.Logger) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "Error al codificar mensaje como JSON", http.StatusInternalServerError)
 		}
-		w.WriteHeader(http.StatusOK)
-		w.Write(respuesta)
 
-		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+		logger.Info("EL hilo no posee el mutex")
+
+		w.WriteHeader(http.StatusAccepted)
+		w.Write(respuesta)
 	}
 }
 
@@ -528,22 +541,31 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 
 		switch magic.Motivo {
 		case "FIN_QUANTUM":
-			if utils.Execute != nil {
-				logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
-				utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
 
-			}
 			planificador.Mu.Lock()
-			utils.Execute = nil
-			planificador.Mu.Unlock()
+
+			tcb, existe := utils.MapaPCB[magic.PID].TCBs[magic.TID]
+			if existe {
+				utils.Encolar_ColaReady(planificador.ColaReady, tcb)
+				if utils.Execute != nil {
+					logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
+				}
+			}
+
 			// utils.Encolar_ColaReady(planificador.ColaReady, utils.Obtener_PCB_por_PID(magic.PID).TCBs[magic.TID])
+			utils.Execute = nil
+
+			planificador.Mu.Unlock()
+
 			planificador.SignalEnviado = true
 			planificador.Semaforo.Signal()
+
 		case "SEGMENTATION_FAULT":
 			planificador.Finalizar_proceso(magic.PID, logger)
 			utils.Execute = nil
 			planificador.SignalEnviado = true
 			planificador.Semaforo.Signal()
+
 		case "PRIORIDAD":
 			utils.Execute = nil
 			logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por PRIORIDAD", magic.PID, magic.TID))

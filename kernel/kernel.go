@@ -14,7 +14,7 @@ import (
 func main() {
 
 	// Inicializamos la configuracion y el logger
-	utils.Configs = utils.Iniciar_Configuracion("config-p.json")
+	utils.Configs = utils.Iniciar_Configuracion("config-rc.json")
 	logger := logging.Iniciar_Logger("kernel.log", utils.Configs.LogLevel)
 
 	// Inicializamos las colas de procesos

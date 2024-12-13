@@ -8,7 +8,7 @@ type HandShake struct {
 type PCB struct {
 	PID    uint32            `json:"pid"`
 	TCBs   map[uint32]TCB    `json:"tcb"`
-	Mutexs map[string]string `json:"mutexs"` // el valor es LIBRE o tid que lo tiene
+	Mutexs map[string]string `json:"mutexs"` // Clave: nombre mutex, Valor: estado del mutex (libre/tid que lo contiene)
 }
 
 type TCB struct {

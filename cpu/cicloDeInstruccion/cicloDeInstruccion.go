@@ -403,7 +403,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
-		client.CederControlAKernell(mutexUnlock, "MUTEX_UNLOCK", logger)
+		CederControlAKernell2(mutexUnlock, "MUTEX_UNLOCK", logger)
 
 	case "THREAD_EXIT":
 		//	Informar memoria
@@ -494,11 +494,10 @@ func CederControlAKernell2[T any](dato T, endpoint string, logger *slog.Logger) 
 	// Aseguramos que el body sea cerrado
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusAccepted {
-		logger.Error("La respuesta del servidor no fue OK")
-		return // Indica que la respuesta no fue exitosa
+	if resp.StatusCode == http.StatusAccepted { //! USO ESTE CUANDO NO NECESITO QUE ROMPA EL BUCLE
+		return
 	}
-	if resp.StatusCode == http.StatusOK {
+	if resp.StatusCode == http.StatusOK { //! USO ESTE CUANDO NECESITO QUE ROMPA EL BUCLE
 		utils.Control = false
 		GlobalPIDTID = types.PIDTID{TID: 10000, PID: 0}
 		return

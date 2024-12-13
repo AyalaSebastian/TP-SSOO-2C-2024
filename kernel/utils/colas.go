@@ -61,6 +61,17 @@ func Desencolar_Por_Motivo(cola *[]Bloqueado, motivo Motivo) *Bloqueado {
 	return nil // No se encontró un elemento con el motivo especificado
 }
 
+func Desencolar_cola_block(bloqueado Bloqueado, cola *[]Bloqueado) bool {
+	for i, elem := range *cola {
+		if elem.PID == bloqueado.PID && elem.TID == bloqueado.TID {
+			*cola = append((*cola)[:i], (*cola)[i+1:]...)
+			return true
+		}
+	}
+	return false
+
+}
+
 func Sacar_TCB_Del_Map(mapaPCBS *map[uint32]types.PCB, pid uint32, tid uint32, logger *slog.Logger) {
 	pcb, existe := (*mapaPCBS)[pid]
 	if !existe {
