@@ -285,7 +285,7 @@ func WorstFitDinamico(pid uint32, tamanio_proceso int, path string) bool {
 	}
 }
 
-func baseDinamica(posicion int) uint32 {
+func BaseDinamica(posicion int) uint32 {
 	var base = 0
 	for i := 0; i < posicion; i++ {
 		base += ParticionesDinamicas[i]
@@ -309,7 +309,7 @@ func AsignarParticion(pid uint32, posicion, tamanio_proceso int, path string) {
 	PidAParticion[pid] = posicion
 
 	// Crear contexto de memoria
-	base := baseDinamica(posicion)
+	base := BaseDinamica(posicion)
 	memSistema.CrearContextoPID(pid, base, uint32(tamanio_proceso))
 	memSistema.CrearContextoTID(pid, 0, path)
 }

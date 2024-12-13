@@ -196,16 +196,39 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		// Obtener la partición correspondiente al PID
-		particion, existe := memUsuario.PidAParticion[pidTid.PID]
-		if !existe {
-			logger.Error("PID no encontrado", slog.Any("pid", pidTid.PID))
-			http.Error(w, "PID no encontrado", http.StatusNotFound)
-			return
-		}
+		//creo la variable para guardar la memoria del proceso que se envia a filesystem
+		var memoriaProceso []byte
 
-		// Obtener la memoria del proceso a partir de la partición
-		memoriaProceso := memUsuario.MemoriaDeUsuario[memUsuario.Particiones[particion].Base : memUsuario.Particiones[particion].Base+memUsuario.Particiones[particion].Limite]
+		// Verificar el esquema de memoria
+		if utils.Configs.Scheme == "DINAMICAS" {
+			// Buscar el proceso en memoria dinámica
+			posicion, existe := memUsuario.PidAParticion[pidTid.PID]
+			if !existe {
+				logger.Error("PID no encontrado en memoria dinámica", slog.Any("pid", pidTid.PID))
+				http.Error(w, "PID no encontrado", http.StatusNotFound)
+				return
+			}
+
+			// Calcular base y tamaño de la partición
+			base := memUsuario.BaseDinamica(posicion)
+			tamanio := uint32(memUsuario.ParticionesDinamicas[posicion])
+
+			// Extraer la memoria del proceso
+			memoriaProceso = memUsuario.MemoriaDeUsuario[base : base+tamanio]
+
+			//si el esquema es fijo
+		} else if utils.Configs.Scheme == "FIJAS" {
+			// Buscar el proceso en memoria de particiones fijas
+			particion, existe := memUsuario.PidAParticion[pidTid.PID]
+			if !existe {
+				logger.Error("PID no encontrado en memoria fija", slog.Any("pid", pidTid.PID))
+				http.Error(w, "PID no encontrado", http.StatusNotFound)
+				return
+			}
+
+			// Extraer la memoria del proceso
+			memoriaProceso = memUsuario.MemoriaDeUsuario[memUsuario.Particiones[particion].Base : memUsuario.Particiones[particion].Base+memUsuario.Particiones[particion].Limite]
+		}
 
 		// Generar el timestamp actual
 		timestamp := time.Now().Unix()
