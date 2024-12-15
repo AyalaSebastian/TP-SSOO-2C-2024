@@ -229,7 +229,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 			// Extraer la memoria del proceso
 			memoriaProceso = memUsuario.MemoriaDeUsuario[memUsuario.Particiones[particion].Base : memUsuario.Particiones[particion].Base+memUsuario.Particiones[particion].Limite]
 		}
-
+		fmt.Sprintf(string(memoriaProceso))
 		// Generar el timestamp actual
 		timestamp := time.Now().Unix()
 
