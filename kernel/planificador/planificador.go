@@ -137,6 +137,7 @@ func Crear_hilo(path string, prioridad int, logger *slog.Logger) {
 	pcb := utils.Obtener_PCB_por_PID(utils.Execute.PID)
 	if pcb == nil {
 		logger.Error("No se encontro el PCB") //! SACAR
+		return
 	}
 	tcb := generadores.Generar_TCB(pcb, prioridad)
 
@@ -206,6 +207,8 @@ func Procesar_cola_IO(colaIO *[]utils.SolicitudIO, logger *slog.Logger) {
 			logger.Info(fmt.Sprintf("## (%d:%d) finalizó IO y pasa a READY", solicitud.PID, solicitud.TID))
 			utils.Encolar_ColaReady(ColaReady, tcb)
 
+			SignalEnviado = true
+			Semaforo.Signal()
 		} else {
 			// No hay solicitudes en la cola, esperar un tiempo antes de volver a chequear
 			time.Sleep(100 * time.Millisecond)

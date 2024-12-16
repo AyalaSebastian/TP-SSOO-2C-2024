@@ -66,11 +66,11 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		if sePudo {
 			logger.Info(fmt.Sprintf("## Proceso Creado - PID: %d  - Tamaño: %d", magic.PID, magic.Tamanio))
 			w.WriteHeader(http.StatusOK)
-
 			return
 		}
 		if !sePudo {
-			logger.Info("NO SE CREO EL PROCESO")
+			logger.Info(msj)
+			w.WriteHeader(http.StatusInsufficientStorage)
 			return
 		}
 		if msj == "COMPACTACION" {

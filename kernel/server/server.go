@@ -98,7 +98,7 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 		planificador.SignalEnviado = true
 		planificador.Semaforo.Signal()
 
-		client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "memory-dump", logger)
+		client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "MEMORY-DUMP", logger)
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
 
 		w.WriteHeader(http.StatusOK)
@@ -514,8 +514,8 @@ func IO(logger *slog.Logger) http.HandlerFunc {
 			Duracion:  ms.MS,
 			Timestamp: time.Now(),
 		}
+		utils.Encolar(&planificador.ColaBlocked, utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID, Motivo: utils.IO})
 		utils.Encolar(&planificador.ColaIO, solicitud)
-		utils.Encolar(&planificador.ColaBlocked, utils.Bloqueado{PID: utils.Execute.PID, TID: utils.Execute.TID}) // Acá me falta el motivo pero no se como ponerlo
 		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: IO", utils.Execute.PID, utils.Execute.TID))
 
 		utils.Execute = nil
@@ -544,10 +544,14 @@ func Recibir_desalojo(logger *slog.Logger) http.HandlerFunc {
 
 			planificador.Mu.Lock()
 
+			if utils.Execute == nil { //agrego verificacion de execute nulo para que no rompa en la verificacion de abajo
+				break
+			}
+
 			tcb, existe := utils.MapaPCB[magic.PID].TCBs[magic.TID]
 			if existe {
-				utils.Encolar_ColaReady(planificador.ColaReady, tcb)
-				if utils.Execute != nil {
+				if utils.Execute.PID == magic.PID && utils.Execute.TID == magic.TID {
+					utils.Encolar_ColaReady(planificador.ColaReady, tcb)
 					logger.Info(fmt.Sprintf("## (%d:%d) - Desalojado por fin de Quantum", magic.PID, magic.TID))
 				}
 			}
