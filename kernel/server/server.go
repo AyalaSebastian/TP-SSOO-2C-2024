@@ -311,7 +311,7 @@ func MUTEX_CREATE(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		// Mandamos a que siga ejecutando el hilo que invoco la syscall
-		client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
+		// client.Enviar_Body(types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID}, utils.Configs.IpCPU, utils.Configs.PortCPU, "EJECUTAR_KERNEL", logger)
 		w.WriteHeader(http.StatusOK)
 		w.Write(respuesta)
 	}
@@ -371,12 +371,13 @@ func MUTEX_LOCK(logger *slog.Logger) http.HandlerFunc {
 
 			// Encolamos en ColaBlock y desencolamos de ColaReady
 			utils.Encolar(&planificador.ColaBlocked, bloqueado)
-			if utils.Configs.SchedulerAlgorithm != "FIFO" {
-				utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
-			} else {
-				utils.Desencolar_TCB(planificador.ColaReady, 0)
 
-			}
+			// if utils.Configs.SchedulerAlgorithm != "FIFO" {
+			// 	utils.Desencolar_TCB(planificador.ColaReady, utils.MapaPCB[utils.Execute.PID].TCBs[uint32(utils.Execute.TID)].Prioridad)
+			// } else {
+			// 	utils.Desencolar_TCB(planificador.ColaReady, 0)
+
+			// }
 
 			logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: MUTEX", utils.Execute.PID, utils.Execute.TID))
 
