@@ -127,6 +127,7 @@ func Enviar_Proceso[T any](dato T, ip string, puerto int, endpoint string, logge
 			return false, ""
 		}
 		if string(respBody) == "COMPACTACION" {
+			logger.Error("me llego msg de compactacion")
 			return false, "COMPACTACION" // Indica que la respuesta no fue exitosa y que ademas memoria solicita compactacion
 		}
 

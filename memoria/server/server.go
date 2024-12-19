@@ -68,12 +68,14 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		if !sePudo {
+		if !sePudo && (msj == "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES") {
 			logger.Info(msj)
 			w.WriteHeader(http.StatusInsufficientStorage)
 			return
 		}
-		if msj == "COMPACTACION" {
+
+		if !sePudo && (msj == "COMPACTACION") {
+			logger.Info("se puede compactar")
 			w.WriteHeader(http.StatusConflict)
 			w.Write([]byte("COMPACTACION"))
 			return
