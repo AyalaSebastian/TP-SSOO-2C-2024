@@ -70,6 +70,9 @@ func Comenzar_cpu(logger *slog.Logger) {
 			// 3. Execute: ejecutar la instrucción decodificada (esta dentro de Decode)
 
 			// }
+			if !utils.Control {
+				break
+			}
 
 			// 4. Chequear interrupciones
 			CheckInterrupt(GlobalPIDTID.TID, GlobalPIDTID.PID, logger)
@@ -303,7 +306,7 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
-		client.CederControlAKernell(io, "IO", logger)
+		CederControlAKernell2(io, "IO", logger)
 
 	case "PROCESS_CREATE":
 
@@ -458,8 +461,11 @@ func CheckInterrupt(tidActual uint32, pidActual uint32, logger *slog.Logger) {
 			InterrupcionRecibida = nil
 		} else {
 			// Si el TID no coincide, descartar la interrupción
-			logger.Info("Interrupción descartada debido a TID no coincidente", slog.Any("Interrupción TID", InterrupcionRecibida.TID), slog.Any("TID actual", tidActual))
-
+			logger.Info("Interrupción descartada debido a TID no coincidente \n" +
+				fmt.Sprintf("Interrupción PID: %d \n", InterrupcionRecibida.PID) +
+				fmt.Sprintf("Interrupción TID: %d \n", InterrupcionRecibida.TID) +
+				fmt.Sprintf("Actual PID: %d \n", pidActual) +
+				fmt.Sprintf("Actual TID: %d", tidActual))
 			// Descartar la interrupción al no coincidir el TID
 			InterrupcionRecibida = nil
 		}

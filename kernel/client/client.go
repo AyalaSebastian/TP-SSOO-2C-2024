@@ -32,6 +32,12 @@ func Enviar_Body[T any](dato T, ip string, puerto int, endpoint string, logger *
 		return false // Indica que la respuesta no fue exitosa
 	}
 
+	// Log de éxito
+	logger.Info("Mensaje enviado con éxito",
+		slog.Int("puerto", puerto),
+		slog.String("endpoint", endpoint),
+	)
+
 	return true // Indica que la respuesta fue exitosa
 }
 
@@ -109,6 +115,10 @@ func Enviar_Proceso[T any](dato T, ip string, puerto int, endpoint string, logge
 	}
 	// Aseguramos que el body sea cerrado
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusInsufficientStorage {
+		return false, "NO HAY MEMORIA"
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, err := io.ReadAll(resp.Body)

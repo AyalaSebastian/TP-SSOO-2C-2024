@@ -94,6 +94,10 @@ func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad in
 	if alt == "COMPACTACION" {
 		return false, "COMPACTACION"
 	}
+	if alt == "NO HAY MEMORIA" {
+		logger.Error("NO HAY MEMORIA SUFICIENTE")
+		return false, ""
+	}
 	// Si no hay espacio en memoria, devolver false
 	logger.Error("No se pudo asignar espacio en memoria para el proceso")
 	return false, ""
