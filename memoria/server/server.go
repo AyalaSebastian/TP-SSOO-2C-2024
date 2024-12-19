@@ -109,7 +109,7 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		//como no lo tengo lo saco del log
 
 		// Log de destrucción del proceso
-		logger.Info(fmt.Sprintf("## Proceso Destruido - PID: %d - ", pidUint32))
+		logger.Info(fmt.Sprintf("## Proceso Destruido - PID: %d", pidUint32))
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
@@ -229,7 +229,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 			// Extraer la memoria del proceso
 			memoriaProceso = memUsuario.MemoriaDeUsuario[memUsuario.Particiones[particion].Base : memUsuario.Particiones[particion].Base+memUsuario.Particiones[particion].Limite]
 		}
-		fmt.Sprintf(string(memoriaProceso))
+
 		// Generar el timestamp actual
 		timestamp := time.Now().Unix()
 
