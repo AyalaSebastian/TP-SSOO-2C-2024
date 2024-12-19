@@ -80,11 +80,6 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 			w.Write([]byte("COMPACTACION"))
 			return
 		}
-		if !sePudo {
-			logger.Info(msj)
-			w.WriteHeader(http.StatusInsufficientStorage)
-			return
-		}
 		w.WriteHeader(http.StatusConflict)
 
 	}

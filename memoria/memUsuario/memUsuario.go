@@ -151,9 +151,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
 			// Si no se pudo asignar, intentamos compactar
 			compactar := SePuedeCompactar(tamanio_proceso)
 			if compactar {
-				Compactar()
-				return false, "OK"
-				//return false, "COMPACTACION"
+				return false, "COMPACTACION"
 			} else {
 				return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
 			}
