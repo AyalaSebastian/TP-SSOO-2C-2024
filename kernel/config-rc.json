@@ -5,6 +5,6 @@
     "ip_cpu": "127.0.0.1",
     "port_cpu": 8004,
     "scheduler_algorithm": "CMN",
-    "quantum": 150,
+    "quantum": 750,
     "log_level": "DEBUG"
 }
