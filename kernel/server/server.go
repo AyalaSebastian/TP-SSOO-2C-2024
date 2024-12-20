@@ -107,14 +107,23 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 
 func Respuesta_dump(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		response := r.PathValue("response")
-		defer w.WriteHeader(http.StatusOK)
 
-		if response == "OK" {
+		respuestaDelDump := types.RespuestaDump{}
+		err := json.NewDecoder(r.Body).Decode(&respuestaDelDump)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error al decodificar mensaje: %s", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		if respuestaDelDump.Respuesta == "OK" {
 			desbloqueado := utils.Desencolar_Por_Motivo(&planificador.ColaBlocked, utils.DUMP)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
 			utils.Encolar_ColaReady(planificador.ColaReady, tcb)
+
+			planificador.SignalEnviado = true
+			planificador.Semaforo.Signal()
+
 		} else {
 			desbloqueado := utils.Desencolar_Por_Motivo(&planificador.ColaBlocked, utils.DUMP)
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)

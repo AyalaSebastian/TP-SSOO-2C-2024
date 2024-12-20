@@ -59,6 +59,12 @@ type ProcesoNew struct {
 	Prioridad int    `json:"prioridad"`
 }
 
+type RespuestaDump struct {
+	PID       uint32 `json:"pid"`
+	TID       uint32 `json:"tid"`
+	Respuesta string `json:"respuesta"`
+}
+
 // --------------------------------- CPU ---------------------------------
 type RegCPU struct {
 	PC     uint32 `json:"pc"`     // Program Counter (Proxima instruccion a ejecutar)
