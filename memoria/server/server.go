@@ -26,7 +26,7 @@ func Iniciar_memoria(logger *slog.Logger) {
 	mux.HandleFunc("POST /CREAR_HILO", Crear_hilo(logger))
 	mux.HandleFunc("POST /FINALIZAR_HILO", FinalizarHilo(logger))
 	mux.HandleFunc("POST /MEMORY-DUMP", MemoryDump(logger))
-	mux.HandleFunc("PATCH /compactar", Compactar(logger))
+	mux.HandleFunc("POST /compactar", Compactar(logger))
 
 	// Comunicacion con CPU
 	mux.HandleFunc("POST /contexto", Obtener_Contexto_De_Ejecucion(logger))
@@ -272,9 +272,9 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 func Compactar(logger *slog.Logger) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("## -Se Solicitó Compactar")
+		logger.Info("## Compactación Solicitada")
 		if memUsuario.Compactar() {
-			fmt.Printf("## -Se Completo Compactar")
+			logger.Info("## Compactación Realizada")
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		} else {

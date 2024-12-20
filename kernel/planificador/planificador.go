@@ -27,6 +27,8 @@ var (
 	ExecuteContador int
 )
 
+var NecesitoCompactar bool
+
 func Inicializar_colas() {
 	ColaNew = []types.ProcesoNew{}
 	ColaReady = make(map[int][]types.TCB)
@@ -51,6 +53,8 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 			if alt == "COMPACTACION" {
 				logger.Error("compactar 3")
 				// utils.MutexPlanificador.Lock() //! HACERLO CON UNA VARIABLE
+
+				NecesitoCompactar = true
 				for utils.Execute != nil {
 					logger.Error("me trabe")
 					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
@@ -59,7 +63,9 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 					logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
 					Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger)
 
-					// planificador.Semaforo.Signal()
+					NecesitoCompactar = false
+					SignalEnviado = true
+					Semaforo.Signal()
 				}
 
 			}
@@ -117,20 +123,21 @@ func Reintentar_procesos(logger *slog.Logger) {
 		if alt == "COMPACTACION" {
 			logger.Error("me trabe 2")
 
+			NecesitoCompactar = true
 			for utils.Execute != nil {
 				logger.Error("me trabe")
 				time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 			}
-			if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
+			if client.Enviar_Body(types.EstructuraEmpty{}, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", logger) {
 				logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
-				Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger)
-				// planificador.Semaforo.Signal()
-			}
 
-			//aca llega el msg de compactacion en este orden:
-			//"me llego msg de compactacion"
-			//"compactar 2"
-			//"me trabe 2"
+				Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger)
+				utils.Desencolar(&ColaNew)
+
+				NecesitoCompactar = false
+				SignalEnviado = true
+				Semaforo.Signal()
+			}
 		}
 	}
 }
@@ -334,6 +341,10 @@ func COLAS_MULTINIVEL(logger *slog.Logger) {
 
 		Semaforo.Wait()
 		SignalEnviado = false
+		if NecesitoCompactar {
+			utils.Execute = nil
+			continue
+		}
 
 		// Agarro el proximo y lo elimino de la cola de ready
 		proximo, hayAlguien := seleccionarSiguienteHilo()

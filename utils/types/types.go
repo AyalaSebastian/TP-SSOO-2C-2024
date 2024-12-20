@@ -4,6 +4,9 @@ type HandShake struct {
 	Mensaje string `json:"mensaje"`
 }
 
+type EstructuraEmpty struct {
+}
+
 // --------------------------------- KERNEL ---------------------------------
 type PCB struct {
 	PID    uint32            `json:"pid"`

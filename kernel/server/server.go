@@ -131,7 +131,6 @@ func Respuesta_dump(logger *slog.Logger) http.HandlerFunc {
 			pcb := utils.Obtener_PCB_por_PID(desbloqueado.PID)
 			tcb := pcb.TCBs[desbloqueado.TID]
 			planificador.Finalizar_proceso(tcb.PID, logger)
-			logger.Info(fmt.Sprintf("## Finaliza el proceso %d", desbloqueado.PID))
 		}
 	}
 }
