@@ -55,7 +55,6 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 					logger.Error("me trabe")
 					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 				}
-				// para que es el if ??
 				if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
 					logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
 					Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger)
@@ -117,6 +116,17 @@ func Reintentar_procesos(logger *slog.Logger) {
 		}
 		if alt == "COMPACTACION" {
 			logger.Error("me trabe 2")
+
+			for utils.Execute != nil {
+				logger.Error("me trabe")
+				time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
+			}
+			if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
+				logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
+				Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger)
+				// planificador.Semaforo.Signal()
+			}
+
 			//aca llega el msg de compactacion en este orden:
 			//"me llego msg de compactacion"
 			//"compactar 2"

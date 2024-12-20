@@ -27,7 +27,7 @@ func Iniciar_kernel(logger *slog.Logger) {
 	mux.HandleFunc("POST /THREAD_CANCEL", THREAD_CANCEL(logger))
 	mux.HandleFunc("POST /THREAD_EXIT", THREAD_EXIT(logger))
 	mux.HandleFunc("POST /DUMP_MEMORY", DUMP_MEMORY(logger))
-	mux.HandleFunc("PATCH /dump_response", Respuesta_dump(logger))
+	mux.HandleFunc("POST /dump_response", Respuesta_dump(logger))
 	mux.HandleFunc("POST /MUTEX_CREATE", MUTEX_CREATE(logger))
 	mux.HandleFunc("POST /MUTEX_LOCK", MUTEX_LOCK(logger))
 	mux.HandleFunc("POST /MUTEX_UNLOCK", MUTEX_UNLOCK(logger))
@@ -72,8 +72,10 @@ func Colas_vacias(colas map[int][]types.TCB) bool {
 func PROCESS_EXIT(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: PROCESS_EXIT", utils.Execute.PID, utils.Execute.TID))
-		planificador.Finalizar_proceso(utils.Execute.PID, logger)
+		finaliza := utils.Execute.PID
+
 		utils.Execute = nil
+		planificador.Finalizar_proceso(finaliza, logger)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))

@@ -198,6 +198,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 
+		logger.Info(fmt.Sprintf("## Memory Dump Solicitado - (PID:TID) - (%d:%d) ", pidTid.PID, pidTid.TID))
 		//creo la variable para guardar la memoria del proceso que se envia a filesystem
 		var memoriaProceso []byte
 
@@ -245,18 +246,26 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 		// Enviar la estructura al FileSystem para crear el archivo con el dump
 		// Usamos el endpoint "dump" para enviar la estructura
 		exito := client.Enviar_Body(memoryDumpRequest, utils.Configs.IpFilesystem, utils.Configs.PortFilesystem, "dump", logger)
+
+		// Si el dump no se pudo realizar:
 		if !exito {
 			logger.Error("Error al enviar el dump al FileSystem")
-			http.Error(w, "Error al enviar el dump al FileSystem", http.StatusInternalServerError)
+			respuesta := types.RespuestaDump{
+				PID:       pidTid.PID,
+				TID:       pidTid.TID,
+				Respuesta: "Error al enviar el dump al FileSystem",
+			}
+			client.Enviar_Body(respuesta, utils.Configs.IpKernel, utils.Configs.PortKernel, "dump_response", logger)
 			return
 		}
 
-		// Responder con un mensaje OK si la operación fue exitosa
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-
-		// Log de éxito
-		logger.Info(fmt.Sprintf("## Memory Dump Solicitado - (PID:TID) - (%d:%d) ", pidTid.PID, pidTid.TID))
+		// Si el dump se realizo con éxito:
+		respuestaOK := types.RespuestaDump{
+			PID:       pidTid.PID,
+			TID:       pidTid.TID,
+			Respuesta: "OK",
+		}
+		client.Enviar_Body(respuestaOK, utils.Configs.IpKernel, utils.Configs.PortKernel, "dump_response", logger)
 	}
 }
 
