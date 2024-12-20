@@ -151,7 +151,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
 			// Si no se pudo asignar, intentamos compactar
 			compactar := SePuedeCompactar(tamanio_proceso)
 			if compactar {
-				return false, "COMPACTAR"
+				return false, "COMPACTACION"
 			} else {
 				return false, "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES"
 			}
@@ -322,7 +322,7 @@ func SePuedeCompactar(tamanio_proceso int) bool {
 			espacioLibre += particiones[i]
 		}
 	}
-	return espacioLibre >= tamanio_proceso
+	return espacioLibre > tamanio_proceso
 }
 
 func Compactar() bool {
@@ -342,16 +342,13 @@ func Compactar() bool {
 		}
 	}
 
-	// Si hay espacio libre, lo añadimos como una partición al final
-	if espacioLibre > 0 {
-		nuevasParticiones = append(nuevasParticiones, espacioLibre)
-		nuevoBitmap = append(nuevoBitmap, false)
-	}
-
 	// Actualizamos las particiones y el bitmap globales
 	ParticionesDinamicas = nuevasParticiones
 	BitmapParticiones = nuevoBitmap
 
+	ParticionesDinamicas = append(ParticionesDinamicas, espacioLibre)
+	BitmapParticiones = append(BitmapParticiones, false)
+
 	// Retorna `true` si hubo compactación (es decir, si se encontró espacio libre)
-	return espacioLibre > 0
+	return true
 }

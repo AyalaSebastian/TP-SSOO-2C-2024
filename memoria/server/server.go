@@ -68,12 +68,14 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		if !sePudo {
+		if !sePudo && (msj == "NO SE PUDO INICIALIZAR EL PROCESO POR FALTA DE HUECOS EN LAS PARTICIONES") {
 			logger.Info(msj)
 			w.WriteHeader(http.StatusInsufficientStorage)
 			return
 		}
-		if msj == "COMPACTACION" {
+
+		if !sePudo && (msj == "COMPACTACION") {
+			logger.Info("se puede compactar")
 			w.WriteHeader(http.StatusConflict)
 			w.Write([]byte("COMPACTACION"))
 			return
@@ -109,7 +111,7 @@ func FinalizarProceso(logger *slog.Logger) http.HandlerFunc {
 		//como no lo tengo lo saco del log
 
 		// Log de destrucción del proceso
-		logger.Info(fmt.Sprintf("## Proceso Destruido - PID: %d - ", pidUint32))
+		logger.Info(fmt.Sprintf("## Proceso Destruido - PID: %d", pidUint32))
 
 		// Responder al Kernel con "OK" si la operación fue exitosa
 		w.WriteHeader(http.StatusOK)
@@ -229,7 +231,7 @@ func MemoryDump(logger *slog.Logger) http.HandlerFunc {
 			// Extraer la memoria del proceso
 			memoriaProceso = memUsuario.MemoriaDeUsuario[memUsuario.Particiones[particion].Base : memUsuario.Particiones[particion].Base+memUsuario.Particiones[particion].Limite]
 		}
-		fmt.Sprintf(string(memoriaProceso))
+
 		// Generar el timestamp actual
 		timestamp := time.Now().Unix()
 

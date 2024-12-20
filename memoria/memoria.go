@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Inicializamos la configuracion y el logger
-	utils.Configs = utils.Iniciar_configuracion("config-fs.json")
+	utils.Configs = utils.Iniciar_configuracion("config-pd.json")
 	logger := logging.Iniciar_Logger("memoria.log", utils.Configs.LogLevel)
 
 	// Inicializacion de memoria de usuario

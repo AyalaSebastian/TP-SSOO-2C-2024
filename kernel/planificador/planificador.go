@@ -49,16 +49,18 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		if !success {
 			// Si no se pudo incializar el proceso y necesita compactacion
 			if alt == "COMPACTACION" {
+				logger.Error("compactar 3")
 				// utils.MutexPlanificador.Lock() //! HACERLO CON UNA VARIABLE
 				for utils.Execute != nil {
+					logger.Error("me trabe")
 					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 				}
+				// para que es el if ??
 				if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
 					logger.Info("Compactacion de Memoria exitosa, reintentando inicializar proceso")
 					Inicializar_proceso(pcb, pseudo, tamanio, prioridad, logger)
 
 					// planificador.Semaforo.Signal()
-
 				}
 
 			}
@@ -92,6 +94,7 @@ func Inicializar_proceso(pcb types.PCB, pseudo string, tamanio int, prioridad in
 		return true, ""
 	}
 	if alt == "COMPACTACION" {
+		logger.Error("compactar 2")
 		return false, "COMPACTACION"
 	}
 	if alt == "NO HAY MEMORIA" {
@@ -107,10 +110,17 @@ func Reintentar_procesos(logger *slog.Logger) {
 	if len(ColaNew) > 0 {
 		// Intentar inicializar el primer proceso en ColaNew
 		new := ColaNew[0]
-		success, _ := Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger)
+		success, alt := Inicializar_proceso(new.PCB, new.Pseudo, new.Tamanio, new.Prioridad, logger)
 		if success {
 			// Si se inicializa correctamente, quitarlo de ColaNew
 			utils.Desencolar(&ColaNew)
+		}
+		if alt == "COMPACTACION" {
+			logger.Error("me trabe 2")
+			//aca llega el msg de compactacion en este orden:
+			//"me llego msg de compactacion"
+			//"compactar 2"
+			//"me trabe 2"
 		}
 	}
 }
