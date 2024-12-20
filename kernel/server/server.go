@@ -89,17 +89,17 @@ func DUMP_MEMORY(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info(fmt.Sprintf("## (%d:%d) - Solicitó syscall: DUMP_MEMORY", utils.Execute.PID, utils.Execute.TID))
 		parametros := types.PIDTID{TID: utils.Execute.TID, PID: utils.Execute.PID} // Saco el pid y el tid del hilo que esta ejecutando
-		pcb := utils.Obtener_PCB_por_PID(parametros.PID)
-		utils.Execute = nil
+		// pcb := utils.Obtener_PCB_por_PID(parametros.PID) //! OJO
 		bloqueado := utils.Bloqueado{PID: parametros.PID, TID: parametros.TID, Motivo: utils.DUMP}
+		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
+		utils.Execute = nil
 		utils.Encolar(&planificador.ColaBlocked, bloqueado)
-		utils.Eliminar_TCBs_de_cola_Ready(pcb, planificador.ColaReady, logger)
+		// utils.Eliminar_TCBs_de_cola_Ready(pcb, planificador.ColaReady, logger) //! OJO
 
 		planificador.SignalEnviado = true
 		planificador.Semaforo.Signal()
 
 		client.Enviar_Body(parametros, utils.Configs.IpMemory, utils.Configs.PortMemory, "MEMORY-DUMP", logger)
-		logger.Info(fmt.Sprintf("## (%d:%d) - Bloqueado por: DUMP MEMORY", utils.Execute.PID, utils.Execute.TID))
 
 		w.WriteHeader(http.StatusOK)
 	}

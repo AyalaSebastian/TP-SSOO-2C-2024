@@ -291,6 +291,8 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
+
+		utils.Control = false //! OJO
 		client.CederControlAKernell(dumpMemory, "DUMP_MEMORY", logger)
 
 	case "IO":
@@ -303,6 +305,8 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 			MS: ms,
 		}
 		proceso.ContextoEjecucion.PC++
+
+		utils.Control = false //! OJO (creo que va asi porque cuando manda a io no sigue ejecutando el io)
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
@@ -424,6 +428,8 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		client.EnviarContextoDeEjecucion(proceso, "actualizar_contexto", logger)
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
+
+		logger.Info(fmt.Sprintf("## (%d,%d) - soloicito process Exit SACARRR", GlobalPIDTID.PID, GlobalPIDTID.TID))
 
 		// ROMPO EL CICLO YA QUE SIEMPRE VA A FINALIZAR EL PROCESO
 		utils.Control = false
