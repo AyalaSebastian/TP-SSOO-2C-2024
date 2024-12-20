@@ -186,9 +186,9 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	var menor = 1024
 	var pos_menor = -1
 	for i := 0; i < len(BitmapParticiones); i++ {
-		if !BitmapParticiones[i] {
-			if tamanio_proceso < particiones[i] {
-				if particiones[i] < menor {
+		if !BitmapParticiones[i] { // Verifica que la partición esté libre.
+			if tamanio_proceso <= particiones[i] { // Verifica que la partición sea suficiente para el tamaño del proceso.
+				if particiones[i] < menor { // Busca la partición más pequeña dentro de las válidas.
 					menor = particiones[i]
 					pos_menor = i
 				}
@@ -198,8 +198,8 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	if pos_menor == -1 {
 		return false
 	} else {
-		PidAParticion[pid] = pos_menor
-		BitmapParticiones[pos_menor] = true
+		PidAParticion[pid] = pos_menor      // Asocia el PID con la partición encontrada.
+		BitmapParticiones[pos_menor] = true // Marca la partición como ocupada.
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
 		memSistema.CrearContextoTID(pid, 0, path)
 		return true
@@ -209,19 +209,19 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 // worst fit para particiones fijas
 func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 	particiones := utils.Configs.Partitions
-	var mayor = 0
+	var mayor = 0 // Variables para guardar la mayor partición válida y su posición
 	var pos_mayor = -1
-	for i := 0; i < len(BitmapParticiones); i++ {
-		if !BitmapParticiones[i] {
-			if tamanio_proceso < particiones[i] {
-				if particiones[i] > mayor {
-					mayor = particiones[i]
-					pos_mayor = i
+	for i := 0; i < len(BitmapParticiones); i++ { // Recorremos todas las particiones
+		if !BitmapParticiones[i] { // Verificamos si la partición está libre
+			if tamanio_proceso <= particiones[i] { // Verificamos si la partición puede almacenar el proceso
+				if particiones[i] > mayor { // Si es la mayor partición encontrada hasta ahora, actualizamos
+					mayor = particiones[i] // Guardamos el tamaño de la partición
+					pos_mayor = i          // Guardamos la posición de la partición
 				}
 			}
 		}
 	}
-	if pos_mayor == -1 {
+	if pos_mayor == -1 { // Si no se encontró una partición válida, retornamos false
 		return false
 	} else {
 		PidAParticion[pid] = pos_mayor
