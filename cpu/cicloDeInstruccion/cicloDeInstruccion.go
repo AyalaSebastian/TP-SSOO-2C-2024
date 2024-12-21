@@ -429,8 +429,6 @@ func Execute(operacion string, args []string, logger *slog.Logger) {
 		logger.Info(fmt.Sprintf("## TID: %d - Actualizo Contexto Ejecución", GlobalPIDTID.TID))
 		//AnteriorPIDTID = GlobalPIDTID
 
-		logger.Info(fmt.Sprintf("## (%d,%d) - soloicito process Exit SACARRR", GlobalPIDTID.PID, GlobalPIDTID.TID))
-
 		// ROMPO EL CICLO YA QUE SIEMPRE VA A FINALIZAR EL PROCESO
 		utils.Control = false
 		client.CederControlAKernell(processExit, "PROCESS_EXIT", logger)

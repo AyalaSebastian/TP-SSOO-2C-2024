@@ -51,12 +51,9 @@ func Crear_proceso(pseudo string, tamanio int, prioridad int, logger *slog.Logge
 		if !success {
 			// Si no se pudo incializar el proceso y necesita compactacion
 			if alt == "COMPACTACION" {
-				logger.Error("compactar 3")
-				// utils.MutexPlanificador.Lock() //! HACERLO CON UNA VARIABLE
 
 				NecesitoCompactar = true
 				for utils.Execute != nil {
-					logger.Error("me trabe")
 					time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 				}
 				if client.Enviar_QueryPath(0, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", "PATCH", logger) {
@@ -121,11 +118,9 @@ func Reintentar_procesos(logger *slog.Logger) {
 			utils.Desencolar(&ColaNew)
 		}
 		if alt == "COMPACTACION" {
-			logger.Error("me trabe 2")
 
 			NecesitoCompactar = true
 			for utils.Execute != nil {
-				logger.Error("me trabe")
 				time.Sleep(1000 * time.Millisecond) //no me parece la mejor implementacion a nivel recursos pero no se me ocurre otra sin modificar mucho la estructura actual
 			}
 			if client.Enviar_Body(types.EstructuraEmpty{}, utils.Configs.IpMemory, utils.Configs.PortMemory, "compactar", logger) {
