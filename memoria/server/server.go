@@ -59,7 +59,7 @@ func Crear_proceso(logger *slog.Logger) http.HandlerFunc {
 		logger.Info(fmt.Sprintf("Me llegaron los siguientes parametros para crear proceso: %+v", magic))
 
 		// Llamar a Inicializar_proceso con los parámetros correspondientes
-		sePudo, msj := memUsuario.AsignarPID(magic.PID, magic.Tamanio, magic.Path)
+		sePudo, msj := memUsuario.AsignarPID(magic.PID, magic.Tamanio, magic.Path, logger)
 
 		// Si la inicialización fue exitosa
 

@@ -110,7 +110,7 @@ func combinarParticionesLibres(index int, logger *slog.Logger) {
 	logger.Info("Particiones combinadas", "Nueva Base", base, "Nuevo Límite", limite)
 }
 
-func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
+func AsignarPID(pid uint32, tamanio_proceso int, path string, logger *slog.Logger) (bool, string) {
 	var asigno = false
 	algoritmo := utils.Configs.SearchAlgorithm
 	esquema := utils.Configs.Scheme
@@ -120,11 +120,11 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
 		// Algoritmos de particionamiento fijo
 		switch algoritmo {
 		case "FIRST":
-			asigno = FirstFitFijo(pid, tamanio_proceso, path)
+			asigno = FirstFitFijo(pid, tamanio_proceso, path, logger)
 		case "BEST":
-			asigno = BestFitFijo(pid, tamanio_proceso, path)
+			asigno = BestFitFijo(pid, tamanio_proceso, path, logger)
 		case "WORST":
-			asigno = WorstFitFijo(pid, tamanio_proceso, path)
+			asigno = WorstFitFijo(pid, tamanio_proceso, path, logger)
 		}
 
 		// Resultado para particiones fijas
@@ -163,7 +163,7 @@ func AsignarPID(pid uint32, tamanio_proceso int, path string) (bool, string) {
 }
 
 // first fit para particiones fijas
-func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
+func FirstFitFijo(pid uint32, tamanio_proceso int, path string, logger *slog.Logger) bool {
 	particion := utils.Configs.Partitions
 	for i := 0; i < len(BitmapParticiones); i++ {
 		if !BitmapParticiones[i] {
@@ -172,6 +172,7 @@ func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 				BitmapParticiones[i] = true
 				memSistema.CrearContextoPID(pid, uint32(Particiones[i].Base), uint32(Particiones[i].Limite))
 				memSistema.CrearContextoTID(pid, 0, path)
+				logger.Info(fmt.Sprintf("PROCESO: %d, ASIGNADO PARTICION: %d", pid, i))
 				return true
 			}
 		}
@@ -180,7 +181,7 @@ func FirstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 }
 
 // best fit para particiones fijas
-func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
+func BestFitFijo(pid uint32, tamanio_proceso int, path string, logger *slog.Logger) bool {
 
 	particiones := utils.Configs.Partitions
 	var menor = 1024
@@ -202,12 +203,14 @@ func BestFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 		BitmapParticiones[pos_menor] = true // Marca la partición como ocupada.
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_menor].Base), uint32(Particiones[pos_menor].Limite))
 		memSistema.CrearContextoTID(pid, 0, path)
+
+		logger.Info(fmt.Sprintf("PROCESO: %d ASIGNADO PARTICION: %d", pid, pos_menor))
 		return true
 	}
 }
 
 // worst fit para particiones fijas
-func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
+func WorstFitFijo(pid uint32, tamanio_proceso int, path string, logger *slog.Logger) bool {
 	particiones := utils.Configs.Partitions
 	var mayor = 0 // Variables para guardar la mayor partición válida y su posición
 	var pos_mayor = -1
@@ -228,6 +231,8 @@ func WorstFitFijo(pid uint32, tamanio_proceso int, path string) bool {
 		BitmapParticiones[pos_mayor] = true
 		memSistema.CrearContextoPID(pid, uint32(Particiones[pos_mayor].Base), uint32(Particiones[pos_mayor].Limite))
 		memSistema.CrearContextoTID(pid, 0, path)
+
+		logger.Info(fmt.Sprintf("PROCESO: %d ASIGNADO PARTICION: %d", pid, pos_mayor))
 		return true
 	}
 }
