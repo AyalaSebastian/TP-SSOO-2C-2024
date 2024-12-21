@@ -67,13 +67,15 @@ func LiberarParticionPorPID(pid uint32, logger *slog.Logger) error {
 	// Comprobar si el esquema es dinámico
 	if utils.Configs.Scheme == "DINAMICA" {
 		var particionIndex int
-		// Verificar si hay particiones libres adyacentes
-		adyacenteIzquierdaLibre := particionIndex > 0 && !BitmapParticiones[particionIndex-1]
-		adyacenteDerechaLibre := particionIndex < len(Particiones)-1 && !BitmapParticiones[particionIndex+1]
+		for particionIndex = 0; particionIndex < len(ParticionesDinamicas); particionIndex++ {
+			// Verificar si hay particiones libres adyacentes
+			adyacenteIzquierdaLibre := particionIndex > 0 && !BitmapParticiones[particionIndex-1]
+			adyacenteDerechaLibre := particionIndex < len(Particiones)-1 && !BitmapParticiones[particionIndex+1]
 
-		// Llamar a combinarParticionesLibres si alguna adyacente está libre
-		if adyacenteIzquierdaLibre || adyacenteDerechaLibre {
-			combinarParticionesLibres(particionIndex, logger)
+			// Llamar a combinarParticionesLibres si alguna adyacente está libre
+			if adyacenteIzquierdaLibre || adyacenteDerechaLibre {
+				combinarParticionesLibres(particionIndex, logger)
+			}
 		}
 	}
 	return nil

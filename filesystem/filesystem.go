@@ -9,7 +9,7 @@ import (
 func main() {
 
 	// Inicio configs
-	utils.Configs = utils.Iniciar_configuracion("config-pf.json")
+	utils.Configs = utils.Iniciar_configuracion("config-pd.json")
 
 	// Inicio log
 	logger := logging.Iniciar_Logger("filesystem.log", utils.Configs.LogLevel)
