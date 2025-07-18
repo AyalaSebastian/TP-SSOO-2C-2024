@@ -1,29 +1,37 @@
-## Enunciado:
-https://docs.google.com/document/d/1HSZ14tk7IOfkOf-7ni0Wa6wnKZClEQA7zZyv-h0EZAY/edit?tab=t.0
+⚙️ TP - Sistemas Operativos (UTN - 2º Año)
 
-## Archivos y Documento De Pruebas Finales:
-https://github.com/sisoputnfrba/the-last-of-c-pruebas
+Trabajo práctico de la materia **Sistemas Operativos** de la carrera Ingeniería en Sistemas (UTN FRBA).  
+El proyecto simula un sistema de planificación de procesos con una CPU, hilos de ejecución y mecanismos de sincronización mediante semáforos.
 
-https://docs.google.com/document/d/10uUK0feflEI5HQVqDOSnEZaWcfi9fapvLcLCsmIgu9Y/edit?tab=t.0
+---
 
-## Checkpoint
+# Orden de levantamiento de los módulos
+1. Filesystem
+2. Memoria
+3. CPU
+4. Kernel
 
-Para cada checkpoint de control obligatorio, se debe crear un tag en el
-repositorio con el siguiente formato:
+---
 
-```
-checkpoint-{número}
-```
+🧠 Objetivos
 
-Donde `{número}` es el número del checkpoint.
+- Implementar una planificación de procesos en un entorno cooperativo/preventivo.
+- Modelar la interacción entre CPU, procesos, recursos y memoria compartida.
+- Utilizar hilos (threads) y semáforos para la sincronización de secciones críticas.
+- Simular interrupciones, estados de proceso y prioridades.
+- Aplicar conceptos clave de planificación (FIFO, RR, prioridades), control de concurrencia y sincronización.
 
-Para crear un tag y subirlo al repositorio, podemos utilizar los siguientes
-comandos:
+---
 
-```bash
-git tag -a checkpoint-{número} -m "Checkpoint {número}"
-git push origin checkpoint-{número}
-```
+🛠️ Tecnologías usadas
 
-Asegúrense de que el código compila y cumple con los requisitos del checkpoint
-antes de subir el tag.
+- Lenguaje **GOLAND**
+- Librería **pthread** para manejo de hilos
+- Uso de Semáforos
+- Sistema operativo **Linux**
+
+---
+
+🤝 Agradecimientos
+
+Agradezco a los integrantes del grupo por su compromiso y trabajo sostenido a lo largo de cada etapa del proyecto, contribuyendo al desarrollo integral de este trabajo práctico.
